@@ -1,0 +1,115 @@
+{
+  "bot_token": "000000000:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+  "database": "mysql+pymysql://root:password@localhost/rapturebot?charset=utf8mb4",
+  "--webhook_domain": "your-ip-or-domain",
+  "cache": {
+    "redis": {
+      "host": "localhost",
+      "port": 6379,
+      "db": 0
+    }
+  },
+  "logging": {
+    "format": "[%(asctime)s][%(levelname)s] - %(message)s",
+    "level": "INFO",
+    "file": null
+  },
+  "--telegram_proxy": {
+    "proxy_url": "socks5://127.0.0.1:1080",
+    "username": "",
+    "password": ""
+  },
+
+  "admins_ids": [ 1234, 1234567 ],
+  "debug_uid": 1234,
+  "off_delay": 300,
+  "top_users_num": 15,
+  "weekly_stats_chats_ids": [ -1, -2 ],
+  "chats": {
+    "-198791234": {
+      "comment": "Chat name",
+      "all_cmd": true
+    },
+    "-1": {
+      "all_cmd": false,
+      "enabled_commands": [
+        "help", "on", "off", "start", "stop",
+        "stat", "allstat", "salo", "leave", "whois", "mystat",
+        "пидор", "pidor",
+        "orzik", "сы", "putin", "pipinder", "repinder",
+        "huyamda", "khaleesi",
+        "daily_full_moon_check", "ebalo_zavali", "alllove",
+        "time", "bayanometer", "mylove", "welcome"
+      ],
+      "commands_config": {
+        "time": {
+          "sort": false
+        },
+        "welcome": {
+          "text": "Добро пожаловать в чат \n{username}!"
+        }
+      }
+    }
+  },
+
+  "time": {
+    "-1": [
+      ["Сан-Франциско", "America/Los_Angeles"],
+      ["Лондон", "Europe/London"],
+      ["Москва", "Europe/Moscow"]
+    ],
+    "-2": [
+      ["Алматы", "Asia/Almaty"],
+      ["Атырау", "Asia/Atyrau"],
+      ["Москва", "Europe/Moscow"],
+      ["Киев", "Europe/Kiev"]
+    ]
+  },
+
+  "--weather_wunderground_api_key": "",
+  "--weather_darksky_api_key": "",
+  "--weather_yandex_api_key": "",
+  "--weather_debug": true,
+  "--weather_cities": {
+    "-1": [
+      ["Санкт-Петербург", "59.9387,30.3162", "Europe/Moscow", "Russia/Saint Petersburg"]
+    ],
+    "-2": [
+      ["Москва", "55.7507,37.6177", "Europe/Moscow", "Russia/Moscow"],
+      ["Сосновый Бор", "59.9042,29.0922", "Europe/Moscow", ""]
+    ]
+  },
+
+  "--google_vision_client_json_file": "1234567.json",
+  "cat_tag": "@username 🐈",
+
+  "leha_ids": [],
+  "leha_anya": [],
+  "expert_uid": 12345,
+  "orzik": "Твое Имя, Другое",
+  "lord": "Другие, Имена, Список",
+  "changelog": "Текст команды /changelog",
+  "--anecdotica_url": "",
+  "--dialogflow_api_token": "",
+  "anon_chat_id": -1,
+
+  "sasha_rebinder_stickersets_names": ["LINE_okamas_Alice_Series", "pisos_1000", "SpoiledRabbit17", "LifeisPotato", "STRVSFOFEV", "LINE_NEKOMIMI_MiA"],
+  "repinder_users": [],
+
+  "replylove__dragon_lovers": [],
+  "replylove__ignore": [],
+  "replylove__narcissist": [],
+  "replylove__ignore_pairs": {},
+
+  "--pm2_bot_repair": "/home/london/pm2_bot_repair.sh",
+  "--pm2_repair": "/home/london/pm2_repair.sh",
+  "--pm2_venv_python": "/home/london/tjchatbot_rep/venv/bin/python",
+
+  "--mat_notify_uids": [],
+  "--matshowtime": {
+    "channel_id": -1234
+  },
+
+  "--ktolivnul": 1234,
+  "--tema_uid": 1234
+}

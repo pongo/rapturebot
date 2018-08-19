@@ -1199,10 +1199,21 @@ def photo_reactions(bot: telegram.Bot, update: telegram.Update, img_url=None):
     if update.message.media_group_id and cache.get(key_media_group):
         return
 
-    # если урл картинки не задан, то берем самую большую фотку из сообщения
-    # file_path - это урл картинки (обычная ссылка)
+    # если урл картинки не задан, то берем самую большую фотку из сообщения и загружаем ее в память
     if img_url is None:
         img_url = get_photo_url(bot, update.message)
+        file = bot.get_file(update.message.photo[-1].file_id)
+        content = bytes(file.download_as_bytearray())
+    # иначе нам нужно сперва скачать в файл переданный урл картинки
+    else:
+        try:
+            img_response = requests.get(img_url)
+        except Exception:
+            return
+        content = img_response.content
+
+    from google.cloud.vision import types
+    image = types.Image(content=content)
 
     # noinspection PyPackageRequirements
     from google.cloud import vision
@@ -1211,7 +1222,7 @@ def photo_reactions(bot: telegram.Bot, update: telegram.Update, img_url=None):
         logger.debug(f"[google vision] parse img {img_url}")
         client = config.google_vision_client
         response = client.annotate_image({
-            'image': {'source': {'image_uri': img_url}},
+            'image': image,
             'features': [{'type': vision.enums.Feature.Type.LABEL_DETECTION, 'max_results': 30}],
         })
     except Exception as ex:

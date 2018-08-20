@@ -1369,8 +1369,6 @@ def tema_warning(bot: telegram.Bot, update: telegram.Update):
 
 def private(bot: telegram.Bot, update: telegram.Update):
     DayOfManager.private_handler(bot, update)
-    if MatshowtimeHandlers.comment(bot, update):
-        return
     if is_today_special():
         return
     ai(bot, update)

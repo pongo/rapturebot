@@ -1199,21 +1199,18 @@ def photo_reactions(bot: telegram.Bot, update: telegram.Update, img_url=None):
     if update.message.media_group_id and cache.get(key_media_group):
         return
 
-    # если урл картинки не задан, то берем самую большую фотку из сообщения и загружаем ее в память
+    # если урл картинки не задан, то сами берем самую большую фотку из сообщения
+    # гугл апи, почему-то, перестал принимать ссылки телеги, нам приходится самим загружать ему фото
     if img_url is None:
-        img_url = get_photo_url(bot, update.message)
+        from google.cloud.vision import types
         file = bot.get_file(update.message.photo[-1].file_id)
         content = bytes(file.download_as_bytearray())
-    # иначе нам нужно сперва скачать в файл переданный урл картинки
+        image = types.Image(content=content)
+    # но если передана ссылка, то и гуглу отдаем только ссылку
+    # чтобы не заниматься самим вопросом загрузки каких-то непонятных ссылок
+    # а если гугл не сможет ее открыть -- ну не судьба
     else:
-        try:
-            img_response = requests.get(img_url)
-        except Exception:
-            return
-        content = img_response.content
-
-    from google.cloud.vision import types
-    image = types.Image(content=content)
+        image = {'source': {'image_uri': img_url}}
 
     # noinspection PyPackageRequirements
     from google.cloud import vision

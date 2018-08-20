@@ -142,41 +142,9 @@ class Poll:
         return True
 
 
-class CommentForm:
-    key_prefix = f'{CACHE_PREFIX}:comments_waiting'
-
-    @classmethod
-    def start_comment(cls, bot: telegram.Bot, uid: int, id: int) -> bool:
-        text = 'У тебя есть 10 минут для отправки коммента в 140 символов. Комментарии анонимны.'
-        msg_id = TelegramWrapper.send_message(bot, text, chat_id=uid)
-        if not msg_id:
-            return False
-        cache.set(f'{cls.key_prefix}:{uid}', (id, msg_id), time=10 * 60)  # 10 минут
-        return True
-
-    @classmethod
-    def send_comment(cls, bot: telegram.Bot, uid: int, text: str) -> bool:
-        cached = cache.get(f'{cls.key_prefix}:{uid}')
-        if not cached:
-            return False
-        id, help_msg_id = cached
-        text = text.replace('\n', ' ').replace('\r', '').strip()[:140]
-        if not text:
-            return False
-        msg = ChannelMessage.get_msg(id)
-        if not msg:
-            return False
-        bot.send_chat_action(uid, telegram.ChatAction.TYPING)
-        msg.add_comment(bot, text)
-        cache.delete(f'{cls.key_prefix}:{uid}')
-        TelegramWrapper.send_message(bot, '✅ Комментарий отправлен', uid)
-        return True
-
-
 class ChannelMessage:
     callback_like = 'matshowtime_like_click'
     callback_dislike = 'matshowtime_dislike_click'
-    callback_comment = 'matshowtime_comment_click'
 
     def __init__(self, words: List[str]):
         self.words = words
@@ -185,7 +153,6 @@ class ChannelMessage:
         self.id = self.__generate_id()
         self.likes = 0
         self.dislikes = 0
-        self.comments = 0
 
     def send(self, bot: telegram.Bot) -> None:
         self.text = self.__prepare_text()
@@ -202,27 +169,6 @@ class ChannelMessage:
     @classmethod
     def get_msg(cls, id: int) -> Optional['ChannelMessage']:
         return cache.get(cls.__get_key(id))
-
-    @classmethod
-    def on_comment_click(cls, bot: telegram.Bot, _: telegram.Message, query: telegram.CallbackQuery, data) -> None:
-        msg: ChannelMessage = cache.get(cls.__get_key(data['id']))
-        if not msg:
-            bot.answer_callback_query(query.id, 'Время комментирования истекло')
-            return
-
-        uid = query.from_user.id
-        telegram_message_id = query.message.message_id
-        if msg.telegram_message_id != telegram_message_id:
-            bot.answer_callback_query(query.id, 'Вы сюда как попали???')
-            logger.warning(f'[{CACHE_PREFIX}] msg {telegram_message_id} access {uid}')
-            return
-
-        if not CommentForm.start_comment(bot, uid, msg.id):
-            logger.info(f"[{CACHE_PREFIX}] {uid} can't show comment form help")
-            text = f'Не могу отправить сообщение. Нажми Start в личке бота @{bot.username} и попробуй вновь'
-            bot.answerCallbackQuery(query.id, text, show_alert=True)
-            return
-        bot.answerCallbackQuery(query.id, url=f"t.me/{bot.username}?start={query.data}")
 
     @classmethod
     def on_poll_click(cls, bot: telegram.Bot, _: telegram.Message, query: telegram.CallbackQuery, data) -> None:
@@ -266,11 +212,9 @@ class ChannelMessage:
     def __get_buttons(self):
         like = make_button('👍', self.callback_like, self.id, self.likes)
         dislike = make_button('👎', self.callback_dislike, self.id, self.dislikes)
-        comment = make_button('Комментировать', self.callback_comment, self.id)
 
         buttons = [
             [like, dislike],
-            [comment]
         ]
         return buttons
 
@@ -293,17 +237,6 @@ class ChannelMessage:
         self.__save()
         buttons = self.__get_buttons()
         TelegramWrapper.edit_buttons(bot, self.telegram_message_id, buttons, matshowtime.channel_id)
-
-    def add_comment(self, bot: telegram.Bot, text: str) -> None:
-        if self.comments == 0:
-            self.text += '\n\nКомментарии:'
-        self.comments += 1
-        self.text += f'\n<b>{self.comments}:</b> {text}'
-        self.__save()
-
-        buttons = self.__get_buttons()
-        TelegramWrapper.edit_message(bot, self.telegram_message_id, self.text, chat_id=matshowtime.channel_id,
-                                     buttons=buttons)
 
 
 class Matshowtime:
@@ -343,7 +276,6 @@ class MatshowtimeHandlers:
     callbacks = {
         ChannelMessage.callback_like: ChannelMessage.on_poll_click,
         ChannelMessage.callback_dislike: ChannelMessage.on_poll_click,
-        ChannelMessage.callback_comment: ChannelMessage.on_comment_click,
     }
 
     @classmethod
@@ -362,14 +294,6 @@ class MatshowtimeHandlers:
             return
         # отправляем мат
         matshowtime.send(bot, mat_words)
-
-    @classmethod
-    def comment(cls, bot: telegram.Bot, update: telegram.Update) -> bool:
-        text = update.message.text
-        if not text:
-            return False
-        uid = update.message.from_user.id
-        return CommentForm.send_comment(bot, uid, text)
 
     @classmethod
     def callback_handler(cls, bot: telegram.Bot, update: telegram.Message, query: telegram.CallbackQuery, data) -> None:

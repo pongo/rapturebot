@@ -63,6 +63,34 @@
       ["Атырау", "Asia/Atyrau"],
       ["Москва", "Europe/Moscow"],
       ["Киев", "Europe/Kiev"]
+    ],
+    "-3": [
+      ["Сан-Франциско", "37.7793,-122.4192", "America/Los_Angeles", "CA/San_Francisco"],
+      ["Лондон", "51.5073,-0.1276", "Europe/London", "United Kingdom/London"],
+      ["Санкт-Петербург", "59.9387,30.3162", "Europe/Moscow", "Russia/Saint Petersburg"],
+      ["Москва", "55.7507,37.6177", "Europe/Moscow", "Russia/Moscow"],
+      ["Майкоп", "44.6062,40.1041", "Europe/Moscow", "Russia/Maykop"],
+      ["Змеиногорск", "51.1545,82.198", "Asia/Novosibirsk", "Russia/Zmeinogorsk"],
+      ["Калининград", "54.7074,20.5073", "Europe/Kaliningrad", ""],
+      ["Львов", "49.8397,24.0297", "Europe/Kiev", ""],
+      ["Киев", "50.4505,30.5235", "Europe/Kiev", ""],
+      ["Новосибирск", "55.0302,82.9204", "Asia/Novosibirsk", ""],
+      ["Феодосия", "45.031929,35.382429", "Europe/Moscow", ""]
+    ],
+    "-4": [
+      ["Москва", "55.7507,37.6177", "Europe/Moscow", "Russia/Moscow"],
+      ["Сосновый Бор", "59.9042,29.0922", "Europe/Moscow", ""],
+      ["Змеиногорск", "51.1545,82.198", "Asia/Novosibirsk", ""],
+      ["Алматы", "43.2364,76.9457", "Asia/Almaty", "Kazakhstan/Almaty"],
+      ["Гданьск", "54.3612,18.6329", "Europe/Warsaw", ""],
+      ["Тольятти", "53.5088,49.4192", "Europe/Samara", ""],
+      ["Курск", "51.7304,36.1926", "Europe/Moscow", ""],
+      ["Питер", "59.9387,30.3162", "Europe/Moscow", "Russia/Saint Petersburg"],
+      ["Ростов-на-Дону", "47.2225,39.7187", "Europe/Moscow", ""],
+      ["Екатеринбург", "56.838,60.5975", "Asia/Yekaterinburg", ""],
+      ["Сан-Франциско", "37.7793,-122.4192", "America/Los_Angeles", "CA/San_Francisco"],
+      ["Львов", "49.8397,24.0297", "Europe/Kiev", ""],
+      ["Казань", "55.7986,49.1063", "Europe/Moscow", ""]
     ]
   },
 
@@ -103,7 +131,6 @@
 
   "--pm2_bot_repair": "/home/london/pm2_bot_repair.sh",
   "--pm2_repair": "/home/london/pm2_repair.sh",
-  "--pm2_venv_python": "/home/london/tjchatbot_rep/venv/bin/python",
 
   "--mat_notify_uids": [],
   "--matshowtime": {

@@ -418,8 +418,10 @@ class Bayanometer:
         uid = query.from_user.id
         cid = query.message.chat_id
         button_msg_id = query.message.message_id
-        reply_msg_id = query.message.reply_to_message.message_id
         if uid == CONFIG.get('debug_uid', None):
+            reply_msg_id = None
+            if query.message.reply_to_message:
+                reply_msg_id = query.message.reply_to_message.message_id
             bot.forward_message(uid, cid, message_id=reply_msg_id)
         if 'type' not in data or data['type'] == Photo.data_type:
             Photo.callback_handler(bot, uid, cid, button_msg_id, data, query)

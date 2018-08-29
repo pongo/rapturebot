@@ -2,7 +2,7 @@ SQLAlchemy==1.1.1
 python-telegram-bot==10.1.0
 requests==2.19.1
 arrow==0.12.1
-pycryptodome==3.6.4
+pycryptodome==3.6.6
 emoji==0.4.5
 pytils==0.3
 google-cloud-vision==0.33.0

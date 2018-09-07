@@ -196,7 +196,6 @@ class Photo:
     @classmethod
     def __check(cls, url, chat_id, message_id) -> Optional['Photo']:
         hashes = cls.PhotoHasher.get_hashes(url)
-        cls.__save(url, chat_id, message_id)
         photo = None
         for hash_method, hash_value in hashes:
             key = f'{KEY_PREFIX}:photo:{chat_id}:{hash_method}:{hash_value}'
@@ -263,16 +262,6 @@ class Photo:
         reply_markup = telegram.InlineKeyboardMarkup(keyboard)
         bot.send_message(chat_id, f'Баян! Уже было {relative_date(date)}',
                          reply_to_message_id=reply_to_message_id, reply_markup=reply_markup)
-
-    @classmethod
-    def __save(cls, url, chat_id, message_id):
-        current_dir = os.getcwd()
-        tmp_dir = f'{current_dir}/tmp/bayanometer/{chat_id}'
-        os.makedirs(os.path.dirname(f'{tmp_dir}/'), exist_ok=True)
-        try:
-            urllib.request.urlretrieve(url, f'{tmp_dir}/{message_id}{pathlib.Path(url).suffix}')
-        except Exception:
-            pass
 
 
 class URL:

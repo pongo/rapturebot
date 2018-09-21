@@ -189,6 +189,9 @@ def send_chat_access_denied(bot, update) -> None:
         text = update.message.text
         if text is None:
             return
+        # драконизируем 5% сообшений
+        if random.randint(1, 100) > 5:
+            return
         khaleesed = Khaleesi.khaleesi(text, last_sentense=True)
         try:
             bot.send_message(chat_id, '{} 🐉'.format(khaleesed), reply_to_message_id=update.message.message_id)

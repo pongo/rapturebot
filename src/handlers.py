@@ -180,6 +180,9 @@ def command_guard(f):
 
 def send_chat_access_denied(bot, update) -> None:
     chat_id = update.message.chat_id
+
+    # если чат есть в кеше, то значит мы уже писали в него приветствие
+    # и теперь нам нужно заняться драконизацией
     key = f'chat_guard:{chat_id}'
     cached = cache.get(key)
     if cached:
@@ -192,14 +195,17 @@ def send_chat_access_denied(bot, update) -> None:
         except Exception:
             pass
         return
+
+    # новый неопознанный чат. пишем приветствие. плюс в логи инфу о чате
     logger.info(f'Chat {chat_id} not in config. Name: {update.message.chat.title}')
     try:
         admins = ', '.join((f'[{admin.user.id}] @{admin.user.username}' for admin in
                             bot.get_chat_administrators(update.message.chat_id)))
         logger.info(f'Chat {chat_id} admins: {admins}')
+        bot.send_message(chat_id, 'Привет ребята 👋!\n\nВашего чата нет в конфиге, поэтому я могу лишь время от времени драконизировать🐉 ваши сообщения.\n\nСвяжитесь с моим админом, чтобы он добавил ваш чат в конфиг — тогда все функции будут доступны, а драконизация отключится.')
     except Exception:
         pass
-    cache.set(key, True, time=DAY)
+    cache.set(key, True, time=MONTH)
 
 
 def chat_guard(f):

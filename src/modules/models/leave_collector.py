@@ -151,10 +151,19 @@ class LeaveCollector:
     @classmethod
     def get_leaves(cls, cid, days=3, return_id=False):
         days_ago = (datetime.today() - timedelta(days=days)).replace(hour=0, minute=0, second=0, microsecond=0)
-        uids = LeaveCollectorDB.get_leaves(cid, days_ago.strftime('%Y%m%d'))
+        uids: typing.Set[int] = set(LeaveCollectorDB.get_leaves(cid, days_ago.strftime('%Y%m%d')))
+
+        # некоторые ливают, а потом возвращаются без сообщений о входе.
+        # из-за отсутствия сообщения о входе, LeaveCollector думает, что они не в чате
+        # (при этом сам бот в курсе, что они в чате).
+        # можно было бы в `leave_check` определять невидимые входы и отмечать их,
+        # но проще просто в этом методе получить тех, кто в чате, и исключить их из выдачи.
+        chat_uids_db: typing.Set[int] = set([x.uid for x in ChatUser.get_all(cid)])
+        true_leaves = uids - chat_uids_db
+
         if return_id:
-            return uids
-        return [cls.__format_uid(uid) for uid in uids]
+            return list(true_leaves)
+        return [cls.__format_uid(uid) for uid in true_leaves]
 
     @classmethod
     def get_joins(cls, cid, days=3):

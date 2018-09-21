@@ -1,6 +1,7 @@
 # coding=UTF-8
 
 import json
+import re
 
 with open('config.json', 'r', encoding="utf-8") as file:
     CONFIG = json.loads(file.read())
@@ -22,3 +23,5 @@ for cmd in CMDS['text_cmds']:
     VALID_CMDS.append(cmd)
 
 google_vision_client = None
+
+re_ducks_trigger = re.compile(CONFIG['ducks_trigger']['re_pattern'], re.IGNORECASE | re.MULTILINE) if 'ducks_trigger' in CONFIG else None

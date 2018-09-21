@@ -1169,6 +1169,8 @@ def message_reactions(bot: telegram.Bot, update: telegram.Update):
     if 'пидор' in pidor_string or '/pidor' in pidor_string:
         pidor(bot, update)
 
+    ducks_trigger(bot, chat_id, msg_lower)
+
     # если картинка вставлена урлом, то чтобы узнать об этом мы парсим entities сообщения
     entities = update.message.parse_entities()
     for entity, entity_text in entities.items():
@@ -1176,6 +1178,40 @@ def message_reactions(bot: telegram.Bot, update: telegram.Update):
             if re.search(r"\.(jpg|jpeg|png)$", entity_text, re.IGNORECASE):
                 photo_reactions(bot, update, img_url=entity_text)
                 break
+
+
+def ducks_trigger(bot: telegram.Bot, chat_id: int, msg_lower: str) -> None:
+    """
+    Проверка на утко-триггер.
+
+    Бот проверяет каждое сообщение и решает, триггерится он на него или нет. И если да, то
+    через несколько часов бот постит сообщение со случайными знаками.
+
+    Отложеннная реакция нужна, чтобы люди не понимали на что триггерится бот.
+    """
+    if config.re_ducks_trigger is None:
+        return
+    if chat_id != CONFIG.get('anon_chat_id'):
+        return
+
+    # проверяем каждое сообщение на триггер
+    # и решаем через сколько часов бот должен запостить сообщение
+    if config.re_ducks_trigger.search(msg_lower):
+        cache.set('ducks:delayed', True, time=(random.randint(45, 300) * 60))
+        cache.set('ducks:go', True, time=MONTH)
+        return
+
+    # теперь каждый раз, когда кто-то пишет сообщение, не связанное с триггером,
+    # бот проверяет, не настало ли время реагировать.
+    #
+    # если `ducks:delayed` is None — значит пора отправлять.
+    # при этом `ducks:go` используется как ограничитель, чтобы бот постил только один раз.
+    if cache.get('ducks:delayed') is None and cache.get('ducks:go') is True:
+        cache.delete('ducks:go')
+        ducks = cache.get('ducks:count', 0) + 1
+        cache.set('ducks:count', ducks, time=(random.randint(1, 7) * 24 * 60 * 60))
+        sign = random.choice(CONFIG.get('ducks_trigger').get('variants', ['🦆']))
+        bot.send_message(chat_id, sign * ducks)
 
 
 @run_async

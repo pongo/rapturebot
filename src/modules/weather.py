@@ -2,7 +2,7 @@
 import json
 import os
 from multiprocessing.dummy import Pool as ThreadPool
-from typing import Union, Optional
+from typing import Union
 
 import arrow
 import requests

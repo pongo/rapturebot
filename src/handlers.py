@@ -36,11 +36,11 @@ from src.modules.models.week_word import WeekWord
 from src.modules.random_khaleesi import RandomKhaleesi
 from src.modules.reduplicator import reduplicate
 from src.modules.spoiler import SpoilerHandlers
-from src.utils.cache import cache, TWO_DAYS, TWO_YEARS, USER_CACHE_EXPIRE, MONTH, DAY
+from src.utils.cache import cache, TWO_DAYS, TWO_YEARS, USER_CACHE_EXPIRE, MONTH
 from src.utils.handlers_helpers import is_cmd_delayed
 from src.utils.misc import get_int
 from src.utils.misc import weighted_choice
-from src.utils.telegram_helpers import get_chat_admins, get_photo_url
+from src.utils.telegram_helpers import get_chat_admins
 
 logger = logging.getLogger(__name__)
 

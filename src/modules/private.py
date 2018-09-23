@@ -2,23 +2,17 @@
 import random
 import re
 from datetime import datetime
-from functools import wraps
 
 import telegram
 from telegram.ext import run_async
 
 from src.config import CONFIG
 from src.handlers import send_huificator, send_mystat, send_whois, send_mylove
-from src.modules.models.chat_user import ChatUser
 from src.modules.models.reply_top import LoveDumpTable
 from src.modules.models.user import User
 from src.utils.cache import cache
 from src.utils.handlers_helpers import only_users_from_main_chat
 from src.utils.logger import logger
-from src.utils.time_helpers import get_current_monday
-
-
-
 
 
 def startup_time(bot: telegram.Bot, update: telegram.Update) -> None:

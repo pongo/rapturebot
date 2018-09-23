@@ -1,10 +1,7 @@
 # coding=UTF-8
 import datetime
 import hashlib
-import os
-import pathlib
 import re
-import urllib.request
 from io import BytesIO
 from typing import Optional, List, Tuple
 from urllib.parse import urlparse, parse_qsl, ParseResult

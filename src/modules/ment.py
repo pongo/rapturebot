@@ -16,7 +16,7 @@ from src.utils.misc import weighted_choice
 class MentConfig:
     class CallWithoutArgs:
         def __init__(self, json2: dict) -> None:
-            self.sticker: str = json2['sticker']
+            self.stickers: str = json2['stickers']
             self.phrases: List[str] = json2['phrases']
             self.rap: str = json2['rap']
             self.phrases_by_uids: Dict[str, str] = json2['phrases_by_uids']
@@ -144,7 +144,7 @@ def call_without_args(bot: telegram.Bot, cmd: Command, user_cls: Type[User], cha
         return
 
     what_should_we_do = weighted_choice([
-        ('sticker',     20),  # постим стикер
+        ('stickers',    20),  # постим стикер
         ('hour',        25),  # городская стража
         ('phrase',      30),  # случайная фраза
         ('random_user', 20),  # этот не мент
@@ -164,7 +164,7 @@ def call_without_args(bot: telegram.Bot, cmd: Command, user_cls: Type[User], cha
     if text:
         send_message(bot, cmd, text)
         return
-    bot.send_sticker(cmd.chat_id, ment_config.call_without_args.sticker)
+    bot.send_sticker(cmd.chat_id, random.choice(ment_config.call_without_args.stickers))
 
 
 def call_with_args(bot: telegram.Bot, message: telegram.Message, cmd: Command, user_cls: Type[User], cache: Cache, ment_config: MentConfig) -> None:

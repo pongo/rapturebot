@@ -463,6 +463,7 @@ class UserStat:
             return {'users_count': 0, 'top_chart': '', 'msg_count': 0, 'percent': 0}
         msg_count_percent = 100
         top_chart = ''
+        uids = []
         last_monday = get_current_monday() if date is None else get_date_monday(date)
         all_msg_count = cls.__get_all_msg_count(last_monday, cid)
 
@@ -481,7 +482,7 @@ class UserStat:
         except Exception as e:
             logger.error(e)
         if len(q) == 0:
-            return {'users_count': 0, 'top_chart': '', 'msg_count': 0, 'percent': 0}
+            return {'users_count': 0, 'top_chart': '', 'msg_count': 0, 'percent': 0, 'uids': []}
 
         user_position = 0
         asc_msg_count = 0
@@ -501,6 +502,7 @@ class UserStat:
             percent = cls.number_format(raw_percent, 2)
             user_mat = '' if not mat else cls.__get_user_mat(user_stat)
             top_chart += f"<b>{user_position}. {user.fullname}</b> — <b>{count}</b> ({percent}%){user_mat}\n"
+            uids.append(user.uid)
             if not fullstat and user_position >= CONFIG['top_users_num']:
                 break
             if salo and count > 15:
@@ -537,7 +539,8 @@ class UserStat:
             'users_count': users_count,
             'top_chart': top_chart,
             'msg_count': all_msg_count,
-            'percent': msg_count_percent
+            'percent': msg_count_percent,
+            'uids': uids
         }
 
     @staticmethod

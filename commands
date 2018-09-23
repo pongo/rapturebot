@@ -59,6 +59,10 @@
     "pipinder": {
       "name": "pipinder",
       "description": "Саш, какой стикерпак сегодня?"
+    },
+    "ment": {
+      "name": "ment",
+      "description": "А не мент ли ты случаем?"
     }
   },
   "hidden": {

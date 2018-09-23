@@ -3,23 +3,35 @@
 import json
 import re
 
-with open('config.json', 'r', encoding="utf-8") as file:
-    CONFIG = json.loads(file.read())
+try:
+    with open('config.json', 'r', encoding="utf-8") as file:
+        CONFIG = json.loads(file.read())
+except Exception:
+    # print("Can't load config.json")
+    CONFIG = {}
 
-with open('chat_rules', 'r', encoding="utf-8") as file:
-    CHATRULES = file.read()
+try:
+    with open('chat_rules', 'r', encoding="utf-8") as file:
+        CHATRULES = file.read()
+except Exception:
+    # print("Can't load chat_rules")
+    CHATRULES = ''
 
-with open('commands', 'r', encoding="utf-8") as file:
-    CMDS = json.loads(file.read())
+try:
+    with open('commands', 'r', encoding="utf-8") as file:
+        CMDS = json.loads(file.read())
+except Exception:
+    # print("Can't load commands")
+    CMDS = {}
 
 VALID_CMDS = []
-for key, cmd in CMDS['common'].items():
+for key, cmd in CMDS.get('common', {}).items():
     VALID_CMDS.append(cmd['name'])
-for key, cmd in CMDS['admins'].items():
+for key, cmd in CMDS.get('admins', {}).items():
     VALID_CMDS.append(cmd['name'])
-for key, cmd in CMDS['hidden'].items():
+for key, cmd in CMDS.get('hidden', {}).items():
     VALID_CMDS.append(cmd['name'])
-for cmd in CMDS['text_cmds']:
+for cmd in CMDS.get('text_cmds', []):
     VALID_CMDS.append(cmd)
 
 google_vision_client = None

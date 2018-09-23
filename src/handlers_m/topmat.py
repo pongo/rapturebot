@@ -8,7 +8,7 @@ import telegram
 from src.config import CONFIG
 from src.modules.models.user import User
 from src.modules.models.user_stat import UserStat
-from src.utils.cache import pure_cache
+from src.utils.cache import pure_cache, cache, MONTH
 from src.utils.handlers_helpers import only_users_from_main_chat
 from src.utils.text_helpers import lstrip_every_line
 from src.utils.time_helpers import get_current_monday, get_date_monday
@@ -122,13 +122,23 @@ def send_topmat(bot: telegram.Bot, send_to_cid: int, stats_from_cid: int, date=N
     monday = get_current_monday() if date is None else get_date_monday(date)
     stats = UserStat.get_chat_stats(stats_from_cid, date)
     words = get_words_from_cache(monday, stats_from_cid)
+    users_msg_stats = get_mat_users_msg_stats(stats)
     msg = format_msg('Стата по мату', {
         'header_stats': get_header_stats(stats),
-        'users_msg_stats': get_mat_users_msg_stats(stats),
+        'users_msg_stats': users_msg_stats,
         'users_words_stats': get_mat_users_words_stats(stats),
         'words_stats': get_words_stats(words),
     })
+    set_top_mater(stats_from_cid, users_msg_stats)
     bot.send_message(send_to_cid, msg, parse_mode=telegram.ParseMode.HTML)
+
+
+def set_top_mater(stats_from_cid, users_msg_stats) -> None:
+    try:
+        top_mater = [row['uid'] for row in users_msg_stats[0:3]]
+        cache.set(f'weekgoal:{stats_from_cid}:top_mater_uids', top_mater, time=MONTH)
+    except Exception:
+        pass
 
 
 @only_users_from_main_chat

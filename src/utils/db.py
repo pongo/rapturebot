@@ -44,8 +44,12 @@ def add_to_db(value):
         raise Exception("Can't add value to DB")
 
 
-engine = create_engine(CONFIG['database'], convert_unicode=True, echo=False)
-Base.metadata.create_all(engine)
+if 'database' in CONFIG:
+    engine = create_engine(CONFIG['database'], convert_unicode=True, echo=False)
+    Base.metadata.create_all(engine)
 
-session_factory = sessionmaker(bind=engine)
-Session = scoped_session(session_factory)
+    session_factory = sessionmaker(bind=engine)
+    Session = scoped_session(session_factory)
+else:
+    # print("Can't connect to database")
+    pass

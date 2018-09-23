@@ -5,7 +5,7 @@ from telegram.ext import CommandHandler, MessageHandler, Filters, CallbackQueryH
 import src.handlers as handlers
 import src.modules.private as private
 from src.config import CMDS
-from src.handlers_m import khaleesi, ask, pipinder, repinder, topmat
+from src.handlers_m import khaleesi, ask, pipinder, repinder, topmat, ment_handler
 from src.modules.matshowtime import MatshowtimeHandlers
 from src.modules.spoiler import SpoilerHandlers
 from src.modules.time import time_handler
@@ -59,6 +59,7 @@ def add_chat_handlers(dp):
     dp.add_handler(CommandHandler(CMDS['common']['leave']['name'], handlers.leave, filters=cmd_filter))
     dp.add_handler(CommandHandler(CMDS['common']['orzik']['name'], handlers.orzik, filters=cmd_filter))
     dp.add_handler(CommandHandler(CMDS['common']['pipinder']['name'], pipinder.pipinder, filters=cmd_filter))
+    dp.add_handler(CommandHandler(CMDS['common']['ment']['name'], ment_handler.ment_handler, filters=cmd_filter))
 
     # hidden
     dp.add_handler(CommandHandler(CMDS['hidden']['repinder']['name'], repinder.repinder, filters=cmd_filter))

@@ -33,6 +33,7 @@ from src.modules.models.reply_top import ReplyTop, ReplyLove
 from src.modules.models.user import User
 from src.modules.models.user_stat import UserStat
 from src.modules.models.week_word import WeekWord
+from src.modules.random_khaleesi import RandomKhaleesi
 from src.modules.reduplicator import reduplicate
 from src.modules.spoiler import SpoilerHandlers
 from src.utils.cache import cache, TWO_DAYS, TWO_YEARS, USER_CACHE_EXPIRE, MONTH, DAY
@@ -756,12 +757,17 @@ def send_stats(bot, chat_id, chat_title, command, date, tag_salo=False, mat=Fals
                                percents)
     bot.sendMessage(chat_id, msg, parse_mode=ParseMode.HTML)
     logger.info(f'Group {chat_id} requested stats')
+    if salo:
+        cache.set(f'weekgoal:{chat_id}:salo_uids', info['uids'][0:3], time=MONTH)
+    elif fullstat:
+        cache.set(f'weekgoal:{chat_id}:top_pidori_uids', info['uids'][0:3], time=MONTH)
 
 
 def send_top_kroshka(bot, chat_id, monday):
     kroshka = UserStat.get_top_kroshka(chat_id, monday)
     if not kroshka:
         return
+    cache.set(f'weekgoal:{chat_id}:kroshka_uid', kroshka.uid, time=MONTH)
     emoj = ''.join(random.sample(list(emoji.UNICODE_EMOJI), 5))
     she = 'Она' if kroshka.female else 'Он'
     msg = f'Замечательная крошка-картошка <a href="tg://user?id={kroshka.uid}">🥔</a> недели —\n\n<b>{kroshka.fullname}</b> ❤️❤️❤️\n\n{she} получает эти прекрасные эмодзи: {emoj}'
@@ -825,6 +831,7 @@ def send_pidorweekly(bot, chat_id, prev_monday):
     if not user:
         logger.error(f'None user {uid}')
         return
+    cache.set(f'weekgoal:{chat_id}:pidorweekly_uid', user.uid, time=MONTH)
     pidorom = 'пидоршей' if user.female else 'пидором'
     header = f"И {pidorom} недели становится... <a href='tg://user?id={user.uid}'>👯‍♂</a> \n\n"
     body = "🎉     <b>{}</b>    🎉\n\n".format(user.fullname)
@@ -1344,9 +1351,9 @@ def random_khaleesi(bot, update):
     chat_id = update.message.chat_id
     if not is_command_enabled_for_chat(chat_id, CMDS['common']['khaleesi']['name']):
         return
-    if Khaleesi.is_its_time_for_khaleesi(chat_id) and Khaleesi.is_good_for_khaleesi(text):
+    if RandomKhaleesi.is_its_time_for_khaleesi(chat_id) and RandomKhaleesi.is_good_for_khaleesi(text):
         khaleesed = Khaleesi.khaleesi(text, last_sentense=True)
-        Khaleesi.increase_khaleesi_time(chat_id)
+        RandomKhaleesi.increase_khaleesi_time(chat_id)
         bot.sendMessage(chat_id, '{} 🐉'.format(khaleesed), reply_to_message_id=update.message.message_id)
 
 

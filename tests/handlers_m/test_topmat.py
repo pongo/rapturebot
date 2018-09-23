@@ -2,7 +2,7 @@
 
 import sys
 import unittest
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, ANY
 
 sys.modules['telegram'] = MagicMock()
 sys.modules['telegram.ext'] = MagicMock()
@@ -17,7 +17,8 @@ sys.modules['src.utils.db'] = MagicMock()
 from src.modules.models.user import User
 from src.modules.models.user_stat import UserStat
 from src.handlers_m.topmat import get_header_stats, get_mat_users_msg_stats, get_mat_users_words_stats, get_words_stats, \
-    format_msg
+    format_msg, set_top_mater
+from src.utils.cache import cache
 
 stop_after_first_fail = True
 
@@ -158,3 +159,20 @@ class UserStatTest(StopAfterFailTestCase):
             'users_words_stats': get_mat_users_words_stats(stats),
             'words_stats': get_words_stats(words),
         }))
+
+    def test_top_mater_cache(self):
+        stats = [
+            self.make_row(),  # uid 1
+            self.make_row(),
+            self.make_row(30, 5, 500, 50),    # 3
+            self.make_row(50, 0, 850, 0),
+            self.make_row(10, 0, 250, 0),
+            self.make_row(60, 40, 700, 420),  # 6
+            self.make_row(32, 2, 300, 2),
+            self.make_row(33, 4, 345, 7),     # 8
+            self.make_row(),
+        ]
+        cache.set = MagicMock()
+        set_top_mater(-1, get_mat_users_msg_stats(stats))
+        cache.set.assert_called_once_with('weekgoal:-1:top_mater_uids', [6, 3, 8], time=ANY)
+        cache.set.reset_mock()

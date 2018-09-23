@@ -10,8 +10,13 @@ except ImportError:
 
 from src.config import CONFIG
 
-_redis = redis.StrictRedis(host=CONFIG['cache']['redis']['host'], port=CONFIG['cache']['redis']['port'], db=CONFIG['cache']['redis']['db'])
-_pure_redis = redis.StrictRedis(host=CONFIG['cache']['redis']['host'], port=CONFIG['cache']['redis']['port'], db=CONFIG['cache']['redis']['db'], charset='utf-8', decode_responses=True)
+if 'cache' in CONFIG:
+    _redis = redis.StrictRedis(host=CONFIG['cache']['redis']['host'], port=CONFIG['cache']['redis']['port'], db=CONFIG['cache']['redis']['db'])
+    _pure_redis = redis.StrictRedis(host=CONFIG['cache']['redis']['host'], port=CONFIG['cache']['redis']['port'], db=CONFIG['cache']['redis']['db'], charset='utf-8', decode_responses=True)
+else:
+    # print("Can't connect to Redis")
+    _redis = None
+    _pure_redis = None
 
 USER_CACHE_EXPIRE = 15 * 24 * 60 * 60  # 15 дней
 MONTH = 30 * 24 * 60 * 60  # 30 дней

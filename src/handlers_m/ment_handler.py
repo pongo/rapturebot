@@ -21,4 +21,6 @@ from src.utils.time_helpers import today_str
 def ment_handler(bot: telegram.Bot, update: telegram.Update) -> None:
     if 'ment' not in CONFIG:
         return
+    if update.message.chat_id != CONFIG.get('anon_chat_id'):
+        return
     ment(bot, update, cache, User, ChatUser, MentConfig(CONFIG['ment']))

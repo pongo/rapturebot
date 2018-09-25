@@ -1130,6 +1130,7 @@ def message_reactions(bot: telegram.Bot, update: telegram.Update):
             monday_stickersets = set()
         monday_stickersets.add(update.message.sticker.set_name)
         cache.set(cache_key, monday_stickersets, time=USER_CACHE_EXPIRE)
+        stickers_tag(bot, update)
 
     msg = update.message.text
     if msg is None:
@@ -1194,6 +1195,21 @@ def message_reactions(bot: telegram.Bot, update: telegram.Update):
             if re.search(r"\.(jpg|jpeg|png)$", entity_text, re.IGNORECASE):
                 photo_reactions(bot, update, img_url=entity_text)
                 break
+
+
+def stickers_tag(bot: telegram.Bot, update: telegram.Update) -> None:
+    if 'stickers_tag' not in CONFIG:
+        return
+    message = update.message
+    chat_id = message.chat_id
+    if chat_id != CONFIG.get('anon_chat_id'):
+        return
+    uids: typing.List[int] = CONFIG['stickers_tag'].get(message.sticker.file_id, [])
+    if len(uids) == 0:
+        return
+    users = [User.get(uid) for uid in uids]
+    usernames = [user.get_username_or_link() for user in users if user]
+    bot.send_message(chat_id, ' '.join(usernames))
 
 
 def ducks_trigger(bot: telegram.Bot, chat_id: int, msg_lower: str) -> None:

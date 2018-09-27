@@ -18,10 +18,12 @@ def only_who_can_manage_music_users(f):
     def decorator(bot: telegram.Bot, update: telegram.Update):
         message = update.message
         if not can_manage_music_users(bot, message.chat_id, message.from_user.id):
-            bot.send_message(message.chat_id, 'Только админы чата и членессы музкружка могут делать это',
+            bot.send_message(message.chat_id,
+                             'Только админы чата и членессы музкружка могут делать это',
                              reply_to_message_id=message.message_id)
             return
         return f(bot, update)
+
     return decorator
 
 
@@ -52,7 +54,8 @@ def get_args(text: str) -> List[str]:
     return []
 
 
-def find_users(message: telegram.Message, usernames: List[str]) -> Tuple[List[str], Set[int], List[str]]:
+def find_users(message: telegram.Message, usernames: List[str]) -> Tuple[List[str],
+                                                                         Set[int], List[str]]:
     not_found_usernames: List[str] = []
     found_uids: Set[int] = set()
     found_usernames: List[str] = []
@@ -69,7 +72,7 @@ def find_users(message: telegram.Message, usernames: List[str]) -> Tuple[List[st
         found_usernames.append(username.lstrip('@'))
 
     # ищем упоминания людей без юзернейма
-    for entity, entity_text in message.parse_entities().items():
+    for entity, _ in message.parse_entities().items():
         if entity.type == 'text_mention':
             uid = entity.user.id
             user = User.get(uid)
@@ -83,11 +86,11 @@ def find_users(message: telegram.Message, usernames: List[str]) -> Tuple[List[st
 
 def get_manage_users_text(action: str, not_found_usernames, found_usernames) -> str:
     text = ''
-    if len(found_usernames) > 0:
+    if found_usernames:
         text = f'{action}: {", ".join(found_usernames)}'
-    if len(not_found_usernames) > 0:
+    if not_found_usernames:
         text += f'\n\nНе найдены: {", ".join(not_found_usernames)}'
-    if len(text) == 0:
+    if not text:
         text = 'Ошибка'
     return text.strip()
 
@@ -95,7 +98,7 @@ def get_manage_users_text(action: str, not_found_usernames, found_usernames) -> 
 def add_users(bot: telegram.Bot, message: telegram.Message, usernames: List[str]) -> None:
     not_found_usernames, found_uids, found_usernames = find_users(message, usernames)
     chat_id = message.chat_id
-    if len(found_uids) > 0:
+    if found_uids:
         music_uids = get_music_users(chat_id)
         music_uids.update(found_uids)
         set_music_users(chat_id, music_uids)
@@ -106,7 +109,7 @@ def add_users(bot: telegram.Bot, message: telegram.Message, usernames: List[str]
 def del_users(bot: telegram.Bot, message: telegram.Message, usernames: List[str]) -> None:
     not_found_usernames, found_uids, found_usernames = find_users(message, usernames)
     chat_id = message.chat_id
-    if len(found_uids) > 0:
+    if found_uids:
         music_uids = get_music_users(chat_id)
         music_uids = music_uids - found_uids
         set_music_users(chat_id, music_uids)
@@ -156,7 +159,8 @@ def send_list_replay(bot: telegram.Bot, chat_id: int, message_id: int, uids: Ite
 
 
 def send_sorry(bot: telegram.Bot, chat_id: int, message_id: int) -> None:
-    bot.send_message(chat_id, 'Для этого тебе нужно быть в музкружке', reply_to_message_id=message_id)
+    bot.send_message(chat_id, 'Для этого тебе нужно быть в музкружке',
+                     reply_to_message_id=message_id)
 
 
 def music(bot: telegram.Bot, update: telegram.Update) -> None:
@@ -167,7 +171,7 @@ def music(bot: telegram.Bot, update: telegram.Update) -> None:
 
     # команда с текстом
     # бот делает реплай к этому сообщению, независимо от того, есть ли у сообщения реплай или нет.
-    if len(get_args(message.text.strip())) > 0:
+    if get_args(message.text.strip()):
         if can_use:
             send_list_replay(bot, chat_id, message.message_id, music_users)
             return
@@ -183,9 +187,11 @@ def music(bot: telegram.Bot, update: telegram.Update) -> None:
         return
 
     # без текста, без реплая
-    help = 'Команда для музкружка. Использование: \n\n• /music текст — бот делает реплай сообщения с тегами музкружка.\n• /music (без текста, но с реплаем) — бот делает реплай к реплаю.\n\nАдмины чата и люди музкружка могут добавлять и удалять участников при помощи команд /musicadd и /musicdel.'
+    info = 'Команда для музкружка. Использование: \n\n• /music текст — бот делает реплай сообщения с тегами музкружка.\n• /music (без текста, но с реплаем) — бот делает реплай к реплаю.\n\nАдмины чата и люди музкружка могут добавлять и удалять участников при помощи команд /musicadd и /musicdel.'
     formatted_users = format_users(chat_id, music_users)
-    bot.send_message(chat_id, f'{help}\n\nЛюди музкружка ({len(formatted_users)}): {", ".join(formatted_users)}', reply_to_message_id=message.message_id, parse_mode='HTML')
+    bot.send_message(chat_id,
+                     f'{info}\n\nЛюди музкружка ({len(formatted_users)}): {", ".join(formatted_users)}',
+                     reply_to_message_id=message.message_id, parse_mode='HTML')
 
 
 @only_who_can_manage_music_users
@@ -197,7 +203,7 @@ def musicadd(bot: telegram.Bot, update: telegram.Update) -> None:
     """
     message = update.message
     args = get_args(message.text)
-    if len(args) > 0:
+    if args:
         add_users(bot, message, args)
 
 
@@ -205,5 +211,5 @@ def musicadd(bot: telegram.Bot, update: telegram.Update) -> None:
 def musicdel(bot: telegram.Bot, update: telegram.Update) -> None:
     message = update.message
     args = get_args(message.text)
-    if len(args) > 0:
+    if args:
         del_users(bot, message, args)

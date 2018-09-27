@@ -183,7 +183,7 @@ class User:
         cache.delete_by_pattern(cls.__get_cache_key('*'))
 
     @staticmethod
-    def get_id_by_name(username):
+    def get_id_by_name(username: str) -> typing.Optional[int]:
         username = username.lstrip('@')
         try:
             return UserDB.get_uid_by_username(username)

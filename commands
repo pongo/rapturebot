@@ -63,6 +63,10 @@
     "ment": {
       "name": "ment",
       "description": "А не мент ли ты случаем?"
+    },
+    "music": {
+      "name": "music",
+      "description": "Музкружок"
     }
   },
   "hidden": {
@@ -81,6 +85,14 @@
     "repinder": {
       "name": "repinder",
       "description": "repinder"
+    },
+    "musicadd": {
+      "name": "musicadd",
+      "description": "musicadd"
+    },
+    "musicdel": {
+      "name": "musicdel",
+      "description": "musicdel"
     }
   },
   "admins": {

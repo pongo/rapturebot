@@ -1,0 +1,5 @@
+[MESSAGES CONTROL]
+disable=import-error
+
+[REPORTS]
+msg-template={abspath}:{line}:{column}: {msg_id}: {msg} ({symbol})

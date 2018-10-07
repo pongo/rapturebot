@@ -136,17 +136,18 @@ def check_user_is_plohish(update):
     return False
 
 
-def is_command_enabled_for_chat(chat_id, cmd_name: typing.Union[str, None]) -> bool:
+def is_command_enabled_for_chat(chat_id, cmd_name: typing.Optional[str]) -> bool:
     if cmd_name is None:
         return True
     chat_id_str = str(chat_id)
     if chat_id_str not in CONFIG["chats"]:
         return False
-    if "enabled_commands" in CONFIG["chats"][chat_id_str] and cmd_name in CONFIG["chats"][chat_id_str]["enabled_commands"]:
+    chat_options = CONFIG["chats"][chat_id_str]
+    if "enabled_commands" in chat_options and cmd_name in chat_options["enabled_commands"]:
         return True
-    if "disabled_commands" in CONFIG["chats"][chat_id_str] and cmd_name in CONFIG["chats"][chat_id_str]["disabled_commands"]:
+    if "disabled_commands" in chat_options and cmd_name in chat_options["disabled_commands"]:
         return False
-    if "all_cmd" in CONFIG["chats"][chat_id_str] and CONFIG["chats"][chat_id_str]["all_cmd"]:
+    if "all_cmd" in chat_options and chat_options["all_cmd"]:
         return True
     return False
 
@@ -856,19 +857,36 @@ def send_weekword(bot, chat_id, prev_monday):
         f.write(json.dumps(word, ensure_ascii=False, indent=2))
 
 
-def weekly_stats(bot, job):
+def weekly_stats(bot: telegram.Bot, _) -> None:
     today = datetime.today()
     # эта штука запускается в понедельник ночью, поэтому мы откладываем неделю назад
-    prev_monday = (today - timedelta(days=today.weekday() + 7)).replace(hour=0, minute=0, second=0, microsecond=0)
-    for chat_id in CONFIG["weekly_stats_chats_ids"]:
-        send_stats(bot, chat_id, 'Стата за прошлую неделю', CMDS['admins']['all_stat']['name'], prev_monday)
-        send_stats(bot, chat_id, 'Стата за прошлую неделю', CMDS['admins']['silent_guys']['name'], prev_monday, tag_salo=True)
+    prev_monday = (today - timedelta(days=today.weekday() + 7)).replace(hour=0, minute=0, second=0,
+                                                                        microsecond=0)
+    for chat_id_str, chat_options in CONFIG["chats"].items():
+        if not is_command_enabled_for_chat(chat_id_str, 'weeklystat'):
+            continue
+        try:
+            chat_id = int(chat_id_str)
+            disabled_commands = chat_options.get('disabled_commands', [])
+            send_weekly_for_chat(bot, chat_id, disabled_commands, prev_monday)
+        except Exception:
+            pass
+
+
+def send_weekly_for_chat(bot: telegram.Bot, chat_id: int, disabled_commands: typing.List[str],
+                         prev_monday: datetime) -> None:
+    send_stats(bot, chat_id, 'Стата за прошлую неделю',
+               CMDS['admins']['all_stat']['name'], prev_monday)
+    send_stats(bot, chat_id, 'Стата за прошлую неделю',
+               CMDS['admins']['silent_guys']['name'], prev_monday, tag_salo=True)
+    if 'weeklystat:top_kroshka' not in disabled_commands:
         send_top_kroshka(bot, chat_id, prev_monday)
+    if 'weeklystat:pidorweekly' not in disabled_commands:
         send_pidorweekly(bot, chat_id, prev_monday)
-        send_replytop(bot, chat_id, prev_monday)
-        send_alllove(bot, chat_id, prev_monday)
-        send_topmat(bot, chat_id, chat_id, prev_monday)
-        # send_weekword(bot, chat_id, prev_monday)
+    send_replytop(bot, chat_id, prev_monday)
+    send_alllove(bot, chat_id, prev_monday)
+    send_topmat(bot, chat_id, chat_id, prev_monday)
+    # send_weekword(bot, chat_id, prev_monday)
 
 
 def daily_evening(bot, job):

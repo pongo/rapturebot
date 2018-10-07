@@ -24,7 +24,6 @@
   "debug_uid": 1234,
   "off_delay": 300,
   "top_users_num": 15,
-  "weekly_stats_chats_ids": [ -1, -2 ],
   "chats": {
     "-198791234": {
       "comment": "Chat name",
@@ -39,7 +38,8 @@
         "orzik", "сы", "putin", "pipinder", "repinder",
         "huyamda", "khaleesi",
         "daily_full_moon_check", "ebalo_zavali", "alllove",
-        "time", "bayanometer", "mylove", "welcome"
+        "time", "bayanometer", "mylove", "welcome",
+        "weeklystat"
       ],
       "commands_config": {
         "time": {

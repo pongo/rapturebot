@@ -199,11 +199,11 @@ class ChannelMessage:
         if not voted:
             bot.answer_callback_query(query.id, 'Только один раз')
             return
-        bot.answer_callback_query(query.id, text)
         likes, dislikes = poll.get_count()
         msg.likes = likes
         msg.dislikes = dislikes
         msg.update_buttons(bot)
+        bot.answer_callback_query(query.id, text)
 
     def __prepare_text(self) -> str:
         upper_words = ', '.join(self.words).upper()

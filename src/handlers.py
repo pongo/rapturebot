@@ -27,6 +27,7 @@ from src.modules.dayof.helper import is_today_special
 from src.modules.khaleesi import Khaleesi
 from src.modules.matshowtime import MatshowtimeHandlers
 from src.modules.models.chat_user import ChatUser
+from src.modules.models.igor_weekly import IgorWeekly
 from src.modules.models.leave_collector import LeaveCollector
 from src.modules.models.pidor_weekly import PidorWeekly
 from src.modules.models.reply_top import ReplyTop, ReplyLove
@@ -846,6 +847,25 @@ def send_pidorweekly(bot, chat_id, prev_monday):
         bot.sendMessage(chat_id, f'{header}{body}\n\n{user.get_username_or_link()}', parse_mode=ParseMode.HTML)
 
 
+def send_igorweekly(bot: telegram.Bot, chat_id: int, prev_monday: datetime):
+    uid = IgorWeekly.get_top_igor(chat_id, prev_monday)
+    if not uid:
+        return
+    user = User.get(uid)
+    if not user:
+        logger.error(f'None user {uid}')
+        return
+    cache.set(f'weekgoal:{chat_id}:igorweekly_uid', user.uid, time=MONTH)
+    igorem = 'ингой' if user.female else 'игорем'
+    header = f"И {igorem} недели становится... <a href='tg://user?id={user.uid}'>👯‍♂</a> \n\n"
+    body = "🎉     <b>{}</b>    🎉\n\nУра!".format(user.fullname)
+    try:
+        bot.sendMessage(chat_id, f'{header}{body}', parse_mode=ParseMode.HTML)
+    except Exception:
+        header = f"И {igorem} недели становится... 👯‍♂ \n\n"
+        bot.sendMessage(chat_id, f'{header}{body}\n\n{user.get_username_or_link()}', parse_mode=ParseMode.HTML)
+
+
 @run_async
 def send_weekword(bot, chat_id, prev_monday):
     word = WeekWord.get_top_word(prev_monday, chat_id)
@@ -868,13 +888,14 @@ def weekly_stats(bot: telegram.Bot, _) -> None:
         try:
             chat_id = int(chat_id_str)
             disabled_commands = chat_options.get('disabled_commands', [])
-            send_weekly_for_chat(bot, chat_id, disabled_commands, prev_monday)
+            enabled_commands = chat_options.get('enabled_commands', [])
+            send_weekly_for_chat(bot, chat_id, disabled_commands, enabled_commands, prev_monday)
         except Exception:
             pass
 
 
 def send_weekly_for_chat(bot: telegram.Bot, chat_id: int, disabled_commands: typing.List[str],
-                         prev_monday: datetime) -> None:
+                         enabled_commands: typing.List[str], prev_monday: datetime) -> None:
     send_stats(bot, chat_id, 'Стата за прошлую неделю',
                CMDS['admins']['all_stat']['name'], prev_monday)
     send_stats(bot, chat_id, 'Стата за прошлую неделю',
@@ -883,6 +904,8 @@ def send_weekly_for_chat(bot: telegram.Bot, chat_id: int, disabled_commands: typ
         send_top_kroshka(bot, chat_id, prev_monday)
     if 'weeklystat:pidorweekly' not in disabled_commands:
         send_pidorweekly(bot, chat_id, prev_monday)
+    if 'weeklystat:igorweekly' in enabled_commands:
+        send_igorweekly(bot, chat_id, prev_monday)
     send_replytop(bot, chat_id, prev_monday)
     send_alllove(bot, chat_id, prev_monday)
     send_topmat(bot, chat_id, chat_id, prev_monday)
@@ -1422,6 +1445,7 @@ def message(bot, update):
     Bayanometer.check(bot, update)
     message_reactions(bot, update)
     PidorWeekly.parse_message(update.message)
+    IgorWeekly.parse_message(update.message)
     last_word(bot, update)
     # WeekWord.add(update.message.text, update.message.chat_id)
     random_khaleesi(bot, update)

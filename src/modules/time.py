@@ -9,10 +9,10 @@ from src.config import CONFIG, CMDS
 from src.handlers import chat_guard, collect_stats, command_guard, CommandConfig
 
 
+@run_async
 @chat_guard
 @collect_stats
 @command_guard
-@run_async
 def time_handler(bot: telegram.Bot, update: telegram.Update) -> None:
     chat_id = update.message.chat_id
     if str(chat_id) not in CONFIG['time']:

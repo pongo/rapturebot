@@ -19,10 +19,10 @@ TMP_DIR = '../../tmp/weather/'
 full_moon_lock = Lock()
 
 
+@run_async
 @chat_guard
 @collect_stats
 @command_guard
-@run_async
 def weather(bot: telegram.Bot, update: telegram.Update) -> None:
     """
     Добавление новых городов:

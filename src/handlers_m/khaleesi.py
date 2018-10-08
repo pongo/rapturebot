@@ -8,10 +8,10 @@ from src.modules.khaleesi import Khaleesi
 from src.utils.handlers_helpers import chat_guard, collect_stats, command_guard
 
 
+@run_async
 @chat_guard
 @collect_stats
 @command_guard
-@run_async
 def chat(bot: telegram.Bot, update: telegram.Update) -> None:  # pragma: no cover
     send_khaleesi(bot, update.message, limit_chars=1000)
 

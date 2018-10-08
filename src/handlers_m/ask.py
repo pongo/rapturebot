@@ -9,10 +9,10 @@ from src.modules.ask import Ask
 from src.utils.handlers_helpers import chat_guard, collect_stats, command_guard
 
 
+@run_async
 @chat_guard
 @collect_stats
 @command_guard
-@run_async
 def chat(bot: telegram.Bot, update: telegram.Update) -> None:
     send_ask(bot, update.message, private=False)
 

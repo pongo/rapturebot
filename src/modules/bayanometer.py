@@ -399,7 +399,6 @@ class Bayanometer:
             return
 
     @classmethod
-    @run_async
     def callback_handler(cls, bot: telegram.Bot, _, query: telegram.CallbackQuery, data) -> None:
         uid = query.from_user.id
         cid = query.message.chat_id

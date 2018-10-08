@@ -1,7 +1,7 @@
 # coding=UTF-8
 from datetime import datetime, timedelta
 from functools import wraps
-from typing import Union
+from typing import Union, Optional
 
 import telegram
 
@@ -16,19 +16,21 @@ from src.utils.logger import logger
 from src.utils.telegram_helpers import get_chat_admins
 
 
-def is_command_enabled_for_chat(chat_id, cmd_name: Union[str, None]) -> bool:
+def is_command_enabled_for_chat(chat_id: Union[int, str], cmd_name: Optional[str]) -> bool:
+    """
+    Проверяет, включена ли команда в чате. Включая чаты с all_cmd=True.
+    """
     if cmd_name is None:
-        return True
+        return True  # TODO: разобраться почему тут True
     chat_id_str = str(chat_id)
-    if chat_id_str not in CONFIG["chats"]:
+    if chat_id_str not in CONFIG['chats']:
         return False
-    if "enabled_commands" in CONFIG["chats"][chat_id_str] and cmd_name in CONFIG["chats"][chat_id_str]["enabled_commands"]:
+    chat_options = CONFIG['chats'][chat_id_str]
+    if cmd_name in chat_options.get('enabled_commands', []):
         return True
-    if "disabled_commands" in CONFIG["chats"][chat_id_str] and cmd_name in CONFIG["chats"][chat_id_str]["disabled_commands"]:
+    if cmd_name in chat_options.get('disabled_commands', []):
         return False
-    if "all_cmd" in CONFIG["chats"][chat_id_str] and CONFIG["chats"][chat_id_str]["all_cmd"]:
-        return True
-    return False
+    return chat_options.get('all_cmd', False)
 
 
 class CommandConfig:

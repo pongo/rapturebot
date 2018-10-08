@@ -251,7 +251,6 @@ class SpoilerHandlers:
         SpoilerCreator.text_handler(bot, update)
 
     @classmethod
-    @run_async
     def callback_handler(cls, bot: telegram.Bot, update: telegram.Message, query: telegram.CallbackQuery, data) -> None:
         if 'module' not in data or data['module'] != MODULE_NAME:
             return

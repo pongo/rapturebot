@@ -8,17 +8,11 @@ from src.modules.jobs import daily_midnight, lefts_check, daily_afternoon, healt
 
 
 def add_jobs(updater):
-    if "weekly_stats_chats_ids" in CONFIG:
-        updater.job_queue.run_daily(
-            handlers.weekly_stats,
-            time=time(0, 0, 0),  # во сколько постим
-            days=(0,)  # постим в понедельник
-        )
-        # каждый день в 21:00
-        updater.job_queue.run_daily(
-            handlers.daily_evening,
-            time=time(21, 0, 0),
-        )
+    updater.job_queue.run_daily(
+        handlers.weekly_stats,
+        time=time(0, 0, 0),  # во сколько постим
+        days=(0,)  # постим в понедельник
+    )
 
     # каждый день в 00:00
     updater.job_queue.run_daily(

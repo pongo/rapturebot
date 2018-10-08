@@ -5,12 +5,13 @@ from time import sleep
 import telegram
 from telegram.ext import run_async
 
-from src.config import CONFIG, get_config_chats
+from src.config import get_config_chats
 from src.modules.dayof.day_manager import DayOfManager
 from src.modules.models.leave_collector import LeaveCollector
 from src.modules.models.reply_top import ReplyDumper
 from src.modules.weather import send_alert_if_full_moon
 from src.utils.cache import pure_cache, FEW_DAYS
+from src.utils.handlers_helpers import is_command_enabled_for_chat
 
 
 @run_async
@@ -24,8 +25,9 @@ def daily_midnight(bot: telegram.Bot, _):
             send_alert_if_full_moon(bot, chat.chat_id)
             sleep(0.5)
 
-    for cid in CONFIG["weekly_stats_chats_ids"]:
-        ReplyDumper.dump(cid)
+    for chat in get_config_chats():
+        if is_command_enabled_for_chat(chat.chat_id, 'weeklystat'):
+            ReplyDumper.dump(chat.chat_id)
 
 @run_async
 def daily_afternoon(bot: telegram.Bot, _):

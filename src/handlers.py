@@ -1369,8 +1369,7 @@ def leave_check(bot: telegram.Bot, update: telegram.Update):
     from_user: telegram.User = message.from_user
     from_uid = from_user.id
 
-    if not from_user.is_bot:        
-        User.add_user(from_user)
+    if not from_user.is_bot:
         ChatUser.add(from_uid, chat_id)
 
     # убыло

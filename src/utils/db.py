@@ -1,5 +1,6 @@
 # coding=UTF-8
 
+import logging
 from contextlib import contextmanager
 
 from sqlalchemy import create_engine
@@ -7,9 +8,9 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, scoped_session
 
 from src.config import CONFIG
-from src.utils.logger import logger
 from src.utils.misc import retry
 
+logger = logging.getLogger(__name__)
 Base = declarative_base()
 
 

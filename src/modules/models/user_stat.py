@@ -1,6 +1,7 @@
 # coding=UTF-8
 
 import locale
+import logging
 import random
 import typing
 from datetime import timedelta
@@ -18,9 +19,10 @@ from src.modules.models.user import UserDB, User
 from src.utils.cache import USER_CACHE_EXPIRE
 from src.utils.cache import cache
 from src.utils.db import Base, add_to_db, retry, session_scope
-from src.utils.logger import logger
 from src.utils.misc import sort_dict
 from src.utils.time_helpers import get_current_monday, get_date_monday
+
+logger = logging.getLogger(__name__)
 
 
 class UserStatDB(Base):
@@ -36,7 +38,8 @@ class UserStatDB(Base):
     received_replies_count = Column('received_replies_count', Integer, default=0)
     forwards_count = Column('forwards_count', Integer, default=0)
     text_messages_count = Column('text_messages_count', Integer, default=0)
-    text_messages_with_obscene_count = Column('text_messages_with_obscene_count', Integer, default=0)
+    text_messages_with_obscene_count = Column('text_messages_with_obscene_count', Integer,
+                                              default=0)
     audios_count = Column('audios_count', Integer, default=0)
     documents_count = Column('documents_count', Integer, default=0)
     gifs_count = Column('gifs_count', Integer, default=0)
@@ -116,22 +119,25 @@ class UserStatDB(Base):
     def update_db(added_stat: 'UserStat', update) -> None:
         try:
             with session_scope() as db:
-                user_stat = db.query(UserStatDB).filter(UserStatDB.stats_monday == added_stat.stats_monday,
-                                                        UserStatDB.cid == added_stat.cid,
-                                                        UserStatDB.uid == added_stat.uid)
+                user_stat = db.query(UserStatDB).filter(
+                    UserStatDB.stats_monday == added_stat.stats_monday,
+                    UserStatDB.cid == added_stat.cid,
+                    UserStatDB.uid == added_stat.uid)
                 if user_stat.update(update) > 0:
                     return
 
-            logger.error(f'[userstat.update] user {added_stat.uid}:{added_stat.cid} not found in DB')
+            logger.error(
+                f'[userstat.update] user {added_stat.uid}:{added_stat.cid} not found in DB')
 
             # update возвращает 0 если объекта нет в бд
             # тогда мы добавляем его в бд и еще раз пробуем обновить
             # статистику добавляем даже по тем, кого нет в таблицах User|ChatUser
             add_to_db(UserStatDB.copy(added_stat))
             with session_scope() as db:
-                user_stat = db.query(UserStatDB).filter(UserStatDB.stats_monday == added_stat.stats_monday,
-                                                        UserStatDB.cid == added_stat.cid,
-                                                        UserStatDB.uid == added_stat.uid)
+                user_stat = db.query(UserStatDB).filter(
+                    UserStatDB.stats_monday == added_stat.stats_monday,
+                    UserStatDB.cid == added_stat.cid,
+                    UserStatDB.uid == added_stat.uid)
                 user_stat.update(update)
         except Exception as e:
             logger.error(e)
@@ -352,12 +358,14 @@ class UserStat:
                 obscene_words_count = getattr(stat, 'obscene_words_count', 0)
                 words_count = getattr(stat, 'words_count', 0)
                 words_percent = obscene_words_count / words_count * 100
-                obscene_words_count_str = pytils.numeral.get_plural(obscene_words_count, 'матерное слово, матерных слова, матерных слов')
+                obscene_words_count_str = pytils.numeral.get_plural(obscene_words_count,
+                                                                    'матерное слово, матерных слова, матерных слов')
                 msg = f'{msg}, {msg_percent}% ({obscene_words_count_str}, {words_percent:.2f}%)'
             if key == 'voices_count' or key == 'video_notes_count':
                 msg = '{msg} (длительностью {duration})'.format(
                     msg=msg,
-                    duration=cls.__format_duration(getattr(stat, key.replace('_count', '_duration'), 0)))
+                    duration=cls.__format_duration(
+                        getattr(stat, key.replace('_count', '_duration'), 0)))
             counts.append(msg)
         counts_result = ''
         if len(counts) > 0:
@@ -751,7 +759,8 @@ class UserStat:
             result.obscene_words_count = result.obscene_words_count + obscene_words_count
             result.words_count = result.words_count + len(message.text.split())
             result.chars_count = result.chars_count + len(message.text)
-            result.chars_wo_space_count = result.chars_wo_space_count + result.chars_count - message.text.count(' ')
+            result.chars_wo_space_count = result.chars_wo_space_count + result.chars_count - message.text.count(
+                ' ')
             result.emoji_count = len([e for e in message.text if e in emoji.UNICODE_EMOJI])
 
         if message.audio is not None:
@@ -759,7 +768,8 @@ class UserStat:
 
         if message.document is not None:
             if message.document.mime_type == 'video/mp4' or (
-                    message.document.file_name is not None and message.document.file_name.endswith('.gif')):
+                    message.document.file_name is not None and message.document.file_name.endswith(
+                '.gif')):
                 result.gifs_count = 1
             else:
                 result.documents_count = 1
@@ -785,10 +795,12 @@ class UserStat:
             result.video_notes_duration = message.video_note.duration
 
         if message.caption is not None and not foreign_forward:
-            result.obscene_words_count = result.obscene_words_count + Antimat.bad_words_count(message.caption)
+            result.obscene_words_count = result.obscene_words_count + Antimat.bad_words_count(
+                message.caption)
             result.words_count = result.words_count + len(message.caption.split())
             result.chars_count = result.chars_count + len(message.caption)
-            result.chars_wo_space_count = result.chars_wo_space_count + result.chars_count - message.caption.count(' ')
+            result.chars_wo_space_count = result.chars_wo_space_count + result.chars_count - message.caption.count(
+                ' ')
 
         return result
 

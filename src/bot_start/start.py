@@ -13,9 +13,10 @@ from src.bot_start.add_jobs import add_jobs
 from src.bot_start.google_cloud import auth_google_vision
 from src.config import CONFIG
 from src.utils.cache import cache, YEAR
-from src.utils.logger import logger
 from src.utils.repair import repair_bot
 from src.web.server import start_server
+
+logger = logging.getLogger(__name__)
 
 
 def error(_, update, error):
@@ -31,6 +32,7 @@ class CriticalHandler(logging.Handler):
     """
     Этот обработчит логгирования следит за критичными ошибками и вызывает самовосстановление бота.
     """
+
     def emit(self, record: logging.LogRecord):
         if record.levelname != 'CRITICAL':
             return
@@ -40,13 +42,24 @@ class CriticalHandler(logging.Handler):
             return
 
 
+def set_default_logging_format():
+    default_format = '[%(asctime)s][%(levelname)s][%(name)s] - %(message)s'
+    logging.basicConfig(
+        format=CONFIG.get('logging', {}).get('format', default_format),
+        level=logging.getLevelName(CONFIG.get('logging', {}).get('level', 'INFO').upper()),
+        filename=CONFIG.get('logging', {}).get('file', None)
+    )
+
+
 def prepare():
     """
     Подготовительный этап
     """
+    set_default_logging_format()
     if 'google_vision_client_json_file' in CONFIG:
         config.google_vision_client = auth_google_vision(CONFIG['google_vision_client_json_file'])
-    cache.set('pipinder:fav_stickersets_names', set(CONFIG.get("sasha_rebinder_stickersets_names", [])), time=YEAR)
+    cache.set('pipinder:fav_stickersets_names',
+              set(CONFIG.get("sasha_rebinder_stickersets_names", [])), time=YEAR)
 
 
 def start_bot():
@@ -91,7 +104,8 @@ def get_request_data():
         return {'read_timeout': read_timeout, 'connect_timeout': connect_timeout}
     proxy_url = CONFIG['telegram_proxy']['proxy_url']
     if CONFIG['telegram_proxy'].get('username', '') == '':
-        return {'read_timeout': read_timeout, 'connect_timeout': connect_timeout, 'proxy_url': proxy_url}
+        return {'read_timeout': read_timeout, 'connect_timeout': connect_timeout,
+                'proxy_url': proxy_url}
     return {'read_timeout': read_timeout,
             'connect_timeout': connect_timeout,
             'proxy_url': proxy_url,
@@ -99,6 +113,7 @@ def get_request_data():
                 'username': CONFIG['telegram_proxy']['username'],
                 'password': CONFIG['telegram_proxy']['password'],
             }}
+
 
 def start():
     prepare()

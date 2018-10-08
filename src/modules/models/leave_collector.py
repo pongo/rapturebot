@@ -1,6 +1,7 @@
 # coding=UTF-8
 
 import enum
+import logging
 import typing
 from datetime import datetime, timedelta
 from threading import Lock
@@ -15,8 +16,9 @@ from src.modules.models.chat_user import ChatUser
 from src.modules.models.user import User
 from src.utils.cache import cache, TWO_YEARS, FEW_DAYS, pure_cache
 from src.utils.db import Base, add_to_db, session_scope, retry
-from src.utils.logger import logger
 from src.utils.telegram_helpers import telegram_retry
+
+logger = logging.getLogger(__name__)
 
 
 class LeaveCollectorDB(Base):
@@ -40,7 +42,8 @@ class LeaveCollectorDB(Base):
     @retry(logger=logger)
     def add(uid, cid, date, from_uid, leave_type):
         try:
-            add_to_db(LeaveCollectorDB(uid=uid, cid=cid, date=date, from_uid=from_uid, leave_type=leave_type))
+            add_to_db(LeaveCollectorDB(uid=uid, cid=cid, date=date, from_uid=from_uid,
+                                       leave_type=leave_type))
         except Exception as e:
             logger.error(e)
             raise Exception(f"Can't add leave_collect {uid}:{cid} to DB")
@@ -95,6 +98,7 @@ class LeaveCollectorDB(Base):
             logger.error(e)
             return []
 
+
 class LeaveCollector:
     """
     Здесь хранятся все входы и ливы из чата.
@@ -102,7 +106,8 @@ class LeaveCollector:
     add_lock = Lock()
     update_ktolivnul_lock = Lock()
 
-    def __init__(self, id=None, uid=None, cid=None, date=None, leave_type=None, from_uid=None, reason=None):
+    def __init__(self, id=None, uid=None, cid=None, date=None, leave_type=None, from_uid=None,
+                 reason=None):
         self.id = id
         self.uid = uid
         self.cid = cid
@@ -131,7 +136,8 @@ class LeaveCollector:
     def __add(cls, uid, cid, date, from_uid, leave_type):
         with cls.add_lock:
             try:
-                LeaveCollectorDB.add(uid=uid, cid=cid, date=date, from_uid=from_uid, leave_type=leave_type)
+                LeaveCollectorDB.add(uid=uid, cid=cid, date=date, from_uid=from_uid,
+                                     leave_type=leave_type)
             except Exception as e:
                 logger.error(e)
 
@@ -153,7 +159,8 @@ class LeaveCollector:
 
     @classmethod
     def get_leaves(cls, cid, days=3, return_id=False):
-        days_ago = (datetime.today() - timedelta(days=days)).replace(hour=0, minute=0, second=0, microsecond=0)
+        days_ago = (datetime.today() - timedelta(days=days)).replace(hour=0, minute=0, second=0,
+                                                                     microsecond=0)
         uids: typing.Set[int] = set(LeaveCollectorDB.get_leaves(cid, days_ago.strftime('%Y%m%d')))
 
         # некоторые ливают, а потом возвращаются без сообщений о входе.
@@ -170,7 +177,8 @@ class LeaveCollector:
 
     @classmethod
     def get_joins(cls, cid, days=3):
-        days_ago = (datetime.today() - timedelta(days=days)).replace(hour=0, minute=0, second=0, microsecond=0)
+        days_ago = (datetime.today() - timedelta(days=days)).replace(hour=0, minute=0, second=0,
+                                                                     microsecond=0)
         uids = LeaveCollectorDB.get_joins(cid, days_ago.strftime('%Y%m%d'))
         return [cls.__format_uid(uid, show_username=False) for uid in uids]
 
@@ -218,7 +226,8 @@ class LeftUsersChecker:
             LeaveCollector.update_ktolivnul(chat.chat_id)
 
     @classmethod
-    def __get_chat_title_first_word(cls, bot: telegram.Bot, chat_id: int, prefix_if_not_empty: str = '') -> str:
+    def __get_chat_title_first_word(cls, bot: telegram.Bot, chat_id: int,
+                                    prefix_if_not_empty: str = '') -> str:
         cache_key = f'chat_title_first_word:{chat_id}'
         cached = cache.get(cache_key)
         if cached:
@@ -251,7 +260,8 @@ class LeftUsersChecker:
             return is_supergroup
         except telegram.error.TelegramError as e:
             if e.message == 'Chat not found':
-                logger.warning(f'[check_left_users] Chat {chat_id} not found (probably bot don\' have access, but chat is listed in config.json)')
+                logger.warning(
+                    f'[check_left_users] Chat {chat_id} not found (probably bot don\' have access, but chat is listed in config.json)')
             else:
                 logger.warning(f'[check_left_users] Chat {chat_id} error: {e}')
         except Exception as e:

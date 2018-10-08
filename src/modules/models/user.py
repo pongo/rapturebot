@@ -1,5 +1,6 @@
 # coding=UTF-8
 
+import logging
 import typing
 from threading import Lock
 
@@ -9,7 +10,8 @@ from sqlalchemy import Column, Integer, Text, Boolean
 from src.modules.models.chat_user import ChatUser
 from src.utils.cache import cache, USER_CACHE_EXPIRE
 from src.utils.db import Base, add_to_db, retry, session_scope
-from src.utils.logger import logger
+
+logger = logging.getLogger(__name__)
 
 
 class UserDB(Base):

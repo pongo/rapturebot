@@ -1,4 +1,5 @@
 # coding=UTF-8
+import logging
 import random
 from typing import Optional, List
 
@@ -6,13 +7,15 @@ import telegram
 
 from src.utils.cache import cache, FEW_DAYS, YEAR
 from src.utils.handlers_decorators import chat_guard, collect_stats, command_guard
-from src.utils.logger import logger
 from src.utils.telegram_helpers import telegram_retry
 from src.utils.time_helpers import today_str
 
+logger = logging.getLogger(__name__)
+
 
 @telegram_retry(tries=3, silence=True, logger=logger, title='pipinder:get_working_stickerset')
-def get_working_stickerset(bot: telegram.Bot, chat_id: int, stickerset_name: str) -> Optional[telegram.StickerSet]:
+def get_working_stickerset(bot: telegram.Bot, chat_id: int, stickerset_name: str) -> Optional[
+    telegram.StickerSet]:
     """
     Получаем от телеграма этот пак.
     """

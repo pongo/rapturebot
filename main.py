@@ -5,8 +5,9 @@ import sys
 # на случай если pm2 затупит и запустит скрипт со старой версией питона
 if sys.version_info < (3, 6):
     import time as time_time
+    import logging
     from src.config import CONFIG
-    from src.utils.logger import logger
+    logger = logging.getLogger(__name__)
     logger.critical('Wrong python version!!!')
     logger.critical('--')
     time_time.sleep(1)

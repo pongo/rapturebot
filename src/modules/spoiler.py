@@ -1,4 +1,5 @@
 # coding=UTF-8
+import logging
 import re
 from functools import wraps
 from random import randint
@@ -12,10 +13,10 @@ from src.modules.models.chat_user import ChatUser
 from src.modules.models.user import User
 from src.utils.cache import cache
 from src.utils.callback_helpers import get_callback_data
-from src.utils.logger import logger
 from src.utils.mwt import MWT
 from src.utils.telegram_helpers import telegram_retry
 
+logger = logging.getLogger(__name__)
 CACHE_PREFIX = 'spoiler'
 MODULE_NAME = CACHE_PREFIX
 

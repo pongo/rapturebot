@@ -1,4 +1,5 @@
 # coding=UTF-8
+import logging
 import time
 from functools import wraps
 from typing import List, Optional
@@ -6,13 +7,14 @@ from typing import List, Optional
 import telegram
 from telegram.ext import DelayQueue
 
-from src.utils.logger import logger
 from src.utils.mwt import MWT
 
+logger = logging.getLogger(__name__)
 dsp = DelayQueue(burst_limit=20, time_limit_ms=1017)
 
 
-def telegram_retry(tries=4, delay=3, backoff=2, logger=None, silence: bool = False, default=None, title: Optional[str] = None):
+def telegram_retry(tries=4, delay=3, backoff=2, logger=None, silence: bool = False, default=None,
+                   title: Optional[str] = None):
     def deco_retry(f):
         @wraps(f)
         def f_retry(*args, **kwargs):
@@ -46,7 +48,9 @@ def telegram_retry(tries=4, delay=3, backoff=2, logger=None, silence: bool = Fal
                 return default
             if not silence:
                 return f(*args, **kwargs)
+
         return f_retry  # true decorator
+
     return deco_retry
 
 
@@ -55,9 +59,11 @@ def get_chat_admins(bot: telegram.Bot, chat_id: int) -> List[telegram.ChatMember
     """
     Возвращает список админов чата. Результаты кэшируются на 5 минут.
     """
+
     @telegram_retry(logger=logger, silence=True, default=[], title='get_chat_admins')
     def bot_get_chat_administrators(bot: telegram.Bot, chat_id: int) -> List[telegram.ChatMember]:
         return bot.get_chat_administrators(chat_id)
+
     return bot_get_chat_administrators(bot, chat_id)
 
 

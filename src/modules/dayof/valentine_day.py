@@ -2,6 +2,7 @@
 import collections
 import functools
 import hashlib
+import logging
 import re
 import textwrap
 from datetime import datetime
@@ -18,11 +19,11 @@ from src.modules.models.chat_user import ChatUser
 from src.modules.models.user import User
 from src.utils.cache import cache, USER_CACHE_EXPIRE, pure_cache
 from src.utils.callback_helpers import get_callback_data
-from src.utils.logger import logger
 from src.utils.misc import get_int
 from src.utils.misc import retry
 from src.utils.text_helpers import lstrip_every_line
 
+logger = logging.getLogger(__name__)
 CACHE_PREFIX = 'valentine_day'
 MODULE_NAME = 'valentine_day'
 HEARTS = ['♥️', '❤️', '💛', '💚', '💙', '💜', '🖤', '💔']
@@ -45,7 +46,8 @@ class DateChecker:
         # TODO: убрать
         if CONFIG.get('feb14_debug_begin', False):
             return True
-        return datetime.today().strftime("%m-%d") == '02-14'  # месяц-день. Первое января будет: 01-01
+        return datetime.today().strftime(
+            "%m-%d") == '02-14'  # месяц-день. Первое января будет: 01-01
 
     @staticmethod
     def is_today_ending() -> bool:
@@ -70,6 +72,7 @@ class Guard:
             if not ChatUser.get(uid, CONFIG['anon_chat_id']):
                 return
             return f(_cls, bot, update)
+
         return decorator
 
     @classmethod
@@ -80,7 +83,9 @@ class Guard:
                 bot.answer_callback_query(query.id, 'Все уже закончилось', show_alert=True)
                 return
             return f(_cls, bot, update, query, data)
+
         return decorator
+
 
 class TelegramWrapper:
     chat_id = CONFIG['anon_chat_id']
@@ -105,8 +110,10 @@ class TelegramWrapper:
                 parse_mode=telegram.ParseMode.HTML,
                 disable_web_page_preview=True,
                 timeout=20)
-            cache.set(f'{CACHE_PREFIX}:messages:{chat_id}:{message.message_id}:text', message.text_html, time=USER_CACHE_EXPIRE)
-            cache.set(f'{CACHE_PREFIX}:messages:{chat_id}:{message.message_id}:buttons', buttons, time=USER_CACHE_EXPIRE)
+            cache.set(f'{CACHE_PREFIX}:messages:{chat_id}:{message.message_id}:text',
+                      message.text_html, time=USER_CACHE_EXPIRE)
+            cache.set(f'{CACHE_PREFIX}:messages:{chat_id}:{message.message_id}:buttons', buttons,
+                      time=USER_CACHE_EXPIRE)
             return message.message_id
         except Exception as e:
             logger.error(f"[{MODULE_NAME}] Can't send message to {chat_id}. Exception: {e}")
@@ -132,19 +139,23 @@ class TelegramWrapper:
                 reply_markup=reply_markup,
                 parse_mode=telegram.ParseMode.HTML,
                 disable_web_page_preview=True)
-            cache.set(f'{CACHE_PREFIX}:messages:{chat_id}:{message_id}:text', text, time=USER_CACHE_EXPIRE)
-            cache.set(f'{CACHE_PREFIX}:messages:{chat_id}:{message_id}:buttons', buttons, time=USER_CACHE_EXPIRE)
+            cache.set(f'{CACHE_PREFIX}:messages:{chat_id}:{message_id}:text', text,
+                      time=USER_CACHE_EXPIRE)
+            cache.set(f'{CACHE_PREFIX}:messages:{chat_id}:{message_id}:buttons', buttons,
+                      time=USER_CACHE_EXPIRE)
         except Exception as e:
             logger.error(f"[{MODULE_NAME}] Can't edit message from {chat_id}. Exception: {e}")
 
     @classmethod
-    def edit_buttons(cls, bot: telegram.Bot, message_id: int, buttons, chat_id: int = chat_id) -> None:
+    def edit_buttons(cls, bot: telegram.Bot, message_id: int, buttons,
+                     chat_id: int = chat_id) -> None:
         if chat_id == 0:
             return
         reply_markup = cls.get_reply_markup(buttons)
         try:
             bot.edit_message_reply_markup(chat_id, message_id, reply_markup=reply_markup)
-            cache.set(f'{CACHE_PREFIX}:messages:{chat_id}:{message_id}:buttons', buttons, time=USER_CACHE_EXPIRE)
+            cache.set(f'{CACHE_PREFIX}:messages:{chat_id}:{message_id}:buttons', buttons,
+                      time=USER_CACHE_EXPIRE)
         except Exception as e:
             logger.error(f"[{MODULE_NAME}] Can't edit buttons in {chat_id}. Exception: {e}")
 
@@ -241,7 +252,8 @@ class DayBegin:
     # noinspection PyUnusedLocal
     @classmethod
     @Guard.callback_handler_guard
-    def btn_click(cls, bot: telegram.Bot, update: telegram.Message, query: telegram.CallbackQuery, data):
+    def btn_click(cls, bot: telegram.Bot, update: telegram.Message, query: telegram.CallbackQuery,
+                  data):
         TelegramWrapper.answer_callback_query_with_bot_link(bot, query.id, query.data)
         CmdHelp.send(bot, query.from_user.id)
 
@@ -269,7 +281,8 @@ class DayBegin:
         genders = ('👩' if user.female else '👨' for user in users if user)
         # noinspection PyArgumentList
         gender_counter = collections.Counter(genders)
-        gender_text = ', '.join((f'{count} {gender}' for gender, count in gender_counter.most_common()))
+        gender_text = ', '.join(
+            (f'{count} {gender}' for gender, count in gender_counter.most_common()))
 
         # собираем итоговую строку
         return f'{gender_text}, {special}'.strip(',').strip()
@@ -332,7 +345,8 @@ class DayEnd:
         return buttons
 
     @classmethod
-    def on_poll_click(cls, bot: telegram.Bot, _: telegram.Update, query: telegram.CallbackQuery, data):
+    def on_poll_click(cls, bot: telegram.Bot, _: telegram.Update, query: telegram.CallbackQuery,
+                      data):
         uid = query.from_user.id
         message_id = query.message.message_id
         chat_id = query.message.chat_id
@@ -386,6 +400,7 @@ class AntiPlagiat:
     @staticmethod
     def __get_key(chat_id: int, text_hash: str) -> str:
         return f'{CACHE_PREFIX}:texts_by_chat:{chat_id}:{text_hash}'
+
 
 # class AntiPlagiat:
 #     """
@@ -442,6 +457,7 @@ class HeartsStat:
 
     def get(self, heart_index: int) -> int:
         return OneStat(f'{self.key_prefix}:{heart_index}').get()
+
 
 class UidsStats:
     def __init__(self, name):
@@ -503,13 +519,15 @@ class Stats:
         genders = ('👩' if user.female else '👨' for user in users if user)
         # noinspection PyArgumentList
         gender_counter = collections.Counter(genders)
-        gender_stats = ', '.join((f'{count} {gender}' for gender, count in gender_counter.most_common()))
+        gender_stats = ', '.join(
+            (f'{count} {gender}' for gender, count in gender_counter.most_common()))
         text = f'Валентинки отправляли: {gender_stats}.'
         return text
 
     @classmethod
     def __get_hearts_stats(cls) -> str:
-        stats = ', '.join(f'{cls.hearts_stats.get(index)} {heart}' for index, heart in enumerate(HEARTS))
+        stats = ', '.join(
+            f'{cls.hearts_stats.get(index)} {heart}' for index, heart in enumerate(HEARTS))
         return f'Валентинки по виду сердечка: {stats}.'
 
 
@@ -527,13 +545,16 @@ class ReactionNotification:
         TelegramWrapper.send_message(bot, msg, uid, buttons=buttons)
 
     @classmethod
-    def on_show_card_click(cls, bot: telegram.Bot, _: telegram.Message, query: telegram.CallbackQuery, data) -> None:
+    def on_show_card_click(cls, bot: telegram.Bot, _: telegram.Message,
+                           query: telegram.CallbackQuery, data) -> None:
         """
         Показываем текст валентинки
         """
         card: Card = cache.get(f"{CACHE_PREFIX}:cards:{data['card_id']}")
         if not card:
-            bot.answer_callback_query(query.id, f"Ошибка. Не могу найти открытку #{data['card_id']}", show_alert=True)
+            bot.answer_callback_query(query.id,
+                                      f"Ошибка. Не могу найти открытку #{data['card_id']}",
+                                      show_alert=True)
             return
 
         msg = textwrap.shorten(card.text, 190, placeholder='…')
@@ -548,7 +569,8 @@ class Card:
     callback_mig = 'card_mig_click'
     callback_about = 'card_about_click'
 
-    def __init__(self, bot: telegram.Bot, chat_id: int, from_uid: int, to_uid: int, text: str, orig_text: str, preview_message_id: int, heart_index: int = 0):
+    def __init__(self, bot: telegram.Bot, chat_id: int, from_uid: int, to_uid: int, text: str,
+                 orig_text: str, preview_message_id: int, heart_index: int = 0):
         self.bot = bot
         self.chat_id = chat_id
         self.from_uid = from_uid
@@ -567,7 +589,8 @@ class Card:
     def send(self, bot: telegram.Bot) -> bool:
         buttons = self.get_buttons()
         self.time = datetime.now()
-        self.message_id = TelegramWrapper.send_message(bot, self.chat_text, chat_id=self.chat_id, buttons=buttons)
+        self.message_id = TelegramWrapper.send_message(bot, self.chat_text, chat_id=self.chat_id,
+                                                       buttons=buttons)
         if not self.message_id:
             return False
 
@@ -596,7 +619,8 @@ class Card:
 
     @classmethod
     @Guard.callback_handler_guard
-    def on_about_click(cls, bot: telegram.Bot, _: telegram.Message, query: telegram.CallbackQuery, __):
+    def on_about_click(cls, bot: telegram.Bot, _: telegram.Message, query: telegram.CallbackQuery,
+                       __):
         text = textwrap.dedent(
             """
             Сегодня 14 февраля. Все отправляют валентинки! 
@@ -607,11 +631,14 @@ class Card:
 
     @classmethod
     @Guard.callback_handler_guard
-    def on_mig_click(cls, bot: telegram.Bot, _: telegram.Message, query: telegram.CallbackQuery, data):
+    def on_mig_click(cls, bot: telegram.Bot, _: telegram.Message, query: telegram.CallbackQuery,
+                     data):
         uid = query.from_user.id
         card: Card = cache.get(cls.__get_key(data['card_id']))
         if not card:
-            bot.answer_callback_query(query.id, f"Ошибка. Не могу найти открытку #{data['card_id']}", show_alert=True)
+            bot.answer_callback_query(query.id,
+                                      f"Ошибка. Не могу найти открытку #{data['card_id']}",
+                                      show_alert=True)
             return
 
         if uid != card.to_uid:
@@ -638,11 +665,14 @@ class Card:
 
     @classmethod
     @Guard.callback_handler_guard
-    def on_revn_click(cls, bot: telegram.Bot, _: telegram.Message, query: telegram.CallbackQuery, data) -> None:
+    def on_revn_click(cls, bot: telegram.Bot, _: telegram.Message, query: telegram.CallbackQuery,
+                      data) -> None:
         uid = query.from_user.id
         card: Card = cache.get(cls.__get_key(data['card_id']))
         if not card:
-            bot.answer_callback_query(query.id, f"Ошибка. Не могу найти открытку #{data['card_id']}", show_alert=True)
+            bot.answer_callback_query(query.id,
+                                      f"Ошибка. Не могу найти открытку #{data['card_id']}",
+                                      show_alert=True)
             return
 
         # уже ревновали?
@@ -669,8 +699,10 @@ class Card:
             bot.answerCallbackQuery(query.id, text)
 
         username = user.get_username_or_link()
-        to_username = '' if not User.get(card.to_uid) else User.get(card.to_uid).get_username_or_link()
-        ReactionNotification.send(bot, card.to_uid, f"{username} ревнует к валентинке для тебя", card)
+        to_username = '' if not User.get(card.to_uid) else User.get(
+            card.to_uid).get_username_or_link()
+        ReactionNotification.send(bot, card.to_uid, f"{username} ревнует к валентинке для тебя",
+                                  card)
         ReactionNotification.send(bot, card.from_uid, f"{username} ревнует к {to_username}", card)
         cls.__update_buttons(bot, card)
 
@@ -709,7 +741,8 @@ class CardPreview:
         return f'{CACHE_PREFIX}:card_preview:{from_uid}'
 
     @classmethod
-    def __get_text(cls, text: str, heart_index: int = 0, with_header=True, title='<b>Предпросмотр</b>') -> str:
+    def __get_text(cls, text: str, heart_index: int = 0, with_header=True,
+                   title='<b>Предпросмотр</b>') -> str:
         try:
             heart = HEARTS[heart_index]
         except Exception:
@@ -734,7 +767,8 @@ class CardPreview:
         if cached and not cached['done']:
             cls.__remove_header_and_title(bot, cached)
         msg = cls.__get_text(text, heart_index)
-        message_id = TelegramWrapper.send_message(bot, msg, chat_id=from_uid, buttons=cls.__get_buttons())
+        message_id = TelegramWrapper.send_message(bot, msg, chat_id=from_uid,
+                                                  buttons=cls.__get_buttons())
         if not message_id:
             return
         preview_data = {
@@ -753,7 +787,8 @@ class CardPreview:
         """
         Если мы еще не отправили валентинку, то возвращает последний используемый номер сердечка. А если уже отправили, то номер по-умолчанию
         """
-        return default_index if not preview_data or preview_data['done'] else preview_data['heart_index']
+        return default_index if not preview_data or preview_data['done'] else preview_data[
+            'heart_index']
 
     @classmethod
     def __remove_header_and_title(cls, bot, preview_data):
@@ -762,12 +797,14 @@ class CardPreview:
     @classmethod
     def __edit_preview(cls, bot: telegram.Bot, preview_data) -> None:
         msg = cls.__get_text(preview_data['text'], preview_data['heart_index'])
-        TelegramWrapper.edit_message(bot, preview_data['preview_message_id'], msg, chat_id=preview_data['from_uid'], buttons=cls.__get_buttons())
+        TelegramWrapper.edit_message(bot, preview_data['preview_message_id'], msg,
+                                     chat_id=preview_data['from_uid'], buttons=cls.__get_buttons())
         cache.set(cls.__get_key(preview_data['from_uid']), preview_data, time=USER_CACHE_EXPIRE)
 
     @classmethod
     @Guard.callback_handler_guard
-    def preview_done_click(cls, bot: telegram.Bot, _: telegram.Message, query: telegram.CallbackQuery, __):
+    def preview_done_click(cls, bot: telegram.Bot, _: telegram.Message,
+                           query: telegram.CallbackQuery, __):
         uid = query.from_user.id
         key = cls.__get_key(uid)
 
@@ -779,7 +816,9 @@ class CardPreview:
 
         preview_data = cache.get(key)
         if not preview_data:
-            bot.answer_callback_query(query.id, 'Произошла ошибка. Отправьте текст валентинки повторно', show_alert=True)
+            bot.answer_callback_query(query.id,
+                                      'Произошла ошибка. Отправьте текст валентинки повторно',
+                                      show_alert=True)
             cache.delete(key_delayed)
             return
 
@@ -790,12 +829,16 @@ class CardPreview:
             return
 
         # пробуем отправить валентинку в чат
-        text = cls.__get_text(preview_data['text'], preview_data['heart_index'], with_header=False, title='')
-        card = Card(bot, preview_data['chat_id'], preview_data['from_uid'], preview_data['to_uid'], text,
+        text = cls.__get_text(preview_data['text'], preview_data['heart_index'], with_header=False,
+                              title='')
+        card = Card(bot, preview_data['chat_id'], preview_data['from_uid'], preview_data['to_uid'],
+                    text,
                     preview_data['text'], preview_data['preview_message_id'],
                     heart_index=preview_data['heart_index'])
         if not CardCreator.send_card(bot, card):
-            bot.answer_callback_query(query.id, 'Произошла ошибка. Напишите текст валентинки повторно', show_alert=True)
+            bot.answer_callback_query(query.id,
+                                      'Произошла ошибка. Напишите текст валентинки повторно',
+                                      show_alert=True)
             cache.delete(key_delayed)
             return
 
@@ -816,11 +859,14 @@ class CardPreview:
 
     @classmethod
     @Guard.callback_handler_guard
-    def heart_click(cls, bot: telegram.Bot, _: telegram.Message, query: telegram.CallbackQuery, data):
+    def heart_click(cls, bot: telegram.Bot, _: telegram.Message, query: telegram.CallbackQuery,
+                    data):
         uid = query.from_user.id
         preview_data = cache.get(cls.__get_key(uid))
         if not preview_data:
-            bot.answer_callback_query(query.id, 'Произошла ошибка. Отправьте текст валентинки повторно', show_alert=True)
+            bot.answer_callback_query(query.id,
+                                      'Произошла ошибка. Отправьте текст валентинки повторно',
+                                      show_alert=True)
             return
         bot.answer_callback_query(query.id)
         if preview_data['done']:
@@ -1056,7 +1102,8 @@ class ValentineDay:
             DayBegin.send(bot)
 
     @classmethod
-    def callback_handler(cls, bot: telegram.Bot, update: telegram.Message, query: telegram.CallbackQuery, data) -> None:
+    def callback_handler(cls, bot: telegram.Bot, update: telegram.Message,
+                         query: telegram.CallbackQuery, data) -> None:
         if 'module' not in data or data['module'] != MODULE_NAME:
             return
         if data['value'] not in cls.callbacks:

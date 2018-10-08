@@ -1,4 +1,5 @@
 # coding=UTF-8
+import logging
 import typing
 from threading import Lock
 
@@ -8,7 +9,8 @@ from src.config import CONFIG
 from src.utils.cache import USER_CACHE_EXPIRE
 from src.utils.cache import cache
 from src.utils.db import Base, add_to_db, retry, session_scope
-from src.utils.logger import logger
+
+logger = logging.getLogger(__name__)
 
 
 class ChatUserDB(Base):
@@ -89,7 +91,8 @@ class ChatUserDB(Base):
 
     @classmethod
     @retry(logger=logger)
-    def get_user_chats(cls, uid: int, cids: typing.Optional[typing.List[int]] = None) -> typing.List[int]:
+    def get_user_chats(cls, uid: int, cids: typing.Optional[typing.List[int]] = None) -> \
+    typing.List[int]:
         config_cids = cids if cids else [int(c) for c in CONFIG.get('chats', [])]
         try:
             with session_scope() as db:
@@ -109,7 +112,8 @@ class ChatUserDB(Base):
     def update(cls, uid: int, cid: int, update, new_user: 'ChatUser'):
         try:
             with session_scope() as db:
-                user = db.query(ChatUserDB).filter(ChatUserDB.uid == uid).filter(ChatUserDB.cid == cid)
+                user = db.query(ChatUserDB).filter(ChatUserDB.uid == uid).filter(
+                    ChatUserDB.cid == cid)
                 # если запись обновилась
                 if user.update(update) > 0:
                     return

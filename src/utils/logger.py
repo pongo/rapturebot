@@ -4,8 +4,9 @@ import logging
 
 from src.config import CONFIG
 
+default_format = '[%(asctime)s][%(levelname)s][%(name)s] - %(message)s'
 logging.basicConfig(
-    format=CONFIG.get('logging', {}).get('format', '[%(asctime)s][%(levelname)s] - %(message)s'),
+    format=CONFIG.get('logging', {}).get('format', default_format),
     level=logging.getLevelName(CONFIG.get('logging', {}).get('level', 'INFO').upper()),
     filename=CONFIG.get('logging', {}).get('file', None)
 )

@@ -6,7 +6,6 @@ from typing import List, Tuple, Optional, Union
 import re
 import telegram
 from telegram.ext import run_async
-from telegram.utils.promise import Promise
 
 from src.config import CONFIG
 from src.modules.models.chat_user import ChatUser
@@ -55,12 +54,6 @@ class Guard:
 class TelegramWrapper:
     chat_id = CONFIG['anon_chat_id']
 
-    @staticmethod
-    def __get_message_from_promise(promise: Union[Promise, telegram.Message]) -> telegram.Message:
-        if isinstance(promise, Promise):
-            return promise.result(timeout=20)
-        return promise
-
     @classmethod
     @telegram_retry(logger=logger, silence=True, default=None, title='spoiler_send_message')
     def send_message(cls,
@@ -73,13 +66,14 @@ class TelegramWrapper:
         if chat_id == 0:
             return
         reply_markup = cls.get_reply_markup(buttons)
-        message = cls.__get_message_from_promise(bot.send_message(
+        message = bot.send_message(
             chat_id,
             text,
             reply_markup=reply_markup,
             reply_to_message_id=reply_to_message_id,
             parse_mode=telegram.ParseMode.HTML,
-            disable_web_page_preview=disable_web_page_preview))
+            disable_web_page_preview=disable_web_page_preview,
+            timeout=20)
         return message.message_id
 
     @staticmethod

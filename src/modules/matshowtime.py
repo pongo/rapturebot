@@ -6,7 +6,6 @@ from threading import Lock
 from typing import List, Union, Optional, Tuple
 
 import telegram
-from telegram.utils.promise import Promise
 
 from src.config import CONFIG
 from src.modules.antimat import Antimat
@@ -31,12 +30,6 @@ def make_button(title, code_name, id, count=0) -> tuple:
 
 
 class TelegramWrapper:
-    @staticmethod
-    def __get_message_from_promise(promise: Union[Promise, telegram.Message]) -> telegram.Message:
-        if isinstance(promise, Promise):
-            return promise.result(timeout=20)
-        return promise
-
     @classmethod
     @telegram_retry(logger=logger, title=f'[{CACHE_PREFIX}] send_message')
     def send_message(cls,
@@ -47,13 +40,14 @@ class TelegramWrapper:
                      reply_to_message_id=None) -> Optional[int]:
         reply_markup = cls.get_reply_markup(buttons)
         try:
-            message = cls.__get_message_from_promise(bot.send_message(
+            message = bot.send_message(
                 chat_id,
                 text,
                 reply_markup=reply_markup,
                 reply_to_message_id=reply_to_message_id,
                 parse_mode=telegram.ParseMode.HTML,
-                disable_web_page_preview=True))
+                disable_web_page_preview=True,
+                timeout=20)
             # cache.set(f'{CACHE_PREFIX}:messages:{chat_id}:{message.message_id}:text', message.text_html, time=USER_CACHE_EXPIRE)
             return message.message_id
         except Exception as e:
@@ -87,7 +81,7 @@ class TelegramWrapper:
     def edit_buttons(cls, bot: telegram.Bot, message_id: int, buttons, chat_id: int) -> None:
         reply_markup = cls.get_reply_markup(buttons)
         try:
-            bot.edit_message_reply_markup(chat_id, message_id, reply_markup=reply_markup, timeout=5)
+            bot.edit_message_reply_markup(chat_id, message_id, reply_markup=reply_markup, timeout=20)
             # cache.set(f'{CACHE_PREFIX}:messages:{chat_id}:{message_id}:buttons', buttons, time=USER_CACHE_EXPIRE)
         except Exception as e:
             logger.error(f"[{CACHE_PREFIX}] Can't edit buttons in {chat_id}. Exception: {e}")

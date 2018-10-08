@@ -73,9 +73,12 @@ def get_header_stats(stats: List[Tuple[UserStat, User]]) -> dict:
         result['mat_msg'] += user_stat.text_messages_with_obscene_count
         result['mat_words'] += user_stat.obscene_words_count
 
-    result['mat_users_percent'] = result['mat_users'] / result['all_active_users'] * 100
-    result['mat_msg_percent'] = result['mat_msg'] / result['all_msg'] * 100
-    result['mat_words_percent'] = result['mat_words'] / result['all_words'] * 100
+    try:
+        result['mat_users_percent'] = result['mat_users'] / result['all_active_users'] * 100
+        result['mat_msg_percent'] = result['mat_msg'] / result['all_msg'] * 100
+        result['mat_words_percent'] = result['mat_words'] / result['all_words'] * 100
+    except Exception:
+        pass
     return result
 
 

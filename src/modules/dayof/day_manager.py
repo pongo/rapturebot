@@ -3,11 +3,11 @@
 from datetime import datetime
 
 import telegram
-from telegram.ext import run_async
 
 from src.config import CONFIG
 from src.modules.dayof.fsb_day import FSBDay
 from src.modules.dayof.valentine_day import ValentineDay
+from src.utils.telegram_helpers import dsp
 
 
 def new_year(bot: telegram.Bot):
@@ -15,7 +15,11 @@ def new_year(bot: telegram.Bot):
         return
     for chat_id_str, chat_options in CONFIG["chats"].items():
         chat_id = int(chat_id_str)
-        bot.send_message(chat_id, 'https://www.youtube.com/watch?v=Tsbbi0V6l7s')
+        dsp(_send_new_year, bot, chat_id)
+
+
+def _send_new_year(bot, chat_id):
+    bot.send_message(chat_id, 'https://www.youtube.com/watch?v=Tsbbi0V6l7s')
 
 
 class DayOfManager:

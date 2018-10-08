@@ -10,7 +10,6 @@ from functools import wraps
 import telegram
 from pytils.numeral import get_plural
 from telegram.ext import run_async
-from telegram.utils.promise import Promise
 
 from src.config import CONFIG
 from src.modules.dayof.helper import set_today_special
@@ -185,10 +184,9 @@ class FSBDayTelegram:
             self.buttons = buttons
             self.reply_to_message_id = reply_to_message_id
 
-        def execute(self, bot):
+        def execute(self, bot: telegram.Bot):
             reply_markup = self.get_reply_markup(self.buttons)
-            promise: Promise = bot.send_message(FSBDayTelegram.chat_id, self.text, parse_mode=telegram.ParseMode.HTML, reply_markup=reply_markup, reply_to_message_id=self.reply_to_message_id, disable_web_page_preview=True)
-            message: telegram.Message = promise.result(timeout=60)
+            message: telegram.Message = bot.send_message(FSBDayTelegram.chat_id, self.text, parse_mode=telegram.ParseMode.HTML, reply_markup=reply_markup, reply_to_message_id=self.reply_to_message_id, disable_web_page_preview=True, timeout=60)
             cache.set(f'{CACHE_PREFIX}__message_text_{message.message_id}', message.text_html, time=USER_CACHE_EXPIRE)
             cache.set(f'{CACHE_PREFIX}__message_buttons_{message.message_id}', self.buttons, time=USER_CACHE_EXPIRE)
 

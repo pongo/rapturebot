@@ -12,7 +12,6 @@ from typing import Optional, Union, List, Tuple
 import telegram
 from pytils.numeral import get_plural
 from telegram.ext import run_async
-from telegram.utils.promise import Promise
 
 from src.config import CONFIG
 from src.modules.dayof.helper import set_today_special
@@ -87,12 +86,6 @@ class Guard:
 class TelegramWrapper:
     chat_id = CONFIG['anon_chat_id']
 
-    @staticmethod
-    def __get_message_from_promise(promise: Union[Promise, telegram.Message]) -> telegram.Message:
-        if isinstance(promise, Promise):
-            return promise.result(timeout=20)
-        return promise
-
     @classmethod
     @retry(logger=logger)
     def send_message(cls,
@@ -105,13 +98,14 @@ class TelegramWrapper:
             return
         reply_markup = cls.get_reply_markup(buttons)
         try:
-            message = cls.__get_message_from_promise(bot.send_message(
+            message = bot.send_message(
                 chat_id,
                 text,
                 reply_markup=reply_markup,
                 reply_to_message_id=reply_to_message_id,
                 parse_mode=telegram.ParseMode.HTML,
-                disable_web_page_preview=True))
+                disable_web_page_preview=True,
+                timeout=20)
             cache.set(f'{CACHE_PREFIX}:messages:{chat_id}:{message.message_id}:text', message.text_html, time=USER_CACHE_EXPIRE)
             cache.set(f'{CACHE_PREFIX}:messages:{chat_id}:{message.message_id}:buttons', buttons, time=USER_CACHE_EXPIRE)
             return message.message_id

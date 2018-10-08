@@ -41,7 +41,7 @@ from src.utils.cache import cache, TWO_DAYS, TWO_YEARS, USER_CACHE_EXPIRE, MONTH
 from src.utils.handlers_helpers import is_cmd_delayed, is_command_enabled_for_chat
 from src.utils.misc import get_int
 from src.utils.misc import weighted_choice
-from src.utils.telegram_helpers import get_chat_admins
+from src.utils.telegram_helpers import get_chat_admins, dsp
 
 logger = logging.getLogger(__name__)
 re_img = re.compile(r"\.(jpg|jpeg|png)$", re.IGNORECASE)
@@ -891,19 +891,27 @@ def weekly_stats(bot: telegram.Bot, _) -> None:
 
 def send_weekly_for_chat(bot: telegram.Bot, chat_id: int, disabled_commands: typing.List[str],
                          enabled_commands: typing.List[str], prev_monday: datetime) -> None:
-    send_stats(bot, chat_id, 'Стата за прошлую неделю',
-               CMDS['admins']['all_stat']['name'], prev_monday)
-    send_stats(bot, chat_id, 'Стата за прошлую неделю',
-               CMDS['admins']['silent_guys']['name'], prev_monday, tag_salo=True)
+    dsp(send_stats, bot, chat_id, 'Стата за прошлую неделю',
+        CMDS['admins']['all_stat']['name'], prev_monday)
+    sleep(1)
+    dsp(send_stats, bot, chat_id, 'Стата за прошлую неделю',
+        CMDS['admins']['silent_guys']['name'], prev_monday, tag_salo=True)
+    sleep(1)
     if 'weeklystat:top_kroshka' not in disabled_commands:
-        send_top_kroshka(bot, chat_id, prev_monday)
+        dsp(send_top_kroshka, bot, chat_id, prev_monday)
+        sleep(1)
     if 'weeklystat:pidorweekly' not in disabled_commands:
-        send_pidorweekly(bot, chat_id, prev_monday)
+        dsp(send_pidorweekly, bot, chat_id, prev_monday)
+        sleep(1)
     if 'weeklystat:igorweekly' in enabled_commands:
-        send_igorweekly(bot, chat_id, prev_monday)
-    send_replytop(bot, chat_id, prev_monday)
-    send_alllove(bot, chat_id, prev_monday)
-    send_topmat(bot, chat_id, chat_id, prev_monday)
+        dsp(send_igorweekly, bot, chat_id, prev_monday)
+        sleep(1)
+    dsp(send_replytop, bot, chat_id, prev_monday)
+    sleep(1)
+    dsp(send_alllove, bot, chat_id, prev_monday)
+    sleep(1)
+    dsp(send_topmat, bot, chat_id, chat_id, prev_monday)
+    sleep(1)
     # send_weekword(bot, chat_id, prev_monday)
 
 

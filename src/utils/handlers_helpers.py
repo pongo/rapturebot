@@ -179,9 +179,6 @@ def chat_guard(f):
         if chat_id_str not in CONFIG["chats"]:
             send_chat_access_denied(bot, update)
             return
-        if "disable_chat" in CONFIG["chats"][chat_id_str] and CONFIG["chats"][chat_id_str]["disable_chat"]:
-            logger.info(f'Chat {chat_id_str} disabled in config. Name: {update.message.chat.title}')
-            return
         return f(bot, update)
 
     return decorator

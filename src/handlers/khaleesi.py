@@ -5,13 +5,13 @@ import telegram
 from telegram.ext import run_async
 
 from src.modules.khaleesi import Khaleesi
-from src.utils.handlers_helpers import chat_guard, collect_stats, command_guard
+from src.utils.handlers_decorators import chat_guard, collect_stats, command_guard
 
 
+@run_async
 @chat_guard
 @collect_stats
 @command_guard
-@run_async
 def chat(bot: telegram.Bot, update: telegram.Update) -> None:  # pragma: no cover
     send_khaleesi(bot, update.message, limit_chars=1000)
 
@@ -43,7 +43,7 @@ def check_base_khaleesi(
     # если без текста и не реплай, то показываем стандартную фразу
     if not reply_to_msg and not has_cmd_with_text:
         bot.send_message(chat_id, empty_text, reply_to_message_id=message.message_id)
-        return
+        return None
 
     # далее решаем как отвечаем: с реплаем или без
     # если мы получили реплай, то реплаем на то сообщение, к которому идет реплай
@@ -64,12 +64,12 @@ def check_base_khaleesi(
     else:
         text = reply_to_msg.text if reply_to_msg.text else reply_to_msg.caption
         if not text:
-            return
+            return None
 
     # проверяем лимит
     if 0 < limit_chars < len(text):
         bot.send_message(chat_id, too_long, reply_to_message_id=message.message_id)
-        return
+        return None
 
     # сообщаем в каком чате и какой текст обрабатывать
     return chat_id, text, reply_to_message_id

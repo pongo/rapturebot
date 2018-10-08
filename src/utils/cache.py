@@ -4,9 +4,9 @@ from typing import Optional, List, Union, Set
 import redis
 
 try:
-    import cPickle as pickle
+    import cPickle as pickle  # type:ignore
 except ImportError:
-    import pickle
+    import pickle  # type:ignore
 
 from src.config import CONFIG
 

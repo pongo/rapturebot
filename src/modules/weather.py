@@ -2,7 +2,8 @@
 import json
 import os
 from multiprocessing.dummy import Pool as ThreadPool
-from typing import Union
+from threading import Lock
+from typing import Union, Optional
 
 import arrow
 import requests
@@ -10,16 +11,18 @@ import telegram
 from telegram.ext import run_async
 
 from src.config import CONFIG
-from src.handlers import command_guard, chat_guard, collect_stats
 from src.utils.cache import cache
+from src.utils.handlers_decorators import chat_guard, collect_stats, command_guard
+from src.utils.telegram_helpers import dsp
 
 TMP_DIR = '../../tmp/weather/'
+full_moon_lock = Lock()
 
 
+@run_async
 @chat_guard
 @collect_stats
 @command_guard
-@run_async
 def weather(bot: telegram.Bot, update: telegram.Update) -> None:
     """
     Добавление новых городов:
@@ -41,7 +44,8 @@ def send_weather_now(bot: telegram.Bot, update: telegram.Update) -> None:
     cached_key = f'weather:{chat_id}:now:result'
     cached_result = cache.get(cached_key)
     if cached_result is not None:
-        bot.send_message(chat_id, cached_result, parse_mode=telegram.ParseMode.HTML, disable_web_page_preview=True)
+        bot.send_message(chat_id, cached_result, parse_mode=telegram.ParseMode.HTML,
+                         disable_web_page_preview=True)
         return
 
     debug = CONFIG.get('weather_debug')
@@ -59,22 +63,50 @@ def send_weather_now(bot: telegram.Bot, update: telegram.Update) -> None:
     result = f"Погода сейчас:\n\n{cities_joined}{poweredby}"
     cache.set(cached_key, result, 30 * 60)  # хранится в кэше 30 минут
 
-    bot.send_message(chat_id, result, parse_mode=telegram.ParseMode.HTML, disable_web_page_preview=True)
+    bot.send_message(chat_id, result, parse_mode=telegram.ParseMode.HTML,
+                     disable_web_page_preview=True)
 
 
 @run_async
 def send_alert_if_full_moon(bot: telegram.Bot, chat_id: int) -> None:
+    """
+    Сегодня полнолуние? Оповещает чат.
+    """
+    # т.к. используется run_async, то мы можем одновременно вызвать этот метод.
+    # но мы не хотим делать несколько одинаковых запросов к апи.
+    # поэтому используем блокировку и сохраняем результат запроса в редис.
+    with full_moon_lock:
+        full_moon: Optional[bool] = cache.get('weather:full_moon', None)
+        if full_moon is None:
+            full_moon = full_moon_request()
+            cache.set('weather:full_moon', full_moon, time=6 * 60 * 60)  # 6 hours
+    if full_moon:
+        # отправляется через очередь
+        dsp(_send_full_moon_alert, bot, chat_id)
+
+
+def _send_full_moon_alert(bot, chat_id):
+    """
+    Вынес в отдельную функцию, чтобы использовать в `dsp`
+    """
+    bot.send_message(chat_id, "Сегодня:\n\nПОЛНОЛУНИЕ 🌑 БЕРЕГИСЬ ОБОРОТНЕЙ", parse_mode='HTML')
+
+
+def full_moon_request() -> bool:
+    """
+    Обращается в интернет, чтобы узнать полнолуние ли.
+    """
     response = request_wu('Russia/Moscow')
     if response['error']:
-        return
+        return False
     try:
         js = response['json']
         # noinspection PyTypeChecker
         if js['moon_phase']['phaseofMoon'] == "Полнолуние":
-            bot.send_message(chat_id, "Сегодня:\n\nПОЛНОЛУНИЕ 🌑 БЕРЕГИСЬ ОБОРОТНЕЙ",
-                             parse_mode=telegram.ParseMode.HTML)
+            return True
     except Exception:
         pass
+    return False
 
 
 def request_wu(city_code: str):
@@ -144,7 +176,9 @@ class FileUtils:
         """
         Загружает json из временной папки (используется только для отладки)
         """
-        with open(FileUtils.get_tmp_file_path('ya', city_code).format(city_code.replace('/', ' - ')), encoding='utf-8') as f:
+        with open(
+                FileUtils.get_tmp_file_path('ya', city_code).format(city_code.replace('/', ' - ')),
+                encoding='utf-8') as f:
             return json.load(f)
 
 
@@ -326,7 +360,7 @@ def get_uv_index(uv_index) -> str:
 def parse_temp(data: dict, later=False) -> str:
     temp = get_temp(data.get('temp', data.get('temp_avg')), data.get('feels_like', None))
     # icon_emoji = icon_to_emoji(data.get('condition'), get_summary(data.get('condition')))
-    icon_emoji = get_summary(data.get('condition'))
+    icon_emoji = get_summary(data.get('condition', ''))
     wind = get_wind(data.get('wind_speed', 0), data.get('wind_gust', 0))
 
     # вероятность осадков
@@ -342,6 +376,7 @@ def parse_temp(data: dict, later=False) -> str:
         water = f'. Вода: {temp_water}°'
 
     return f"{temp}, {icon_emoji}, {wind}{precip}{water}"
+
 
 def get_summary(condition: str) -> str:
     variants = {

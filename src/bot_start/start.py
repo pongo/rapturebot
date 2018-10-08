@@ -5,23 +5,21 @@ from time import sleep
 
 import telegram
 from telegram.ext import Updater
-from telegram.ext import messagequeue as mq
 from telegram.ext.messagequeue import DelayQueueError
-from telegram.utils.request import Request
 
 import src.config as config
 from src.bot_start.add_handlers import add_chat_handlers, add_private_handlers, add_other_handlers
 from src.bot_start.add_jobs import add_jobs
 from src.bot_start.google_cloud import auth_google_vision
-from src.bot_start.mqbot import MQBot
 from src.config import CONFIG
 from src.utils.cache import cache, YEAR
-from src.utils.logger import logger
 from src.utils.repair import repair_bot
 from src.web.server import start_server
 
+logger = logging.getLogger(__name__)
 
-def error(bot, update, error):
+
+def error(_, update, error):
     try:
         raise error
     except telegram.error.TimedOut:
@@ -34,6 +32,7 @@ class CriticalHandler(logging.Handler):
     """
     Этот обработчит логгирования следит за критичными ошибками и вызывает самовосстановление бота.
     """
+
     def emit(self, record: logging.LogRecord):
         if record.levelname != 'CRITICAL':
             return
@@ -43,22 +42,32 @@ class CriticalHandler(logging.Handler):
             return
 
 
+def set_default_logging_format():
+    default_format = '[%(asctime)s][%(levelname)s][%(name)s] - %(message)s'
+    logging.basicConfig(
+        format=CONFIG.get('logging', {}).get('format', default_format),
+        level=logging.getLevelName(CONFIG.get('logging', {}).get('level', 'INFO').upper()),
+        filename=CONFIG.get('logging', {}).get('file', None)
+    )
+
+
 def prepare():
     """
     Подготовительный этап
     """
+    set_default_logging_format()
     if 'google_vision_client_json_file' in CONFIG:
         config.google_vision_client = auth_google_vision(CONFIG['google_vision_client_json_file'])
-    cache.set('pipinder:fav_stickersets_names', set(CONFIG.get("sasha_rebinder_stickersets_names", [])), time=YEAR)
+    cache.set('pipinder:fav_stickersets_names',
+              set(CONFIG.get("sasha_rebinder_stickersets_names", [])), time=YEAR)
 
 
 def start_bot():
     """
     Инициализация бота
     """
-    q = mq.MessageQueue(all_burst_limit=29, all_time_limit_ms=1017)
-    bot = MQBot(CONFIG['bot_token'], mqueue=q, request=get_request_data())
-    updater = Updater(bot=bot, workers=16)
+    updater = Updater(token=CONFIG['bot_token'], workers=50, request_kwargs=get_request_data())
+    bot = updater.bot
     dp = updater.dispatcher
     dp.logger.addHandler(CriticalHandler())  # в логгер библиотеки добавляем свой обработчик
     add_chat_handlers(dp)
@@ -89,22 +98,21 @@ def start_bot():
 
 
 def get_request_data():
-    con_pool_size = 20
     read_timeout = 10.
     connect_timeout = 10.
     if 'telegram_proxy' not in CONFIG:
-        return Request(con_pool_size=con_pool_size, read_timeout=read_timeout, connect_timeout=connect_timeout)
+        return {'read_timeout': read_timeout, 'connect_timeout': connect_timeout}
     proxy_url = CONFIG['telegram_proxy']['proxy_url']
     if CONFIG['telegram_proxy'].get('username', '') == '':
-        return Request(con_pool_size=con_pool_size, read_timeout=read_timeout, connect_timeout=connect_timeout, proxy_url=proxy_url)
-    return Request(con_pool_size=con_pool_size,
-                   read_timeout=read_timeout,
-                   connect_timeout=connect_timeout,
-                   proxy_url=proxy_url,
-                   urllib3_proxy_kwargs={
-                       'username': CONFIG['telegram_proxy']['username'],
-                       'password': CONFIG['telegram_proxy']['password'],
-                   })
+        return {'read_timeout': read_timeout, 'connect_timeout': connect_timeout,
+                'proxy_url': proxy_url}
+    return {'read_timeout': read_timeout,
+            'connect_timeout': connect_timeout,
+            'proxy_url': proxy_url,
+            'urllib3_proxy_kwargs': {
+                'username': CONFIG['telegram_proxy']['username'],
+                'password': CONFIG['telegram_proxy']['password'],
+            }}
 
 
 def start():

@@ -1,5 +1,6 @@
 # coding=UTF-8
 import enum
+import logging
 import random
 import re
 import textwrap
@@ -10,7 +11,6 @@ from functools import wraps
 import telegram
 from pytils.numeral import get_plural
 from telegram.ext import run_async
-from telegram.utils.promise import Promise
 
 from src.config import CONFIG
 from src.modules.dayof.helper import set_today_special
@@ -18,10 +18,11 @@ from src.modules.models.chat_user import ChatUser
 from src.modules.models.user import User
 from src.utils.cache import cache, USER_CACHE_EXPIRE
 from src.utils.callback_helpers import get_callback_data
-from src.utils.logger import logger
 from src.utils.text_helpers import lstrip_every_line
 
+logger = logging.getLogger(__name__)
 CACHE_PREFIX = 'fsb_day'
+
 
 def extend_initial_data(data: dict) -> dict:
     initial = {"name": 'dayof', "module": "fsb_day"}
@@ -44,6 +45,7 @@ class FSBDayGuard:
                 cls.__send_dinner(bot, uid)
                 return
             return f(_cls, bot, update)
+
         return decorator
 
     @classmethod
@@ -51,14 +53,15 @@ class FSBDayGuard:
         @wraps(f)
         def decorator(_cls, bot: telegram.Bot, update: telegram.Update, query, data):
             uid = query.from_user.id
-            #if not FSBDayModel.is_day_active():
+            # if not FSBDayModel.is_day_active():
             #    return
-            #if not ChatUser.get(uid, CONFIG['anon_chat_id']):
+            # if not ChatUser.get(uid, CONFIG['anon_chat_id']):
             #    return
             if FSBDayModel.is_day_active() and cls.is_dinner_time():
                 cls.__send_dinner(bot, uid)
                 return
             return f(_cls, bot, update, query, data)
+
         return decorator
 
     @staticmethod
@@ -128,7 +131,8 @@ class FSBDayTelegram:
             self.query_data = query_data
 
         def execute(self, bot):
-            bot.answer_callback_query(self.query_id, url=f"t.me/{bot.username}?start={self.query_data}")
+            bot.answer_callback_query(self.query_id,
+                                      url=f"t.me/{bot.username}?start={self.query_data}")
 
     class EditChatButtons(TelegramExecute):
         def __init__(self, message_id, buttons):
@@ -137,8 +141,10 @@ class FSBDayTelegram:
 
         def execute(self, bot):
             reply_markup = self.get_reply_markup(self.buttons)
-            bot.edit_message_reply_markup(FSBDayTelegram.chat_id, self.message_id, reply_markup=reply_markup)
-            cache.set(f'{CACHE_PREFIX}__message_buttons_{self.message_id}', self.buttons, time=USER_CACHE_EXPIRE)
+            bot.edit_message_reply_markup(FSBDayTelegram.chat_id, self.message_id,
+                                          reply_markup=reply_markup)
+            cache.set(f'{CACHE_PREFIX}__message_buttons_{self.message_id}', self.buttons,
+                      time=USER_CACHE_EXPIRE)
 
     class ShowName(TelegramExecute):
         def __init__(self, message_id, uid: int) -> None:
@@ -149,13 +155,22 @@ class FSBDayTelegram:
             user = User.get(self.uid)
             old_text = cache.get(f'{CACHE_PREFIX}__message_text_{self.message_id}')
             if old_text:
-                new_text = re.sub(r"^Подписано\s+[█ ]+$", f'Подписано {user.fullname}', old_text, 0, re.IGNORECASE | re.MULTILINE)
+                new_text = re.sub(r"^Подписано\s+[█ ]+$", f'Подписано {user.fullname}', old_text, 0,
+                                  re.IGNORECASE | re.MULTILINE)
                 buttons = cache.get(f'{CACHE_PREFIX}__message_buttons_{self.message_id}')
                 reply_markup = self.get_reply_markup(buttons)
                 female = 'а' if user.female else ''
-                bot.send_message(FSBDayTelegram.chat_id, f'Какой ужас. Это был{female} {user.get_username_or_link()}', reply_to_message_id=self.message_id, parse_mode=telegram.ParseMode.HTML)
-                return bot.edit_message_text(new_text, FSBDayTelegram.chat_id, self.message_id, parse_mode=telegram.ParseMode.HTML, reply_markup=reply_markup)
-            bot.send_message(FSBDayTelegram.chat_id, f'Не могу исправить само сообщение. Но оно подписано {user.get_username_or_link()}', reply_to_message_id=self.message_id, parse_mode=telegram.ParseMode.HTML)
+                bot.send_message(FSBDayTelegram.chat_id,
+                                 f'Какой ужас. Это был{female} {user.get_username_or_link()}',
+                                 reply_to_message_id=self.message_id,
+                                 parse_mode=telegram.ParseMode.HTML)
+                return bot.edit_message_text(new_text, FSBDayTelegram.chat_id, self.message_id,
+                                             parse_mode=telegram.ParseMode.HTML,
+                                             reply_markup=reply_markup)
+            bot.send_message(FSBDayTelegram.chat_id,
+                             f'Не могу исправить само сообщение. Но оно подписано {user.get_username_or_link()}',
+                             reply_to_message_id=self.message_id,
+                             parse_mode=telegram.ParseMode.HTML)
 
     class SendToUserWithFullButtons(TelegramExecute):
         def __init__(self, uid, text, buttons):
@@ -166,7 +181,8 @@ class FSBDayTelegram:
         def execute(self, bot):
             reply_markup = self.get_full_reply_markup(self.buttons)
             try:
-                bot.send_message(self.uid, self.text, parse_mode=telegram.ParseMode.HTML, reply_markup=reply_markup)
+                bot.send_message(self.uid, self.text, parse_mode=telegram.ParseMode.HTML,
+                                 reply_markup=reply_markup)
             except:
                 user = User.get(self.uid)
                 logger.warning(f"[fsb_day] can't send message to {user.get_username_or_link()}")
@@ -177,7 +193,9 @@ class FSBDayTelegram:
             self.reply_to_message_id = reply_to_message_id
 
         def execute(self, bot):
-            bot.send_message(FSBDayTelegram.chat_id, self.text, parse_mode=telegram.ParseMode.HTML, reply_to_message_id=self.reply_to_message_id, disable_web_page_preview=True)
+            bot.send_message(FSBDayTelegram.chat_id, self.text, parse_mode=telegram.ParseMode.HTML,
+                             reply_to_message_id=self.reply_to_message_id,
+                             disable_web_page_preview=True)
 
     class SendToChatWithButtons(TelegramExecute):
         def __init__(self, text, buttons, reply_to_message_id=None):
@@ -185,12 +203,17 @@ class FSBDayTelegram:
             self.buttons = buttons
             self.reply_to_message_id = reply_to_message_id
 
-        def execute(self, bot):
+        def execute(self, bot: telegram.Bot):
             reply_markup = self.get_reply_markup(self.buttons)
-            promise: Promise = bot.send_message(FSBDayTelegram.chat_id, self.text, parse_mode=telegram.ParseMode.HTML, reply_markup=reply_markup, reply_to_message_id=self.reply_to_message_id, disable_web_page_preview=True)
-            message: telegram.Message = promise.result(timeout=60)
-            cache.set(f'{CACHE_PREFIX}__message_text_{message.message_id}', message.text_html, time=USER_CACHE_EXPIRE)
-            cache.set(f'{CACHE_PREFIX}__message_buttons_{message.message_id}', self.buttons, time=USER_CACHE_EXPIRE)
+            message: telegram.Message = bot.send_message(FSBDayTelegram.chat_id, self.text,
+                                                         parse_mode=telegram.ParseMode.HTML,
+                                                         reply_markup=reply_markup,
+                                                         reply_to_message_id=self.reply_to_message_id,
+                                                         disable_web_page_preview=True, timeout=60)
+            cache.set(f'{CACHE_PREFIX}__message_text_{message.message_id}', message.text_html,
+                      time=USER_CACHE_EXPIRE)
+            cache.set(f'{CACHE_PREFIX}__message_buttons_{message.message_id}', self.buttons,
+                      time=USER_CACHE_EXPIRE)
 
     class SendToUser(TelegramExecute):
         def __init__(self, uid, text, reply_to_message_id=None):
@@ -200,7 +223,8 @@ class FSBDayTelegram:
 
         def execute(self, bot):
             try:
-                bot.send_message(self.uid, self.text, parse_mode=telegram.ParseMode.HTML, reply_to_message_id=self.reply_to_message_id)
+                bot.send_message(self.uid, self.text, parse_mode=telegram.ParseMode.HTML,
+                                 reply_to_message_id=self.reply_to_message_id)
             except:
                 user = User.get(self.uid)
                 logger.warning(f"[fsb_day] can't send message to {user.get_username_or_link()}")
@@ -241,7 +265,8 @@ class FSBDayModel:
             return cls.__callback_like_dislike(uid, message_id, query_id, data)
 
         if not cls.is_day_active():
-            return [FSBDayTelegram.AnswerCallbackQuery(query_id, 'Все уже закончилось', show_alert=True)]
+            return [FSBDayTelegram.AnswerCallbackQuery(query_id, 'Все уже закончилось',
+                                                       show_alert=True)]
 
         if data['value'] == 'begin':
             text, buttons = cls.__get_help(uid)
@@ -263,18 +288,22 @@ class FSBDayModel:
             return cls.__callback_stuk_donate(uid, message_id, query_id, data)
 
     @classmethod
-    def private_help_handler(cls, uid: int) -> typing.Union[None, typing.List[FSBDayTelegram.TelegramExecute]]:
+    def private_help_handler(cls, uid: int) -> typing.Union[
+        None, typing.List[FSBDayTelegram.TelegramExecute]]:
         text, buttons = cls.__get_help(uid)
         return [FSBDayTelegram.SendToUserWithFullButtons(uid, text, buttons)]
 
     @classmethod
-    def private_handler(cls, uid: int, text: str) -> typing.Union[None, typing.List[FSBDayTelegram.TelegramExecute]]:
-        if re.search(r"www|http|\.(jpe?g|gif|png|webp|mp4|webm)", text, re.IGNORECASE | re.MULTILINE):
+    def private_handler(cls, uid: int, text: str) -> typing.Union[
+        None, typing.List[FSBDayTelegram.TelegramExecute]]:
+        if re.search(r"www|http|\.(jpe?g|gif|png|webp|mp4|webm)", text,
+                     re.IGNORECASE | re.MULTILINE):
             return [FSBDayTelegram.SendToUser(uid, 'Орзик, хватит играться.')]
 
         case = FSBDayCase(text, uid)
         if case.text_type == FSBDayTextType.unknown:
-            return [FSBDayTelegram.SendToUser(uid, 'Не могу понять, вы доносите или раскаиваетесь? Начните сообщение с нужных слов (/help).\n\nВы можете как отправить сообщение заново, так и отредактировать старое.')]
+            return [FSBDayTelegram.SendToUser(uid,
+                                              'Не могу понять, вы доносите или раскаиваетесь? Начните сообщение с нужных слов (/help).\n\nВы можете как отправить сообщение заново, так и отредактировать старое.')]
 
         if case.plagiat:
             return [FSBDayTelegram.SendToUser(uid, 'Мы уже получили такое обращение.')]
@@ -332,7 +361,8 @@ class FSBDayModel:
         return text, buttons
 
     @classmethod
-    def __callback_like_dislike(cls, uid, message_id, query_id, data) -> typing.List[FSBDayTelegram.TelegramExecute]:
+    def __callback_like_dislike(cls, uid, message_id, query_id, data) -> typing.List[
+        FSBDayTelegram.TelegramExecute]:
         clicks_count = FSBDayStats.inc_click_count(data['value'], message_id, uid)
         if clicks_count is None:
             return [FSBDayTelegram.AnswerCallbackQuery(query_id, 'Только один раз')]
@@ -357,7 +387,8 @@ class FSBDayModel:
         return buttons
 
     @classmethod
-    def __generate_stuk_donate_buttons(cls, case_uid: int, stuk_count: int = 0, donate_count: int = 0):
+    def __generate_stuk_donate_buttons(cls, case_uid: int, stuk_count: int = 0,
+                                       donate_count: int = 0):
         data1 = extend_initial_data({'value': 'stuk', 'case_uid': case_uid})
         data2 = extend_initial_data({'value': 'donate', 'case_uid': case_uid})
         data3 = extend_initial_data({"value": "wtf"})
@@ -425,7 +456,8 @@ class FSBDayModel:
         return True
 
     @classmethod
-    def __callback_stuk_donate(cls, uid, message_id, query_id, data) -> typing.Union[None, typing.List[FSBDayTelegram.TelegramExecute]]:
+    def __callback_stuk_donate(cls, uid, message_id, query_id, data) -> typing.Union[
+        None, typing.List[FSBDayTelegram.TelegramExecute]]:
         result: typing.List[FSBDayTelegram.TelegramExecute] = []
 
         # если юзер кликает на кнопки своего же дела
@@ -479,13 +511,13 @@ class FSBDayModel:
         if recent_stucks and recent_stucks >= 3 and not cache.get(key_super_stukach_alert):
             user = User.get(uid)
             cache.set(key_super_stukach_alert, True, time=30 * 60)
-            return FSBDayTelegram.SendToChat(f'{user.get_username_or_link()} стучите помедленнее. Я не успеваю записывать.')
+            return FSBDayTelegram.SendToChat(
+                f'{user.get_username_or_link()} стучите помедленнее. Я не успеваю записывать.')
         return None
 
 
 class FSBDay:
     @classmethod
-    @run_async
     def midnight(cls, bot: telegram.Bot) -> None:
         """
         Показывает ночные приветственное и подводящее итоги сообщения.
@@ -499,8 +531,8 @@ class FSBDay:
 
     @classmethod
     @FSBDayGuard.callback_handler_guard
-    @run_async
-    def callback_handler(cls, bot: telegram.Bot, update: telegram.Message, query: telegram.CallbackQuery, data) -> None:
+    def callback_handler(cls, bot: telegram.Bot, update: telegram.Message,
+                         query: telegram.CallbackQuery, data) -> None:
         uid = query.from_user.id
         message_id = query.message.message_id
         query_id = query.id
@@ -509,7 +541,6 @@ class FSBDay:
 
     @classmethod
     @FSBDayGuard.handlers_guard
-    @run_async
     def private_handler(cls, bot: telegram.Bot, update: telegram.Update):
         message = update.edited_message if update.edited_message else update.message
         text = message.text
@@ -521,7 +552,6 @@ class FSBDay:
 
     @classmethod
     @FSBDayGuard.handlers_guard
-    @run_async
     def private_help_handler(cls, bot: telegram.Bot, update: telegram.Update):
         """
         Обрабатывает команду /help
@@ -533,7 +563,8 @@ class FSBDay:
     @staticmethod
     def __execute_work(
             bot: telegram.Bot,
-            result: typing.Union[None, typing.List[typing.Union[None, FSBDayTelegram.TelegramExecute]]]
+            result: typing.Union[
+                None, typing.List[typing.Union[None, FSBDayTelegram.TelegramExecute]]]
     ) -> None:
         if not result:
             return
@@ -558,7 +589,8 @@ class FSBDayAnekdot:
             return
         import requests
         anekdot = requests.get(CONFIG['anecdotica_url']).text
-        bot.send_message(uid, f'Рассказываю анекдот:\n\n{anekdot}', parse_mode=telegram.ParseMode.HTML)
+        bot.send_message(uid, f'Рассказываю анекдот:\n\n{anekdot}',
+                         parse_mode=telegram.ParseMode.HTML)
 
 
 class FSBDayStats:
@@ -577,19 +609,26 @@ class FSBDayStats:
 
     @classmethod
     def get_stats(cls):
-        stukachey = cls.__get_count(cls.key_stukachi, 'ответственный гражданин настучал, ответственных гражданина настучали, ответственных гражданинов настучали')
+        stukachey = cls.__get_count(cls.key_stukachi,
+                                    'ответственный гражданин настучал, ответственных гражданина настучали, ответственных гражданинов настучали')
         stuk_count = cls.__get_count(cls.key_stuk_click_count, 'раз, раза, раз')
-        donators = cls.__get_count(cls.key_donators, 'либерал сделал, либерала сделали, либералов сделали')
-        donate_count = cls.__get_count(cls.key_donate_click_count, 'пожертвование, пожертвования, пожертвований')
+        donators = cls.__get_count(cls.key_donators,
+                                   'либерал сделал, либерала сделали, либералов сделали')
+        donate_count = cls.__get_count(cls.key_donate_click_count,
+                                       'пожертвование, пожертвования, пожертвований')
         sobrano = cls.__get_sobrano()
         stats = [
             cls.__get_engage_users_count(),
-            cls.__get_count(cls.key_donos_count, 'донос был написанан, доноса было написано, доносов было написано'),
-            cls.__get_count(cls.key_raskayanie_count, 'раскаяние было написано, раскаяния было написано, раскаяний было написано'),
+            cls.__get_count(cls.key_donos_count,
+                            'донос был написанан, доноса было написано, доносов было написано'),
+            cls.__get_count(cls.key_raskayanie_count,
+                            'раскаяние было написано, раскаяния было написано, раскаяний было написано'),
             f'{stukachey} {stuk_count}',
             f'{donators} {donate_count} (собрано {sobrano} ₽)',
-            cls.__get_count(cls.key_samodonos_count, 'попытка самодоноса, попытки самодоноса, попыток самодоноса'),
-            cls.__get_count(cls.key_anekdots_count, 'анекдот отправлен, анекдота отправлено, анекдотов отправлено'),
+            cls.__get_count(cls.key_samodonos_count,
+                            'попытка самодоноса, попытки самодоноса, попыток самодоноса'),
+            cls.__get_count(cls.key_anekdots_count,
+                            'анекдот отправлен, анекдота отправлено, анекдотов отправлено'),
         ]
         stats_text = ''.join((f'• {stat}\n' for stat in stats if stat)).strip()
         top_informer = cls.__get_top_informer()
@@ -616,7 +655,8 @@ class FSBDayStats:
         users = cache.get(cls.key_engage_users)
         if not users:
             return None
-        return get_plural(len(users), 'человек принял участие, человека приняло участие, человек приняло участие')
+        return get_plural(len(users),
+                          'человек принял участие, человека приняло участие, человек приняло участие')
 
     @classmethod
     def __get_top_informer(cls) -> str:
@@ -690,14 +730,17 @@ class FSBDayStats:
         return msg_clicks
 
     @classmethod
-    def inc_click_count(cls, click_type: str, message_id, uid: int) -> typing.Union[None, typing.Tuple[int, int, str]]:
+    def inc_click_count(cls, click_type: str, message_id, uid: int) -> typing.Union[
+        None, typing.Tuple[int, int, str]]:
         cls.__add_click_users_general(cls.key_engage_users, uid)
         if click_type == 'stuk' or click_type == 'donate':
-            success = cls.__add_click_users_general(f'{CACHE_PREFIX}__{message_id}_{click_type}_click_users', uid)
+            success = cls.__add_click_users_general(
+                f'{CACHE_PREFIX}__{message_id}_{click_type}_click_users', uid)
             if not success:
                 return None
         elif click_type == 'like' or click_type == 'dislike':
-            success = cls.__add_click_users_general(f'{CACHE_PREFIX}__{message_id}_likedislike_click_users', uid)
+            success = cls.__add_click_users_general(
+                f'{CACHE_PREFIX}__{message_id}_likedislike_click_users', uid)
             if not success:
                 return None
 
@@ -712,15 +755,17 @@ class FSBDayStats:
             cls.__add_user_click(click_type, uid)
             stuk_count += 1
             cls.__inc(cls.key_stuk_click_count)
-            cls.__inc(f'{CACHE_PREFIX}__{uid}_recent_stucks', time=30*60)
-            if not cls.__add_click_users_general(f'{CACHE_PREFIX}__{message_id}_donate_click_users', uid, simulate=True):
+            cls.__inc(f'{CACHE_PREFIX}__{uid}_recent_stucks', time=30 * 60)
+            if not cls.__add_click_users_general(f'{CACHE_PREFIX}__{message_id}_donate_click_users',
+                                                 uid, simulate=True):
                 comment = 'donate, stuk'
         elif click_type == 'donate':
             cls.__add_user_click(click_type, uid)
             donate_count += 1
             cls.__inc(cls.key_donate_click_count)
             cls.__inc(cls.key_sobrano_rub, random.randrange(50, 1000, 50))
-            if not cls.__add_click_users_general(f'{CACHE_PREFIX}__{message_id}_stuk_click_users', uid, simulate=True):
+            if not cls.__add_click_users_general(f'{CACHE_PREFIX}__{message_id}_stuk_click_users',
+                                                 uid, simulate=True):
                 comment = 'stuk, donate'
         elif click_type == 'like':
             stuk_count += 1
@@ -763,10 +808,14 @@ class FSBDayTextChecker:
         """
         Определяет тип заявления в тексте: донос, раскаяние или неизвестный тип.
         """
-        if re.search(r"^\s*(настоящим сообщаю,? что|довожу до вашего сведения,? что|обращаюсь по поводу|спешу сообщить,? что|(?:я )?случайно (?:услышала?|увидела?))", text, re.IGNORECASE | re.MULTILINE):
+        if re.search(
+                r"^\s*(настоящим сообщаю,? что|довожу до вашего сведения,? что|обращаюсь по поводу|спешу сообщить,? что|(?:я )?случайно (?:услышала?|увидела?))",
+                text, re.IGNORECASE | re.MULTILINE):
             return FSBDayTextType.donos
 
-        if re.search(r"^\s*(признаю себя виновн(?:ым|ой)|(?:заявляю|сообщаю),? что (?:я|мною|мне|меня|мной|мы)|хочу чистосердечно (?:заявить|раскаяться))", text, re.IGNORECASE | re.MULTILINE):
+        if re.search(
+                r"^\s*(признаю себя виновн(?:ым|ой)|(?:заявляю|сообщаю),? что (?:я|мною|мне|меня|мной|мы)|хочу чистосердечно (?:заявить|раскаяться))",
+                text, re.IGNORECASE | re.MULTILINE):
             return FSBDayTextType.raskayanie
 
         return FSBDayTextType.unknown

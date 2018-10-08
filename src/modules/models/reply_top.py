@@ -2,6 +2,7 @@
 import json
 import os
 from datetime import datetime
+from threading import Lock
 from typing import List, Tuple, Optional
 
 import pytils
@@ -18,10 +19,10 @@ class ReplyTopDBHelper:
     """
     Хелпер для работы с данными
     """
-
-    def __init__(self, name: str, delay=USER_CACHE_EXPIRE):
+    def __init__(self, name: str, delay=USER_CACHE_EXPIRE) -> None:
         self.name = name
         self.delay = delay
+        self.lock = Lock()
 
     def __get_cache_key(self, date: datetime, cid: int) -> str:
         return f'{self.name}:{date.strftime("%Y%m%d")}:{cid}'
@@ -44,40 +45,22 @@ class ReplyTopDBHelper:
         cache.set(self.__get_cache_key(date, cid), newdb, time=self.delay)
 
     def add(self, from_uid: int, to_uid: int, cid: int, date: datetime) -> None:
-        db = self.get_db(date, cid)
+        """
+        Добавляет статистику по страсти
+        """
+        with self.lock:
+            db = self.get_db(date, cid)
+            self.__count_replays(db, from_uid, to_uid)
+            self.__count_pairs(db, from_uid, to_uid)
+            self.__count_outbound(db, from_uid, to_uid)
+            self.__count_inbound(db, from_uid, to_uid)
+            self.set_db(db, date, cid)
 
-        # сколько реплаев отправлено этому юзеру
-        if to_uid in db['to']:
-            db['to'][to_uid] += 1
-        else:
-            db['to'][to_uid] = 1
-
-        # сколько реплаев отправил этот юзер
-        if from_uid in db['from']:
-            db['from'][from_uid] += 1
-        else:
-            db['from'][from_uid] = 1
-
-        # собираем пары
-        # сортируем id, чтобы ключ всегда был одинаковый
-        # вариант когда юзер реплает самому себе тоже допустим
-        pair_key = ','.join(sorted([str(from_uid), str(to_uid)]))
-        if pair_key in db['pair']:
-            db['pair'][pair_key] += 1
-        else:
-            db['pair'][pair_key] = 1
-
-        # исходящая страсть
-        if 'outbound' not in db:
-            db['outbound'] = {}
-        if from_uid not in db['outbound']:
-            db['outbound'][from_uid] = {}
-        if to_uid in db['outbound'][from_uid]:
-            db['outbound'][from_uid][to_uid] += 1
-        else:
-            db['outbound'][from_uid][to_uid] = 1
-
-        # входящая страсть
+    @staticmethod
+    def __count_inbound(db, from_uid, to_uid):
+        """
+        Входящая страсть
+        """
         if 'inbound' not in db:
             db['inbound'] = {}
         if to_uid not in db['inbound']:
@@ -87,7 +70,48 @@ class ReplyTopDBHelper:
         else:
             db['inbound'][to_uid][from_uid] = 1
 
-        self.set_db(db, date, cid)
+    @staticmethod
+    def __count_outbound(db, from_uid, to_uid):
+        """
+        Исходящая страсть
+        """
+        if 'outbound' not in db:
+            db['outbound'] = {}
+        if from_uid not in db['outbound']:
+            db['outbound'][from_uid] = {}
+        if to_uid in db['outbound'][from_uid]:
+            db['outbound'][from_uid][to_uid] += 1
+        else:
+            db['outbound'][from_uid][to_uid] = 1
+
+    @staticmethod
+    def __count_pairs(db, from_uid, to_uid):
+        """
+        Парная страсть
+        """
+        # сортируем id, чтобы ключ всегда был одинаковый
+        # вариант когда юзер реплает самому себе тоже допустим
+        pair_key = ','.join(sorted([str(from_uid), str(to_uid)]))
+        if pair_key in db['pair']:
+            db['pair'][pair_key] += 1
+        else:
+            db['pair'][pair_key] = 1
+
+    @staticmethod
+    def __count_replays(db, from_uid, to_uid):
+        """
+        Подсчет реплаев
+        """
+        # сколько реплаев отправлено этому юзеру
+        if to_uid in db['to']:
+            db['to'][to_uid] += 1
+        else:
+            db['to'][to_uid] = 1
+        # сколько реплаев отправил этот юзер
+        if from_uid in db['from']:
+            db['from'][from_uid] += 1
+        else:
+            db['from'][from_uid] = 1
 
 
 class ReplyTop:

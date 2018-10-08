@@ -1,5 +1,7 @@
 # coding=UTF-8
+import logging
 import typing
+from threading import Lock
 
 from sqlalchemy import Column, Integer, BigInteger, Boolean, func
 
@@ -7,7 +9,8 @@ from src.config import CONFIG
 from src.utils.cache import USER_CACHE_EXPIRE
 from src.utils.cache import cache
 from src.utils.db import Base, add_to_db, retry, session_scope
-from src.utils.logger import logger
+
+logger = logging.getLogger(__name__)
 
 
 class ChatUserDB(Base):
@@ -88,7 +91,8 @@ class ChatUserDB(Base):
 
     @classmethod
     @retry(logger=logger)
-    def get_user_chats(cls, uid: int, cids: typing.Optional[typing.List[int]] = None) -> typing.List[int]:
+    def get_user_chats(cls, uid: int, cids: typing.Optional[typing.List[int]] = None) -> \
+    typing.List[int]:
         config_cids = cids if cids else [int(c) for c in CONFIG.get('chats', [])]
         try:
             with session_scope() as db:
@@ -108,7 +112,8 @@ class ChatUserDB(Base):
     def update(cls, uid: int, cid: int, update, new_user: 'ChatUser'):
         try:
             with session_scope() as db:
-                user = db.query(ChatUserDB).filter(ChatUserDB.uid == uid).filter(ChatUserDB.cid == cid)
+                user = db.query(ChatUserDB).filter(ChatUserDB.uid == uid).filter(
+                    ChatUserDB.cid == cid)
                 # если запись обновилась
                 if user.update(update) > 0:
                     return
@@ -131,6 +136,8 @@ class ChatUser:
     """
     Список всех юзеров в конкретном чате, даже ливнувших.
     """
+    add_lock = Lock()
+    get_lock = Lock()
 
     def __init__(self, id=None, uid=None, cid=None, left=False):
         self.id = id
@@ -151,28 +158,24 @@ class ChatUser:
         )
 
     @classmethod
-    def add(cls, uid, cid, left=False):
+    def add(cls, uid: int, cid: int, left: bool = False) -> None:
         if uid == cache.get('bot_id'):
             return
-        new_user = ChatUser(uid=uid, cid=cid, left=left)
-        old_user = cls.get(uid, cid)
-        if old_user is not None:
-            update = {}
-            if old_user.left != left:
-                update['left'] = left
-            if update:
-                try:
-                    ChatUserDB.update(uid, cid, update, new_user)
-                except Exception as e:
-                    logger.error(e)
-                    return
-        else:
+        with cls.add_lock:
+            new_user = ChatUser(uid=uid, cid=cid, left=left)
+            old_user = cls.get(uid, cid)
             try:
-                ChatUserDB.add(new_user)
+                if old_user is not None:
+                    update = {}
+                    if old_user.left != left:
+                        update['left'] = left
+                    if update:
+                        ChatUserDB.update(uid, cid, update, new_user)
+                else:
+                    ChatUserDB.add(new_user)
+                cache.set(cls.__get_key(uid, cid), new_user, time=USER_CACHE_EXPIRE)
             except Exception as e:
                 logger.error(e)
-                return
-        cache.set(cls.__get_key(uid, cid), new_user, time=USER_CACHE_EXPIRE)
 
     @classmethod
     def get(cls, uid, cid) -> typing.Optional['ChatUser']:
@@ -183,10 +186,11 @@ class ChatUser:
                 return cls.copy(cached)
             return cached
         try:
-            chatuser = ChatUserDB.get(uid, cid)
-            if chatuser:
-                cache.set(cls.__get_key(uid, cid), chatuser, time=USER_CACHE_EXPIRE)
-                return chatuser
+            with cls.get_lock:
+                chatuser = ChatUserDB.get(uid, cid)
+                if chatuser:
+                    cache.set(cls.__get_key(uid, cid), chatuser, time=USER_CACHE_EXPIRE)
+                    return chatuser
         except Exception as e:
             logger.error(e)
         return None

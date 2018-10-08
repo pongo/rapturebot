@@ -1,24 +1,25 @@
 # coding=UTF-8
+import logging
+import re
 from functools import wraps
 from random import randint
-from typing import List, Tuple, Optional, Union
+from typing import List, Tuple, Optional
 
-import re
 import telegram
 from telegram.ext import run_async
-from telegram.utils.promise import Promise
 
 from src.config import CONFIG
 from src.modules.models.chat_user import ChatUser
 from src.modules.models.user import User
 from src.utils.cache import cache
 from src.utils.callback_helpers import get_callback_data
-from src.utils.logger import logger
 from src.utils.mwt import MWT
 from src.utils.telegram_helpers import telegram_retry
 
+logger = logging.getLogger(__name__)
 CACHE_PREFIX = 'spoiler'
 MODULE_NAME = CACHE_PREFIX
+
 
 def extend_initial_data(data: dict) -> dict:
     initial = {"name": CACHE_PREFIX, "module": MODULE_NAME}
@@ -49,17 +50,12 @@ class Guard:
             if len(ChatHelper.get_user_chats(uid)) == 0:
                 return
             return f(_cls, bot, update)
+
         return decorator
 
 
 class TelegramWrapper:
     chat_id = CONFIG['anon_chat_id']
-
-    @staticmethod
-    def __get_message_from_promise(promise: Union[Promise, telegram.Message]) -> telegram.Message:
-        if isinstance(promise, Promise):
-            return promise.result(timeout=20)
-        return promise
 
     @classmethod
     @telegram_retry(logger=logger, silence=True, default=None, title='spoiler_send_message')
@@ -71,15 +67,16 @@ class TelegramWrapper:
                      reply_to_message_id=None,
                      disable_web_page_preview=True) -> Optional[int]:
         if chat_id == 0:
-            return
+            return None
         reply_markup = cls.get_reply_markup(buttons)
-        message = cls.__get_message_from_promise(bot.send_message(
+        message = bot.send_message(
             chat_id,
             text,
             reply_markup=reply_markup,
             reply_to_message_id=reply_to_message_id,
             parse_mode=telegram.ParseMode.HTML,
-            disable_web_page_preview=disable_web_page_preview))
+            disable_web_page_preview=disable_web_page_preview,
+            timeout=20)
         return message.message_id
 
     @staticmethod
@@ -108,7 +105,7 @@ class Spoiler:
     callback_show = 'spoiler_show_click'
     callback_reply = 'spoiler_reply_click'
 
-    def __init__(self, uid: int, cid: int, header: str, body: str):
+    def __init__(self, uid: int, cid: int, header: str, body: str) -> None:
         self.uid = uid
         self.cid = cid
         self.header = header
@@ -132,7 +129,8 @@ class Spoiler:
     def show(self, bot: telegram.Bot, uid: int) -> bool:
         header = self.__get_header_text(self.uid, self.header)
         text = f'{header}\n\n{self.body}'
-        msg_id = TelegramWrapper.send_message(bot, text, chat_id=uid, disable_web_page_preview=False)
+        msg_id = TelegramWrapper.send_message(bot, text, chat_id=uid,
+                                              disable_web_page_preview=False)
         if not msg_id:
             return False
         return True
@@ -145,10 +143,13 @@ class Spoiler:
     #     Кроме того в самом сообщении "Пришлите ответ. Он отобразится как спойлер" нужно показывать кнопку отмены
 
     @classmethod
-    def on_show_click(cls, bot: telegram.Bot, m: telegram.Message, query: telegram.CallbackQuery, data) -> None:
+    def on_show_click(cls, bot: telegram.Bot, _: telegram.Update, query: telegram.CallbackQuery,
+                      data) -> None:
         spoiler: Spoiler = cache.get(cls.__get_key(data['spoiler_id']))
         if not spoiler:
-            bot.answer_callback_query(query.id, f"Ошибка. Не могу найти спойлер {data['spoiler_id']}", show_alert=True)
+            bot.answer_callback_query(query.id,
+                                      f"Ошибка. Не могу найти спойлер {data['spoiler_id']}",
+                                      show_alert=True)
             return
         bot.answerCallbackQuery(query.id, url=f"t.me/{bot.username}?start={query.data}")
         uid = query.from_user.id
@@ -156,7 +157,9 @@ class Spoiler:
             logger.info(f"[spoiler] {uid} can't show spoiler {spoiler.spoiler_id}")
             user = User.get(uid)
             username = '' if not user else user.get_username_or_link()
-            bot.send_message(query.message.chat_id, f'{username} Не могу отправить спойлер. Нажми Start в личке бота @{bot.username} и попробуй вновь', parse_mode=telegram.ParseMode.HTML)
+            bot.send_message(query.message.chat_id,
+                             f'{username} Не могу отправить спойлер. Нажми Start в личке бота @{bot.username} и попробуй вновь',
+                             parse_mode=telegram.ParseMode.HTML)
             return
         logger.info(f'[spoiler] {uid} show spoiler {spoiler.spoiler_id}')
 
@@ -251,8 +254,8 @@ class SpoilerHandlers:
         SpoilerCreator.text_handler(bot, update)
 
     @classmethod
-    @run_async
-    def callback_handler(cls, bot: telegram.Bot, update: telegram.Message, query: telegram.CallbackQuery, data) -> None:
+    def callback_handler(cls, bot: telegram.Bot, update: telegram.Update,
+                         query: telegram.CallbackQuery, data) -> None:
         if 'module' not in data or data['module'] != MODULE_NAME:
             return
         if data['value'] not in cls.callbacks:

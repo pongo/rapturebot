@@ -6,13 +6,14 @@ import telegram
 from telegram.ext import run_async
 
 from src.config import CONFIG, CMDS
-from src.handlers import chat_guard, collect_stats, command_guard, CommandConfig
+from src.utils.handlers_decorators import chat_guard, collect_stats, command_guard
+from src.utils.handlers_helpers import CommandConfig
 
 
+@run_async
 @chat_guard
 @collect_stats
 @command_guard
-@run_async
 def time_handler(bot: telegram.Bot, update: telegram.Update) -> None:
     chat_id = update.message.chat_id
     if str(chat_id) not in CONFIG['time']:
@@ -21,7 +22,9 @@ def time_handler(bot: telegram.Bot, update: telegram.Update) -> None:
         return
 
     # получаем время
-    cities: typing.Iterable[typing.Tuple[str, arrow.Arrow]] = ((name, arrow.now(timezone)) for name, timezone in CONFIG['time'][str(chat_id)])
+    cities: typing.Iterable[typing.Tuple[str, arrow.Arrow]] = ((name, arrow.now(timezone)) for
+                                                               name, timezone in
+                                                               CONFIG['time'][str(chat_id)])
 
     # сортируем города по времени
     command_config = CommandConfig(chat_id, CMDS['common']['time']['name'])

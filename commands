@@ -134,6 +134,7 @@
     "alllove": ["alove", "allove", "alllove", "allllove", "alllllove"],
     "khaleesi": ["khaliisy", "khalisy", "khalisi", "khaliisi", "khalesi", "khaleesy", "khalesy"],
     "huyamda": ["huyambda", "huyamba"],
-    "weather": ["p", "w", "pogoda"]
+    "weather": ["p", "w", "pogoda"],
+    "music": ["m"]
   }
 }

@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, Mock
 
 import telegram
 
-from src.handlers_m.khaleesi import send_khaleesi
+from src.handlers.khaleesi import send_khaleesi
 from src.modules.khaleesi import Khaleesi
 
 

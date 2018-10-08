@@ -1,22 +1,24 @@
 # coding=UTF-8
 
 import enum
+import logging
 import typing
 from datetime import datetime, timedelta
+from threading import Lock
 from time import sleep
 
 import sqlalchemy
 import telegram
 from sqlalchemy import Column, Integer, Text, BigInteger, DateTime
 
-from src.config import CONFIG
+from src.config import CONFIG, get_config_chats
 from src.modules.models.chat_user import ChatUser
 from src.modules.models.user import User
 from src.utils.cache import cache, TWO_YEARS, FEW_DAYS, pure_cache
 from src.utils.db import Base, add_to_db, session_scope, retry
-from src.utils.logger import logger
-from src.utils.misc import get_int
 from src.utils.telegram_helpers import telegram_retry
+
+logger = logging.getLogger(__name__)
 
 
 class LeaveCollectorDB(Base):
@@ -40,7 +42,8 @@ class LeaveCollectorDB(Base):
     @retry(logger=logger)
     def add(uid, cid, date, from_uid, leave_type):
         try:
-            add_to_db(LeaveCollectorDB(uid=uid, cid=cid, date=date, from_uid=from_uid, leave_type=leave_type))
+            add_to_db(LeaveCollectorDB(uid=uid, cid=cid, date=date, from_uid=from_uid,
+                                       leave_type=leave_type))
         except Exception as e:
             logger.error(e)
             raise Exception(f"Can't add leave_collect {uid}:{cid} to DB")
@@ -95,12 +98,16 @@ class LeaveCollectorDB(Base):
             logger.error(e)
             return []
 
+
 class LeaveCollector:
     """
     Здесь хранятся все входы и ливы из чата.
     """
+    add_lock = Lock()
+    update_ktolivnul_lock = Lock()
 
-    def __init__(self, id=None, uid=None, cid=None, date=None, leave_type=None, from_uid=None, reason=None):
+    def __init__(self, id=None, uid=None, cid=None, date=None, leave_type=None, from_uid=None,
+                 reason=None):
         self.id = id
         self.uid = uid
         self.cid = cid
@@ -125,12 +132,14 @@ class LeaveCollector:
             username = f' @{user.username}'
         return f"<b>{user.fullname}</b>{username}".strip()
 
-    @staticmethod
-    def __add(uid, cid, date, from_uid, leave_type):
-        try:
-            LeaveCollectorDB.add(uid=uid, cid=cid, date=date, from_uid=from_uid, leave_type=leave_type)
-        except Exception as e:
-            logger.error(e)
+    @classmethod
+    def __add(cls, uid, cid, date, from_uid, leave_type):
+        with cls.add_lock:
+            try:
+                LeaveCollectorDB.add(uid=uid, cid=cid, date=date, from_uid=from_uid,
+                                     leave_type=leave_type)
+            except Exception as e:
+                logger.error(e)
 
     @staticmethod
     def add_invite(uid, cid, date, from_uid):
@@ -150,7 +159,8 @@ class LeaveCollector:
 
     @classmethod
     def get_leaves(cls, cid, days=3, return_id=False):
-        days_ago = (datetime.today() - timedelta(days=days)).replace(hour=0, minute=0, second=0, microsecond=0)
+        days_ago = (datetime.today() - timedelta(days=days)).replace(hour=0, minute=0, second=0,
+                                                                     microsecond=0)
         uids: typing.Set[int] = set(LeaveCollectorDB.get_leaves(cid, days_ago.strftime('%Y%m%d')))
 
         # некоторые ливают, а потом возвращаются без сообщений о входе.
@@ -167,7 +177,8 @@ class LeaveCollector:
 
     @classmethod
     def get_joins(cls, cid, days=3):
-        days_ago = (datetime.today() - timedelta(days=days)).replace(hour=0, minute=0, second=0, microsecond=0)
+        days_ago = (datetime.today() - timedelta(days=days)).replace(hour=0, minute=0, second=0,
+                                                                     microsecond=0)
         uids = LeaveCollectorDB.get_joins(cid, days_ago.strftime('%Y%m%d'))
         return [cls.__format_uid(uid, show_username=False) for uid in uids]
 
@@ -177,19 +188,21 @@ class LeaveCollector:
 
     @classmethod
     def update_ktolivnul(cls, chat_id: int) -> None:
-        chat_uids_ktolivnul: typing.Set[int] = set([int(x) for x in pure_cache.get(f'ktolivnul:{chat_id}', '').split(',') if x != ''])
-        if len(chat_uids_ktolivnul) == 0:
-            return
-        chat_uids_db: typing.Set[int] = set([x.uid for x in ChatUser.get_all(chat_id)])
-        leaved_uids = chat_uids_db - chat_uids_ktolivnul
-        if len(leaved_uids) == 0:
-            return
-        ktolivnul_uid = CONFIG['ktolivnul']
-        now = datetime.now()
-        for uid in leaved_uids:
-            ChatUser.add(uid, chat_id, left=True)
-            LeaveCollector.add_kick(uid, chat_id, now, ktolivnul_uid)
-            logger.info(f'[update_ktolivnul] kick {chat_id}:{uid}')
+        with cls.update_ktolivnul_lock:
+            chat_uids_ktolivnul = set(
+                [int(x) for x in pure_cache.get(f'ktolivnul:{chat_id}', '').split(',') if x != ''])
+            if len(chat_uids_ktolivnul) == 0:
+                return
+            chat_uids_db = set([x.uid for x in ChatUser.get_all(chat_id)])
+            leaved_uids = chat_uids_db - chat_uids_ktolivnul
+            if len(leaved_uids) == 0:
+                return
+            ktolivnul_uid = CONFIG.get('ktolivnul', 0)
+            now = datetime.now()
+            for uid in leaved_uids:
+                ChatUser.add(uid, chat_id, left=True)
+                LeaveCollector.add_kick(uid, chat_id, now, ktolivnul_uid)
+                logger.info(f'[update_ktolivnul] kick {chat_id}:{uid}')
 
 
 class LeftUsersChecker:
@@ -202,19 +215,19 @@ class LeftUsersChecker:
 
     @classmethod
     def check(cls, bot: telegram.Bot) -> None:
-        for chat_id_str, chat_options in CONFIG["chats"].items():
-            chat_id = get_int(chat_id_str)
+        for chat in get_config_chats():
             # это нужно только для супергрупп, поэтому сперва проверяем, супергруппа ли это
-            if not cls.__is_supergroup(bot, chat_id):
+            if not cls.__is_supergroup(bot, chat.chat_id):
                 continue
             # проверяем, не кикнули ли нас из этой супергруппы
-            if not cls.__is_we_still_in_chat(bot, chat_id):
+            if not cls.__is_we_still_in_chat(bot, chat.chat_id):
                 continue
             # используем данные ктоливнулыча
-            LeaveCollector.update_ktolivnul(chat_id)
+            LeaveCollector.update_ktolivnul(chat.chat_id)
 
     @classmethod
-    def __get_chat_title_first_word(cls, bot: telegram.Bot, chat_id: int, prefix_if_not_empty: str = '') -> str:
+    def __get_chat_title_first_word(cls, bot: telegram.Bot, chat_id: int,
+                                    prefix_if_not_empty: str = '') -> str:
         cache_key = f'chat_title_first_word:{chat_id}'
         cached = cache.get(cache_key)
         if cached:
@@ -247,11 +260,12 @@ class LeftUsersChecker:
             return is_supergroup
         except telegram.error.TelegramError as e:
             if e.message == 'Chat not found':
-                logger.warning(f'[check_left_users] Chat {chat_id} not found (probably bot don\' have access, but chat is listed in config.json)')
+                logger.warning(
+                    f'[check_left_users] Chat {chat_id} not found (probably bot don\' have access, but chat is listed in config.json)')
             else:
-                logger.warning(f'[check_left_users] Chat {chat_id} error: {e.message}')
+                logger.warning(f'[check_left_users] Chat {chat_id} error: {e}')
         except Exception as e:
-            logger.warning(f'[leave_check.__is_supergroup] cid {chat_id}. Exception {e.message}')
+            logger.warning(f'[leave_check.__is_supergroup] cid {chat_id}. Exception {e}')
         return False
 
     @classmethod
@@ -261,7 +275,7 @@ class LeftUsersChecker:
             cls.__get_chat(bot, chat_id)
             return True
         except telegram.error.TelegramError as e:
-            logger.warning(f'[check_left_users double check] Chat {chat_id} error: {e.message}')
+            logger.warning(f'[check_left_users double check] Chat {chat_id} error: {e}')
         except Exception as e:
-            logger.warning(f'[leave_check.__is_we_still_in_chat] cid {chat_id}. Exception {e.message}')
+            logger.warning(f'[leave_check.__is_we_still_in_chat] cid {chat_id}. Exception {e}')
         return False

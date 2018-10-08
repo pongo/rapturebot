@@ -16,7 +16,7 @@ sys.modules['src.utils.db'] = MagicMock()
 
 from src.modules.models.user import User
 from src.modules.models.user_stat import UserStat
-from src.handlers_m.topmat import get_header_stats, get_mat_users_msg_stats, get_mat_users_words_stats, get_words_stats, \
+from src.handlers.topmat import get_header_stats, get_mat_users_msg_stats, get_mat_users_words_stats, get_words_stats, \
     format_msg, set_top_mater
 from src.utils.cache import cache
 

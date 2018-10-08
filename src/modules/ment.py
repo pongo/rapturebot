@@ -1,7 +1,7 @@
 # coding=UTF-8
 import datetime
 import random
-from typing import Optional, List, Type, Dict
+from typing import Optional, List, Type, Dict, Union
 
 import pytils
 import telegram
@@ -42,8 +42,10 @@ class Command:
         self.args = args or []
         self.target_is_reply = target_is_reply
 
-    def __eq__(self, other: Optional['Command']) -> bool:
+    def __eq__(self, other: Union[None, object, 'Command']) -> bool:
         if other is None:
+            return False
+        if not isinstance(other, Command):
             return False
         return all((
             self.chat_id == other.chat_id,
@@ -88,7 +90,7 @@ def parse_command(message: telegram.Message) -> Command:
     return result
 
 
-def get_hour(now: datetime) -> str:
+def get_hour(now: datetime.datetime) -> str:
     """
     Отсылка к Пратчетту.
     """
@@ -113,7 +115,8 @@ def get_random_user(chat_id: int, user_cls: Type[User], chat_user_cls: Type[Chat
     if chat_user is None:
         return text
     user = user_cls.get(chat_user.uid)
-    return f'Даю голову на отсечение, {user.get_username_or_link()} — не мент!'
+    username = user.get_username_or_link() if user else str(chat_user.uid)
+    return f'Даю голову на отсечение, {username} — не мент!'
 
 
 def send_message(bot, cmd, text) -> None:

@@ -874,16 +874,11 @@ def weekly_stats(bot: telegram.Bot, _) -> None:
     # эта штука запускается в понедельник ночью, поэтому мы откладываем неделю назад
     prev_monday = (today - timedelta(days=today.weekday() + 7)).replace(hour=0, minute=0, second=0,
                                                                         microsecond=0)
-    for chat_id_str, chat_options in CONFIG["chats"].items():
-        if not is_command_enabled_for_chat(chat_id_str, 'weeklystat'):
+    for chat in config.get_config_chats():
+        if not is_command_enabled_for_chat(chat.chat_id, 'weeklystat'):
             continue
-        try:
-            chat_id = int(chat_id_str)
-            disabled_commands = chat_options.get('disabled_commands', [])
-            enabled_commands = chat_options.get('enabled_commands', [])
-            send_weekly_for_chat(bot, chat_id, disabled_commands, enabled_commands, prev_monday)
-        except Exception as e:
-            logger.error(e)
+        send_weekly_for_chat(bot, chat.chat_id, chat.disabled_commands, chat.enabled_commands,
+                             prev_monday)
 
 
 def send_weekly_for_chat(bot: telegram.Bot, chat_id: int, disabled_commands: typing.List[str],

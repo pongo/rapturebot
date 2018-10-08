@@ -4,7 +4,7 @@ from datetime import datetime
 
 import telegram
 
-from src.config import CONFIG
+from src.config import get_config_chats
 from src.modules.dayof.fsb_day import FSBDay
 from src.modules.dayof.valentine_day import ValentineDay
 from src.utils.telegram_helpers import dsp
@@ -13,9 +13,8 @@ from src.utils.telegram_helpers import dsp
 def new_year(bot: telegram.Bot):
     if datetime.today().strftime("%m-%d") != '01-01':
         return
-    for chat_id_str, chat_options in CONFIG["chats"].items():
-        chat_id = int(chat_id_str)
-        dsp(_send_new_year, bot, chat_id)
+    for chat in get_config_chats():
+        dsp(_send_new_year, bot, chat.chat_id)
 
 
 def _send_new_year(bot, chat_id):

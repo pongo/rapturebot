@@ -10,13 +10,12 @@ import sqlalchemy
 import telegram
 from sqlalchemy import Column, Integer, Text, BigInteger, DateTime
 
-from src.config import CONFIG
+from src.config import CONFIG, get_config_chats
 from src.modules.models.chat_user import ChatUser
 from src.modules.models.user import User
 from src.utils.cache import cache, TWO_YEARS, FEW_DAYS, pure_cache
 from src.utils.db import Base, add_to_db, session_scope, retry
 from src.utils.logger import logger
-from src.utils.misc import get_int
 from src.utils.telegram_helpers import telegram_retry
 
 
@@ -208,16 +207,15 @@ class LeftUsersChecker:
 
     @classmethod
     def check(cls, bot: telegram.Bot) -> None:
-        for chat_id_str, chat_options in CONFIG["chats"].items():
-            chat_id = get_int(chat_id_str)
+        for chat in get_config_chats():
             # это нужно только для супергрупп, поэтому сперва проверяем, супергруппа ли это
-            if not cls.__is_supergroup(bot, chat_id):
+            if not cls.__is_supergroup(bot, chat.chat_id):
                 continue
             # проверяем, не кикнули ли нас из этой супергруппы
-            if not cls.__is_we_still_in_chat(bot, chat_id):
+            if not cls.__is_we_still_in_chat(bot, chat.chat_id):
                 continue
             # используем данные ктоливнулыча
-            LeaveCollector.update_ktolivnul(chat_id)
+            LeaveCollector.update_ktolivnul(chat.chat_id)
 
     @classmethod
     def __get_chat_title_first_word(cls, bot: telegram.Bot, chat_id: int, prefix_if_not_empty: str = '') -> str:

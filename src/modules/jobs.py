@@ -1,4 +1,5 @@
 # coding=UTF-8
+from time import sleep
 
 import telegram
 from datetime import datetime
@@ -11,6 +12,7 @@ from src.modules.models.leave_collector import LeaveCollector
 from src.modules.models.reply_top import ReplyDumper
 from src.modules.weather import send_alert_if_full_moon
 from src.utils.cache import pure_cache, FEW_DAYS
+from src.utils.misc import get_int
 
 
 @run_async
@@ -20,13 +22,13 @@ def daily_midnight(bot: telegram.Bot, _):
 
     # для каждого чата
     for chat_id_str, chat_options in CONFIG["chats"].items():
-        chat_id = int(chat_id_str)
-        # if 'all_cmd' in chat_options and chat_options['all_cmd']:
-        #     send_alert_if_full_moon(bot, chat_id)
-        #     continue
+        chat_id = get_int(chat_id_str)
+        if chat_id is None:
+            continue
         if 'enabled_commands' in chat_options:
             if 'daily_full_moon_check' in chat_options['enabled_commands']:
                 send_alert_if_full_moon(bot, chat_id)
+                sleep(0.5)
 
     for cid in CONFIG["weekly_stats_chats_ids"]:
         ReplyDumper.dump(cid)

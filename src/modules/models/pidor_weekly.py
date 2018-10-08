@@ -50,8 +50,9 @@ class PidorWeekly:
         cid = message.chat_id
         entities = message.parse_entities()
 
-        if cls.__has_pidor(msg):
-            cls.__add(uid, cid)
+        if not cls.__has_pidor(msg):
+            return
+        cls.__add(uid, cid)
 
         if message.reply_to_message is not None:
             to_uid = message.reply_to_message.from_user.id

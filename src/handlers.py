@@ -841,7 +841,7 @@ def send_igorweekly(bot: telegram.Bot, chat_id: int, prev_monday: datetime):
         logger.error(f'None user {uid}')
         return
     cache.set(f'weekgoal:{chat_id}:igorweekly_uid', user.uid, time=MONTH)
-    igorem = 'ингой' if user.female else 'игорем'
+    igorem = 'игорессой' if user.female else 'игорем'
     header = f"И {igorem} недели становится... <a href='tg://user?id={user.uid}'>👯‍♂</a> \n\n"
     body = "🎉     <b>{}</b>    🎉\n\nУра!".format(user.fullname)
     try:

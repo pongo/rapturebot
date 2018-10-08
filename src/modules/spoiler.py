@@ -145,7 +145,7 @@ class Spoiler:
     #     Кроме того в самом сообщении "Пришлите ответ. Он отобразится как спойлер" нужно показывать кнопку отмены
 
     @classmethod
-    def on_show_click(cls, bot: telegram.Bot, m: telegram.Message, query: telegram.CallbackQuery, data) -> None:
+    def on_show_click(cls, bot: telegram.Bot, _: telegram.Update, query: telegram.CallbackQuery, data) -> None:
         spoiler: Spoiler = cache.get(cls.__get_key(data['spoiler_id']))
         if not spoiler:
             bot.answer_callback_query(query.id, f"Ошибка. Не могу найти спойлер {data['spoiler_id']}", show_alert=True)
@@ -251,7 +251,7 @@ class SpoilerHandlers:
         SpoilerCreator.text_handler(bot, update)
 
     @classmethod
-    def callback_handler(cls, bot: telegram.Bot, update: telegram.Message, query: telegram.CallbackQuery, data) -> None:
+    def callback_handler(cls, bot: telegram.Bot, update: telegram.Update, query: telegram.CallbackQuery, data) -> None:
         if 'module' not in data or data['module'] != MODULE_NAME:
             return
         if data['value'] not in cls.callbacks:

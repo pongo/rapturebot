@@ -2,7 +2,8 @@
 import json
 import os
 from multiprocessing.dummy import Pool as ThreadPool
-from typing import Union
+from threading import Lock
+from typing import Union, Optional
 
 import arrow
 import requests
@@ -14,6 +15,7 @@ from src.handlers import command_guard, chat_guard, collect_stats
 from src.utils.cache import cache
 
 TMP_DIR = '../../tmp/weather/'
+full_moon_lock = Lock()
 
 
 @chat_guard
@@ -64,17 +66,36 @@ def send_weather_now(bot: telegram.Bot, update: telegram.Update) -> None:
 
 @run_async
 def send_alert_if_full_moon(bot: telegram.Bot, chat_id: int) -> None:
+    """
+    Сегодня полнолуние? Оповещаем чат.
+    """
+    # т.к. используется run_async, то мы можем одновременно вызвать этот метод.
+    # но мы не хотим делать несколько одинаковых запросов к апи.
+    # поэтому используем блокировку и сохраняем результат запроса в редис.
+    with full_moon_lock:
+        full_moon: Optional[bool] = cache.get('weather:full_moon', None)
+        if full_moon is None:
+            full_moon = full_moon_request()
+            cache.set('weather:full_moon', full_moon, time=6 * 60 * 60)  # 6 hours
+    if full_moon:
+        bot.send_message(chat_id, "Сегодня:\n\nПОЛНОЛУНИЕ 🌑 БЕРЕГИСЬ ОБОРОТНЕЙ", parse_mode='HTML')
+
+
+def full_moon_request() -> bool:
+    """
+    Обращается в интернет, чтобы узнать полнолуние ли.
+    """
     response = request_wu('Russia/Moscow')
     if response['error']:
-        return
+        return False
     try:
         js = response['json']
         # noinspection PyTypeChecker
         if js['moon_phase']['phaseofMoon'] == "Полнолуние":
-            bot.send_message(chat_id, "Сегодня:\n\nПОЛНОЛУНИЕ 🌑 БЕРЕГИСЬ ОБОРОТНЕЙ",
-                             parse_mode=telegram.ParseMode.HTML)
+            return True
     except Exception:
         pass
+    return False
 
 
 def request_wu(city_code: str):

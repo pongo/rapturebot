@@ -21,7 +21,7 @@ from src.utils.repair import repair_bot
 from src.web.server import start_server
 
 
-def error(bot, update, error):
+def error(_, update, error):
     try:
         raise error
     except telegram.error.TimedOut:
@@ -58,7 +58,7 @@ def start_bot():
     """
     q = mq.MessageQueue(all_burst_limit=29, all_time_limit_ms=1017)
     bot = MQBot(CONFIG['bot_token'], mqueue=q, request=get_request_data())
-    updater = Updater(bot=bot, workers=32)
+    updater = Updater(bot=bot, workers=50)
     dp = updater.dispatcher
     dp.logger.addHandler(CriticalHandler())  # в логгер библиотеки добавляем свой обработчик
     add_chat_handlers(dp)
@@ -89,7 +89,7 @@ def start_bot():
 
 
 def get_request_data():
-    con_pool_size = 20
+    con_pool_size = 54
     read_timeout = 10.
     connect_timeout = 10.
     if 'telegram_proxy' not in CONFIG:

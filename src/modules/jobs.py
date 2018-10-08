@@ -14,7 +14,7 @@ from src.utils.cache import pure_cache, FEW_DAYS
 
 
 @run_async
-def daily_midnight(bot: telegram.Bot, job):
+def daily_midnight(bot: telegram.Bot, _):
     # особый режим сегодняшнего дня
     DayOfManager.midnight(bot)
 
@@ -32,11 +32,10 @@ def daily_midnight(bot: telegram.Bot, job):
         ReplyDumper.dump(cid)
 
 @run_async
-def daily_afternoon(bot: telegram.Bot, job):
+def daily_afternoon(bot: telegram.Bot, _):
     DayOfManager.afternoon(bot)
 
-
-def lefts_check(bot: telegram.Bot, job):
+def lefts_check(bot: telegram.Bot, _):
     LeaveCollector.check_left_users(bot)
 
 def health_log(*_):

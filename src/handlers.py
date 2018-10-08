@@ -1454,32 +1454,7 @@ def message(bot, update):
     IgorWeekly.parse_message(update.message)
     # WeekWord.add(update.message.text, update.message.chat_id)
     mat_notify(bot, update)
-    tema_warning(bot, update)
     Bayanometer.check(bot, update)
-
-
-def tema_warning(bot: telegram.Bot, update: telegram.Update):
-    tema_uid = CONFIG.get('tema_uid', None)
-    if tema_uid is None:
-        return
-    if tema_uid != update.message.from_user.id:
-        return
-    if update.message.text is None:
-        return
-
-    delayed = cache.get('tema_warning:delayed')
-    if delayed:
-        return
-    cache.set('tema_warning:delayed', True, time=(2 * 60 * 60))  # 2 часа
-
-    try:
-        import requests
-        anekdot = requests.get(CONFIG['anecdotica_url']).text
-        msg = f'Тёма, ты такой юморист. Вот тебе анекдот:\n\n{anekdot}'
-    except Exception:
-        msg = random.choice(['Это Тема пишет', 'Тем, ну хватит', 'Тема, шутка зашла слишком далеко', 'Тёма, ты чего такой грустный?', 'Очень смешно, Артем', 'Тём, ну перестань'])
-
-    bot.send_message(update.message.chat_id, msg, reply_to_message_id=update.message.message_id)
 
 
 @run_async

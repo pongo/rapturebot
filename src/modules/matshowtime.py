@@ -1,4 +1,6 @@
 # coding=UTF-8
+import logging
+import time
 from random import randint
 from threading import Lock
 from typing import List, Union, Optional, Tuple
@@ -10,9 +12,9 @@ from src.config import CONFIG
 from src.modules.antimat import Antimat
 from src.utils.cache import pure_cache, TWO_YEARS, cache, MONTH
 from src.utils.callback_helpers import get_callback_data
-from src.utils.logger import logger
-from src.utils.telegram_helpers import telegram_retry
+from src.utils.telegram_helpers import telegram_retry, dsp
 
+logger = logging.getLogger(__name__)
 CACHE_PREFIX = 'matshowtime'
 
 
@@ -85,7 +87,7 @@ class TelegramWrapper:
     def edit_buttons(cls, bot: telegram.Bot, message_id: int, buttons, chat_id: int) -> None:
         reply_markup = cls.get_reply_markup(buttons)
         try:
-            bot.edit_message_reply_markup(chat_id, message_id, reply_markup=reply_markup)
+            bot.edit_message_reply_markup(chat_id, message_id, reply_markup=reply_markup, timeout=5)
             # cache.set(f'{CACHE_PREFIX}:messages:{chat_id}:{message_id}:buttons', buttons, time=USER_CACHE_EXPIRE)
         except Exception as e:
             logger.error(f"[{CACHE_PREFIX}] Can't edit buttons in {chat_id}. Exception: {e}")
@@ -205,8 +207,18 @@ class ChannelMessage:
         likes, dislikes = poll.get_count()
         msg.likes = likes
         msg.dislikes = dislikes
+        dsp(cls.__update_buttons_and_answer, bot, msg, query, text)
+
+    @classmethod
+    def __update_buttons_and_answer(cls, bot, msg, query, text):
+        start_time = time.time()
         msg.update_buttons(bot)
-        bot.answer_callback_query(query.id, text)
+        try:
+            bot.answer_callback_query(query.id, text)
+        except Exception:
+            pass
+        elapsed_time = time.time() - start_time
+        logger.info(f'update buttons finished in {int(elapsed_time * 1000)} ms')
 
     def __prepare_text(self) -> str:
         upper_words = ', '.join(self.words).upper()

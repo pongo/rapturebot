@@ -38,7 +38,7 @@ from src.modules.random_khaleesi import RandomKhaleesi
 from src.modules.reduplicator import reduplicate
 from src.modules.spoiler import SpoilerHandlers
 from src.utils.cache import cache, TWO_DAYS, TWO_YEARS, USER_CACHE_EXPIRE, MONTH
-from src.utils.handlers_helpers import is_cmd_delayed
+from src.utils.handlers_helpers import is_cmd_delayed, is_command_enabled_for_chat
 from src.utils.misc import get_int
 from src.utils.misc import weighted_choice
 from src.utils.telegram_helpers import get_chat_admins
@@ -133,22 +133,6 @@ def check_user_is_plohish(update):
     cmd_name = get_command_name(update.message.text)
     disabled = cache.get(f'plohish_cmd:{chat_id}:{user_id}:{cmd_name}')
     if disabled:
-        return True
-    return False
-
-
-def is_command_enabled_for_chat(chat_id, cmd_name: typing.Optional[str]) -> bool:
-    if cmd_name is None:
-        return True
-    chat_id_str = str(chat_id)
-    if chat_id_str not in CONFIG["chats"]:
-        return False
-    chat_options = CONFIG["chats"][chat_id_str]
-    if "enabled_commands" in chat_options and cmd_name in chat_options["enabled_commands"]:
-        return True
-    if "disabled_commands" in chat_options and cmd_name in chat_options["disabled_commands"]:
-        return False
-    if "all_cmd" in chat_options and chat_options["all_cmd"]:
         return True
     return False
 

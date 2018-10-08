@@ -1271,7 +1271,6 @@ def ducks_trigger(bot: telegram.Bot, chat_id: int, msg_lower: str) -> None:
         bot.send_message(chat_id, sign * ducks)
 
 
-@run_async
 def photo_reactions(bot: telegram.Bot, update: telegram.Update, img_url=None):
     """
     Вычисляем объекты на фотке.
@@ -1284,13 +1283,20 @@ def photo_reactions(bot: telegram.Bot, update: telegram.Update, img_url=None):
     if config.google_vision_client is None:
         return
 
-    chat_id = update.message.chat_id
-    if not is_command_enabled_for_chat(chat_id, 'photo_reactions'):
+    if not is_command_enabled_for_chat(update.message.chat_id, 'photo_reactions'):
         return
 
     key_media_group = f'media_group_reacted:{update.message.media_group_id}'
     if update.message.media_group_id and cache.get(key_media_group):
         return
+
+    call_cats_vision_api(bot, update, key_media_group, img_url)
+
+
+@run_async
+def call_cats_vision_api(bot: telegram.Bot, update: telegram.Update, key_media_group: str,
+                         img_url=None):
+    chat_id = update.message.chat_id
 
     # если урл картинки не задан, то сами берем самую большую фотку из сообщения
     # гугл апи, почему-то, перестал принимать ссылки телеги, нам приходится самим загружать ему фото
@@ -1320,7 +1326,8 @@ def photo_reactions(bot: telegram.Bot, update: telegram.Update, img_url=None):
         return
 
     # если на фото кот
-    cat = any(re.search(r"\bcats?\b", label.description, re.IGNORECASE) for label in response.label_annotations)
+    cat = any(re.search(r"\bcats?\b", label.description, re.IGNORECASE) for label in
+              response.label_annotations)
     if cat:
         logger.debug(f"[google vision] cat found")
         if update.message.media_group_id:
@@ -1328,7 +1335,8 @@ def photo_reactions(bot: telegram.Bot, update: telegram.Update, img_url=None):
                 return
             cache.set(key_media_group, True, time=TWO_DAYS)
         msg_id = update.message.message_id
-        bot.sendMessage(chat_id, CONFIG.get("cat_tag", "Это же кошак 🐈"), reply_to_message_id=msg_id)
+        bot.sendMessage(chat_id, CONFIG.get("cat_tag", "Это же кошак 🐈"),
+                        reply_to_message_id=msg_id)
         return
     logger.debug(f"[google vision] cat not found")
 

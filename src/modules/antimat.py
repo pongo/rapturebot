@@ -2,8 +2,7 @@
 
 import re
 from functools import partial
-from typing import Iterable
-
+from typing import Iterable, Optional
 
 extended_filter_enabled = False  # если True, то проверяем не только мат, но и оскорбления, ругательства, etc
 
@@ -46,7 +45,7 @@ class ObsceneRegexp:
         'ю': 'ю',
         'я': 'я',
     }
-    ru_variants_of_letter: partial = None
+    ru_variants_of_letter: Optional[partial] = None
 
     @classmethod
     def variants_of_letter(cls, alphabet, letter):

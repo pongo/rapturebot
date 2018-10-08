@@ -7,11 +7,10 @@ import textwrap
 from datetime import datetime
 from functools import wraps
 from random import randint
-from typing import Optional, Union, List, Tuple
+from typing import Optional, List, Tuple
 
 import telegram
 from pytils.numeral import get_plural
-from telegram.ext import run_async
 
 from src.config import CONFIG
 from src.modules.dayof.helper import set_today_special
@@ -19,9 +18,9 @@ from src.modules.models.chat_user import ChatUser
 from src.modules.models.user import User
 from src.utils.cache import cache, USER_CACHE_EXPIRE, pure_cache
 from src.utils.callback_helpers import get_callback_data
-from src.utils.misc import retry
 from src.utils.logger import logger
 from src.utils.misc import get_int
+from src.utils.misc import retry
 from src.utils.text_helpers import lstrip_every_line
 
 CACHE_PREFIX = 'valentine_day'
@@ -973,9 +972,10 @@ class Web:
         card: Card = cache.get(f"{CACHE_PREFIX}:cards:{card_id}")
         if not card:
             return None
+        user = User.get(card.to_uid)
         return {
             "chat_id": card.chat_id,
-            "to_user": User.get(card.to_uid).get_username_or_link(),
+            "to_user": user.get_username_or_link() if user else str(card.to_uid),
             "text": card.orig_text,
             "heart_index": card.heart_index,
             "card_id": card.card_id,
@@ -1005,7 +1005,8 @@ class Web:
         result = []
         for uid in uids:
             updated.append(uid)
-            username = User.get(uid).get_username_or_link()
+            user = User.get(uid)
+            username = user.get_username_or_link() if User else str(uid)
             result.append({
                 "user": username,
                 "viewed": uid in viewed,

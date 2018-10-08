@@ -3,7 +3,7 @@ import logging
 import time
 from random import randint
 from threading import Lock
-from typing import List, Union, Optional, Tuple
+from typing import List, Optional, Tuple
 
 import telegram
 
@@ -81,7 +81,8 @@ class TelegramWrapper:
     def edit_buttons(cls, bot: telegram.Bot, message_id: int, buttons, chat_id: int) -> None:
         reply_markup = cls.get_reply_markup(buttons)
         try:
-            bot.edit_message_reply_markup(chat_id, message_id, reply_markup=reply_markup, timeout=20)
+            bot.edit_message_reply_markup(chat_id, message_id, reply_markup=reply_markup,
+                                          timeout=20)
             # cache.set(f'{CACHE_PREFIX}:messages:{chat_id}:{message_id}:buttons', buttons, time=USER_CACHE_EXPIRE)
         except Exception as e:
             logger.error(f"[{CACHE_PREFIX}] Can't edit buttons in {chat_id}. Exception: {e}")
@@ -109,7 +110,7 @@ class TelegramWrapper:
 
 
 class Poll:
-    def __init__(self, telegram_message_id: int):
+    def __init__(self, telegram_message_id: int) -> None:
         self.key_prefix = f'{CACHE_PREFIX}:polls:likes:{telegram_message_id}'
 
     def get_count(self) -> Tuple[int, int]:
@@ -144,10 +145,10 @@ class ChannelMessage:
     callback_like = 'matshowtime_like_click'
     callback_dislike = 'matshowtime_dislike_click'
 
-    def __init__(self, words: List[str]):
+    def __init__(self, words: List[str]) -> None:
         self.words = words
-        self.text = None
-        self.telegram_message_id = None
+        self.text: Optional[str] = None
+        self.telegram_message_id: Optional[int] = None
         self.id = self.__generate_id()
         self.likes = 0
         self.dislikes = 0
@@ -155,7 +156,8 @@ class ChannelMessage:
     def send(self, bot: telegram.Bot) -> None:
         self.text = self.__prepare_text()
         buttons = self.__get_buttons()
-        self.telegram_message_id = TelegramWrapper.send_message(bot, self.text, matshowtime.channel_id, buttons)
+        self.telegram_message_id = TelegramWrapper.send_message(bot, self.text,
+                                                                matshowtime.channel_id, buttons)
         if not self.telegram_message_id:
             logger.error(f"[{CACHE_PREFIX}] Can't send message {self.id}")
             return
@@ -169,7 +171,8 @@ class ChannelMessage:
         return cache.get(cls.__get_key(id))
 
     @classmethod
-    def on_poll_click(cls, bot: telegram.Bot, _: telegram.Update, query: telegram.CallbackQuery, data) -> None:
+    def on_poll_click(cls, bot: telegram.Bot, _: telegram.Update, query: telegram.CallbackQuery,
+                      data) -> None:
         msg: ChannelMessage = cache.get(cls.__get_key(data['id']))
         if not msg:
             bot.answer_callback_query(query.id, 'Время голосования истекло')
@@ -245,6 +248,9 @@ class ChannelMessage:
     def update_buttons(self, bot: telegram.Bot) -> None:
         self.__save()
         buttons = self.__get_buttons()
+        if self.telegram_message_id is None:
+            logger.error(f"Can't edit buttons")
+            return
         TelegramWrapper.edit_buttons(bot, self.telegram_message_id, buttons, matshowtime.channel_id)
 
 
@@ -305,7 +311,8 @@ class MatshowtimeHandlers:
         matshowtime.send(bot, mat_words)
 
     @classmethod
-    def callback_handler(cls, bot: telegram.Bot, update: telegram.Update, query: telegram.CallbackQuery, data) -> None:
+    def callback_handler(cls, bot: telegram.Bot, update: telegram.Update,
+                         query: telegram.CallbackQuery, data) -> None:
         if 'module' not in data or data['module'] != CACHE_PREFIX:
             return
         if data['value'] not in cls.callbacks:

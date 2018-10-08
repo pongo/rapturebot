@@ -6,7 +6,7 @@ import telegram
 from src.config import CONFIG
 from src.handlers_m.pipinder import send_pipinder
 from src.utils.cache import cache, FEW_DAYS
-from src.utils.handlers_helpers import chat_guard, collect_stats, command_guard
+from src.utils.handlers_decorators import chat_guard, collect_stats, command_guard
 from src.utils.time_helpers import today_str
 
 repinder_lock = Lock()

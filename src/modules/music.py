@@ -95,7 +95,9 @@ def find_users(message: telegram.Message, usernames: List[str]) -> Tuple[List[st
         uid = User.get_id_by_name(username)
         if uid is None:
             # на случай если вместо юзернейма указан цифровой user_id
-            uid = User.get(username)
+            user = User.get(username)
+            if user is not None:
+                uid = user.uid
         if uid is None:
             not_found_usernames.append(username)
             continue
@@ -106,6 +108,8 @@ def find_users(message: telegram.Message, usernames: List[str]) -> Tuple[List[st
     for entity, _ in message.parse_entities().items():
         if entity.type == 'text_mention':
             uid = entity.user.id
+            if uid is None:
+                continue
             user = User.get(uid)
             if user is None:
                 continue

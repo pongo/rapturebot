@@ -9,7 +9,7 @@ from src.config import CONFIG
 from src.modules.models.user import User
 from src.modules.models.user_stat import UserStat
 from src.utils.cache import pure_cache, cache, MONTH
-from src.utils.handlers_helpers import only_users_from_main_chat
+from src.utils.handlers_decorators import only_users_from_main_chat
 from src.utils.text_helpers import lstrip_every_line
 from src.utils.time_helpers import get_current_monday, get_date_monday
 
@@ -49,13 +49,13 @@ def get_header_stats(stats: List[Tuple[UserStat, User]]) -> dict:
     result = {
         'all_active_users': 0,
         'mat_users': 0,
-        'mat_users_percent': 0,
+        'mat_users_percent': 0.0,
         'all_msg': 0,
         'mat_msg': 0,
-        'mat_msg_percent': 0,
+        'mat_msg_percent': 0.0,
         'all_words': 0,
         'mat_words': 0,
-        'mat_words_percent': 0,
+        'mat_words_percent': 0.0,
     }
 
     for user_stat, user in stats:

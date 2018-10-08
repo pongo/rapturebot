@@ -19,7 +19,7 @@ class ReplyTopDBHelper:
     """
     Хелпер для работы с данными
     """
-    def __init__(self, name: str, delay=USER_CACHE_EXPIRE):
+    def __init__(self, name: str, delay=USER_CACHE_EXPIRE) -> None:
         self.name = name
         self.delay = delay
         self.lock = Lock()

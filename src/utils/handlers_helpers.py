@@ -1,17 +1,10 @@
 # coding=UTF-8
-from datetime import datetime, timedelta
-from functools import wraps
+import random
 from typing import Union, Optional
-
-import telegram
 
 from src.config import CMDS, VALID_CMDS, CONFIG
 from src.modules.khaleesi import Khaleesi
-from src.modules.models.chat_user import ChatUser
-from src.modules.models.reply_top import ReplyTop
-from src.modules.models.user import User
-from src.modules.models.user_stat import UserStat
-from src.utils.cache import cache, DAY
+from src.utils.cache import cache, MONTH
 from src.utils.logger import logger
 from src.utils.telegram_helpers import get_chat_admins
 
@@ -34,7 +27,7 @@ def is_command_enabled_for_chat(chat_id: Union[int, str], cmd_name: Optional[str
 
 
 class CommandConfig:
-    def __init__(self, chat_id: int, command_name: str):
+    def __init__(self, chat_id: int, command_name: str) -> None:
         self.config = None
         try:
             self.config = CONFIG['chats'][str(chat_id)]['commands_config'][command_name]
@@ -45,12 +38,6 @@ class CommandConfig:
         if not self.config:
             return None
         return self.config.get(key, None)
-
-
-def get_current_monday_str():
-    date = datetime.today()
-    monday = date - timedelta(days=date.weekday())
-    return monday.replace(hour=0, minute=0, second=0, microsecond=0).strftime("%Y%m%d")
 
 
 def is_valid_command(text):
@@ -105,83 +92,39 @@ def check_command_is_off(chat_id, cmd_name):
     return False
 
 
-def check_user_is_plohish(update):
-    chat_id = update.message.chat_id
-    user_id = update.message.from_user.id
-    cmd_name = get_command_name(update.message.text)
-    disabled = cache.get(f'plohish_cmd:{chat_id}:{user_id}:{cmd_name}')
-    if disabled:
-        return True
-    return False
-
-
-def collect_stats(f):
-    def decorator(bot: telegram.Bot, update: telegram.Update):
-        if update.message.from_user.is_bot:
-            return
-        User.add_user(update.message.from_user)
-        UserStat.add(UserStat.parse_message_stat(update.message.from_user.id,
-                                                 update.message.chat_id,
-                                                 update.message,
-                                                 update.message.parse_entities()))
-        ReplyTop.parse_message(update.message)
-        return f(bot, update)
-
-    return decorator
-
-
-def command_guard(f):
-    def decorator(bot, update):
-        chat_id = update.message.chat_id
-        cmd_name = get_command_name(update.message.text)
-        if not is_command_enabled_for_chat(chat_id, cmd_name):
-            return
-        if check_user_is_plohish(update):
-            return
-        if check_command_is_off(chat_id, cmd_name):
-            return
-        return f(bot, update)
-
-    return decorator
-
-
 def send_chat_access_denied(bot, update) -> None:
     chat_id = update.message.chat_id
+
+    # если чат есть в кеше, то значит мы уже писали в него приветствие
+    # и теперь нам нужно заняться драконизацией
     key = f'chat_guard:{chat_id}'
     cached = cache.get(key)
     if cached:
         text = update.message.text
         if text is None:
             return
+        # драконизируем 5% сообшений
+        if random.randint(1, 100) > 5:
+            return
         khaleesed = Khaleesi.khaleesi(text, last_sentense=True)
         try:
-            bot.send_message(chat_id, '{} 🐉'.format(khaleesed), reply_to_message_id=update.message.message_id)
+            bot.send_message(chat_id, '{} 🐉'.format(khaleesed),
+                             reply_to_message_id=update.message.message_id)
         except Exception:
             pass
         return
+
+    # новый неопознанный чат. пишем приветствие. плюс в логи инфу о чате
     logger.info(f'Chat {chat_id} not in config. Name: {update.message.chat.title}')
     try:
         admins = ', '.join((f'[{admin.user.id}] @{admin.user.username}' for admin in
                             bot.get_chat_administrators(update.message.chat_id)))
         logger.info(f'Chat {chat_id} admins: {admins}')
+        bot.send_message(chat_id,
+                         'Привет ребята 👋!\n\nВашего чата нет в конфиге, поэтому я могу лишь время от времени драконизировать🐉 ваши сообщения.\n\nСвяжитесь с моим админом, чтобы он добавил ваш чат в конфиг — тогда все функции будут доступны, а драконизация отключится.')
     except Exception:
         pass
-    cache.set(key, True, time=DAY)
-
-
-def chat_guard(f):
-    """
-    Проверяет, разрешено боту работать в этом чате
-    """
-
-    def decorator(bot: telegram.Bot, update):
-        chat_id_str = str(update.message.chat_id)
-        if chat_id_str not in CONFIG["chats"]:
-            send_chat_access_denied(bot, update)
-            return
-        return f(bot, update)
-
-    return decorator
+    cache.set(key, True, time=MONTH)
 
 
 def is_cmd_delayed(chat_id: int, cmd: str) -> bool:
@@ -192,12 +135,12 @@ def is_cmd_delayed(chat_id: int, cmd: str) -> bool:
     cache.set(delayed_key, True, 5 * 60)  # 5 минут
     return False
 
-def only_users_from_main_chat(f):
-    @wraps(f)
-    def decorator(bot: telegram.Bot, update: telegram.Update):
-        message = update.edited_message if update.edited_message else update.message
-        uid = message.from_user.id
-        if not ChatUser.get(uid, CONFIG['anon_chat_id']):
-            return
-        return f(bot, update)
-    return decorator
+
+def check_user_is_plohish(update):
+    chat_id = update.message.chat_id
+    user_id = update.message.from_user.id
+    cmd_name = get_command_name(update.message.text)
+    disabled = cache.get(f'plohish_cmd:{chat_id}:{user_id}:{cmd_name}')
+    if disabled:
+        return True
+    return False

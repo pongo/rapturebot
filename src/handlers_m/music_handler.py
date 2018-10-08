@@ -3,7 +3,7 @@
 import telegram
 
 from src.modules.music import music, musicdel, musicadd
-from src.utils.handlers_helpers import chat_guard, collect_stats, command_guard
+from src.utils.handlers_decorators import chat_guard, collect_stats, command_guard
 
 
 @chat_guard

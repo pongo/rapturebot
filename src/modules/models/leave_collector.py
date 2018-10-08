@@ -253,9 +253,9 @@ class LeftUsersChecker:
             if e.message == 'Chat not found':
                 logger.warning(f'[check_left_users] Chat {chat_id} not found (probably bot don\' have access, but chat is listed in config.json)')
             else:
-                logger.warning(f'[check_left_users] Chat {chat_id} error: {e.message}')
+                logger.warning(f'[check_left_users] Chat {chat_id} error: {e}')
         except Exception as e:
-            logger.warning(f'[leave_check.__is_supergroup] cid {chat_id}. Exception {e.message}')
+            logger.warning(f'[leave_check.__is_supergroup] cid {chat_id}. Exception {e}')
         return False
 
     @classmethod
@@ -265,7 +265,7 @@ class LeftUsersChecker:
             cls.__get_chat(bot, chat_id)
             return True
         except telegram.error.TelegramError as e:
-            logger.warning(f'[check_left_users double check] Chat {chat_id} error: {e.message}')
+            logger.warning(f'[check_left_users double check] Chat {chat_id} error: {e}')
         except Exception as e:
-            logger.warning(f'[leave_check.__is_we_still_in_chat] cid {chat_id}. Exception {e.message}')
+            logger.warning(f'[leave_check.__is_we_still_in_chat] cid {chat_id}. Exception {e}')
         return False

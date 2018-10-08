@@ -5,7 +5,7 @@ from typing import Optional, List
 import telegram
 
 from src.utils.cache import cache, FEW_DAYS, YEAR
-from src.utils.handlers_helpers import chat_guard, collect_stats, command_guard
+from src.utils.handlers_decorators import chat_guard, collect_stats, command_guard
 from src.utils.logger import logger
 from src.utils.telegram_helpers import telegram_retry
 from src.utils.time_helpers import today_str

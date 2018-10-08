@@ -1631,24 +1631,28 @@ def callback_last_word(bot, update, query, data):
             pass
 
 
-def callback_handler(bot, update):
+def callback_handler(bot: telegram.Bot, update: telegram.Update) -> None:
     query = update.callback_query
     data = cache.get(f'callback:{query.data}')
     if not data:
         return
     if data['name'] == '/off':
         bot.answerCallbackQuery(query.id)
-        return callback_off(bot, update, query, data)
+        callback_off(bot, update, query, data)
+        return
     if data['name'] == 'last_word':
         bot.answerCallbackQuery(query.id, url=f"t.me/{bot.username}?start={query.data}")
-        return callback_last_word(bot, update, query, data)
-    # if data['name'] == '/private_valya':
-    #     return callback_private_valya(bot, update, query, data)
+        callback_last_word(bot, update, query, data)
+        return
     if data['name'] == 'dayof':
-        return DayOfManager.callback_handler(bot, update, query, data)
+        DayOfManager.callback_handler(bot, update, query, data)
+        return
     if data['name'] == 'bayanometer_show_orig':
-        return Bayanometer.callback_handler(bot, update, query, data)
+        Bayanometer.callback_handler(bot, update, query, data)
+        return
     if data['name'] == 'spoiler':
-        return SpoilerHandlers.callback_handler(bot, update, query, data)
+        SpoilerHandlers.callback_handler(bot, update, query, data)
+        return
     if data['name'] == 'matshowtime':
-        return MatshowtimeHandlers.callback_handler(bot, update, query, data)
+        MatshowtimeHandlers.callback_handler(bot, update, query, data)
+        return

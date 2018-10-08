@@ -44,6 +44,7 @@ from src.utils.misc import weighted_choice
 from src.utils.telegram_helpers import get_chat_admins
 
 logger = logging.getLogger(__name__)
+re_img = re.compile(r"\.(jpg|jpeg|png)$", re.IGNORECASE)
 
 
 class CommandConfig:
@@ -1212,14 +1213,19 @@ def message_reactions(bot: telegram.Bot, update: telegram.Update):
         pidor(bot, update)
 
     ducks_trigger(bot, chat_id, msg_lower)
+    handle_photos_in_urls(bot, update)
 
-    # если картинка вставлена урлом, то чтобы узнать об этом мы парсим entities сообщения
+
+def handle_photos_in_urls(bot: telegram.Bot, update: telegram.Update) -> None:
+    """
+    Парсит entities сообщения на случай если картинка указана ссылкой.
+    """
     entities = update.message.parse_entities()
     for entity, entity_text in entities.items():
         if entity.type == 'url':
-            if re.search(r"\.(jpg|jpeg|png)$", entity_text, re.IGNORECASE):
+            if re_img.search(entity_text):
                 photo_reactions(bot, update, img_url=entity_text)
-                break
+                return
 
 
 def stickers_tag(bot: telegram.Bot, update: telegram.Update) -> None:

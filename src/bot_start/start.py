@@ -58,7 +58,7 @@ def start_bot():
     """
     q = mq.MessageQueue(all_burst_limit=29, all_time_limit_ms=1017)
     bot = MQBot(CONFIG['bot_token'], mqueue=q, request=get_request_data())
-    updater = Updater(bot=bot, workers=16)
+    updater = Updater(bot=bot, workers=32)
     dp = updater.dispatcher
     dp.logger.addHandler(CriticalHandler())  # в логгер библиотеки добавляем свой обработчик
     add_chat_handlers(dp)

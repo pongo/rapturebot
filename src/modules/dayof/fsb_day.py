@@ -485,7 +485,6 @@ class FSBDayModel:
 
 class FSBDay:
     @classmethod
-    @run_async
     def midnight(cls, bot: telegram.Bot) -> None:
         """
         Показывает ночные приветственное и подводящее итоги сообщения.
@@ -499,7 +498,6 @@ class FSBDay:
 
     @classmethod
     @FSBDayGuard.callback_handler_guard
-    @run_async
     def callback_handler(cls, bot: telegram.Bot, update: telegram.Message, query: telegram.CallbackQuery, data) -> None:
         uid = query.from_user.id
         message_id = query.message.message_id
@@ -509,7 +507,6 @@ class FSBDay:
 
     @classmethod
     @FSBDayGuard.handlers_guard
-    @run_async
     def private_handler(cls, bot: telegram.Bot, update: telegram.Update):
         message = update.edited_message if update.edited_message else update.message
         text = message.text
@@ -521,7 +518,6 @@ class FSBDay:
 
     @classmethod
     @FSBDayGuard.handlers_guard
-    @run_async
     def private_help_handler(cls, bot: telegram.Bot, update: telegram.Update):
         """
         Обрабатывает команду /help

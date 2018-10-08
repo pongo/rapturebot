@@ -1042,7 +1042,6 @@ class ValentineDay:
     }
 
     @classmethod
-    @run_async
     def midnight(cls, bot: telegram.Bot) -> None:
         """
         Показывает ночные приветственное и подводящее итоги сообщения.
@@ -1054,7 +1053,6 @@ class ValentineDay:
             DayEnd.send(bot)
 
     @classmethod
-    @run_async
     def afternoon(cls, bot: telegram.Bot) -> None:
         """
         Дневное напоминание
@@ -1063,7 +1061,6 @@ class ValentineDay:
             DayBegin.send(bot)
 
     @classmethod
-    @run_async
     def callback_handler(cls, bot: telegram.Bot, update: telegram.Message, query: telegram.CallbackQuery, data) -> None:
         if 'module' not in data or data['module'] != MODULE_NAME:
             return
@@ -1073,13 +1070,11 @@ class ValentineDay:
 
     @classmethod
     @Guard.handlers_guard
-    @run_async
     def private_handler(cls, bot: telegram.Bot, update: telegram.Update):
         CardCreator.text_handler(bot, update)
 
     @classmethod
     @Guard.handlers_guard
-    @run_async
     def private_help_handler(cls, bot: telegram.Bot, update: telegram.Update):
         """
         Обрабатывает команду /help

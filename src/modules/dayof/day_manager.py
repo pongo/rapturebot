@@ -20,7 +20,6 @@ def new_year(bot: telegram.Bot):
 
 class DayOfManager:
     @staticmethod
-    @run_async
     def midnight(bot: telegram.Bot) -> None:
         # здесь перечислены все модули - просто вызывается метод midnight в каждом
         # а там уж модуль сам разберется, должен ли он реагировать
@@ -29,24 +28,20 @@ class DayOfManager:
         new_year(bot)
 
     @staticmethod
-    @run_async
     def afternoon(bot: telegram.Bot) -> None:
         ValentineDay.afternoon(bot)
 
     @staticmethod
-    @run_async
     def callback_handler(bot, update, query, data) -> None:
         FSBDay.callback_handler(bot, update, query, data)
         ValentineDay.callback_handler(bot, update, query, data)
 
     @staticmethod
-    @run_async
     def private_handler(bot: telegram.Bot, update: telegram.Update):
         FSBDay.private_handler(bot, update)
         ValentineDay.private_handler(bot, update)
 
     @staticmethod
-    @run_async
     def private_help_handler(bot: telegram.Bot, update: telegram.Update):
         FSBDay.private_help_handler(bot, update)
         ValentineDay.private_help_handler(bot, update)

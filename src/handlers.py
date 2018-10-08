@@ -478,6 +478,7 @@ def send_huificator(bot: telegram.Bot, message: telegram.Message, limit_chars: i
 @chat_guard
 @collect_stats
 @command_guard
+@run_async
 def expert(bot, update):
     expert_uid = CONFIG.get('expert_uid', None)
     if expert_uid is None:
@@ -504,6 +505,7 @@ def expert(bot, update):
 @chat_guard
 @collect_stats
 @command_guard
+@run_async
 def gdeleha(bot, update):
     chat_id = update.message.chat_id
     user_id = update.message.from_user.id
@@ -556,6 +558,7 @@ def pidor(bot, update):
 @chat_guard
 @collect_stats
 @command_guard
+@run_async
 def papa(bot, update):
     phrases = [
         'Кек в кукарек',
@@ -572,6 +575,7 @@ def papa(bot, update):
 @chat_guard
 @collect_stats
 @command_guard
+@run_async
 def changelog(bot: telegram.Bot, update):
     text = CONFIG.get('changelog', '')
     if len(text) == 0:
@@ -583,6 +587,7 @@ def changelog(bot: telegram.Bot, update):
 @chat_guard
 @collect_stats
 @command_guard
+@run_async
 def love(bot, update):
     chat_id = update.message.chat_id
     stickers = [
@@ -631,6 +636,7 @@ def send_whois(bot: telegram.Bot, update: telegram.Update, send_to_cid: int, fin
 @chat_guard
 @collect_stats
 @command_guard
+@run_async
 def whois(bot: telegram.Bot, update: telegram.Update) -> None:
     chat_id = update.message.chat_id
     send_whois(bot, update, send_to_cid=chat_id, find_in_cid=chat_id)
@@ -639,6 +645,7 @@ def whois(bot: telegram.Bot, update: telegram.Update) -> None:
 @chat_guard
 @collect_stats
 @command_guard
+@run_async
 def rules(bot, update):
     chat_id = update.message.chat_id
     bot.sendMessage(chat_id, CHATRULES, parse_mode=ParseMode.HTML)
@@ -661,6 +668,7 @@ def anketa(bot, update):
 @chat_guard
 @collect_stats
 @command_guard
+@run_async
 def putin(bot: telegram.Bot, update: telegram.Update) -> None:
     chat_id = update.message.chat_id
     if update.message.reply_to_message is None:
@@ -675,6 +683,7 @@ def putin(bot: telegram.Bot, update: telegram.Update) -> None:
 @chat_guard
 @collect_stats
 @command_guard
+@run_async
 def pomogite(bot, update):
     def __get_commands(chat_id, section_name):
         return [
@@ -698,6 +707,7 @@ def pomogite(bot, update):
 @chat_guard
 @collect_stats
 @command_guard
+@run_async
 def stats(bot, update):
     # Get stats for group
     msg_id = update.message.message_id
@@ -851,7 +861,6 @@ def send_igorweekly(bot: telegram.Bot, chat_id: int, prev_monday: datetime):
         bot.sendMessage(chat_id, f'{header}{body}\n\n{user.get_username_or_link()}', parse_mode=ParseMode.HTML)
 
 
-@run_async
 def send_weekword(bot, chat_id, prev_monday):
     word = WeekWord.get_top_word(prev_monday, chat_id)
     if not word:
@@ -862,6 +871,7 @@ def send_weekword(bot, chat_id, prev_monday):
         f.write(json.dumps(word, ensure_ascii=False, indent=2))
 
 
+@run_async
 def weekly_stats(bot: telegram.Bot, _) -> None:
     today = datetime.today()
     # эта штука запускается в понедельник ночью, поэтому мы откладываем неделю назад
@@ -875,8 +885,8 @@ def weekly_stats(bot: telegram.Bot, _) -> None:
             disabled_commands = chat_options.get('disabled_commands', [])
             enabled_commands = chat_options.get('enabled_commands', [])
             send_weekly_for_chat(bot, chat_id, disabled_commands, enabled_commands, prev_monday)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.error(e)
 
 
 def send_weekly_for_chat(bot: telegram.Bot, chat_id: int, disabled_commands: typing.List[str],
@@ -897,17 +907,10 @@ def send_weekly_for_chat(bot: telegram.Bot, chat_id: int, disabled_commands: typ
     # send_weekword(bot, chat_id, prev_monday)
 
 
-def daily_evening(bot, job):
-    today = datetime.today()
-    monday = (today - timedelta(days=today.weekday() + 0)).replace(hour=0, minute=0, second=0, microsecond=0)
-    for chat_id in CONFIG["weekly_stats_chats_ids"]:
-        # send_weekword(bot, chat_id, monday)
-        pass
-
-
 @chat_guard
 @collect_stats
 @command_guard
+@run_async
 def mystat(bot, update):
     chat_id = update.message.chat_id
     send_mystat(bot, update, chat_id, chat_id)
@@ -1004,6 +1007,7 @@ def alllove(bot: telegram.Bot, update: telegram.Update) -> None:
 @chat_guard
 @collect_stats
 @command_guard
+@run_async
 def leave(bot, update):
     chat_id = update.message.chat_id
     bot.sendChatAction(chat_id, ChatAction.TYPING)
@@ -1078,6 +1082,7 @@ def get_base_name(key: str) -> typing.Optional[str]:
 @chat_guard
 @collect_stats
 @command_guard
+@run_async
 def orzik(bot, update):
     """
     Говорит случайное имя Озрика.
@@ -1095,6 +1100,7 @@ def orzik(bot, update):
 @chat_guard
 @collect_stats
 @command_guard
+@run_async
 def lord(bot: telegram.Bot, update: telegram.Update) -> None:
     """
     Для аляски. Аналог /orzik
@@ -1108,6 +1114,7 @@ def lord(bot: telegram.Bot, update: telegram.Update) -> None:
     bot.sendMessage(chat_id, 'Это баг, такого не должно быть')
 
 
+@run_async
 def orzik_correction(bot, update):
     chat_id = update.message.chat_id
     today = datetime.today().replace(hour=0, minute=0, second=0, microsecond=0).strftime("%Y%m%d")
@@ -1133,6 +1140,7 @@ def orzik_correction(bot, update):
     bot.sendMessage(chat_id, f'Сегодня он {name}', reply_to_message_id=update.message.message_id)
 
 
+@run_async
 def send_kek(bot: telegram.Bot, chat_id):
     stickerset = cache.get('kekopack_stickerset')
     if not stickerset:
@@ -1386,7 +1394,6 @@ def leave_check(bot: telegram.Bot, update: telegram.Update):
         LeaveCollector.update_ktolivnul(chat_id)
 
 
-@run_async
 def last_word(bot: telegram.Bot, update: telegram.Update):
     message = update.message
     if message.left_chat_member is not None or (message.new_chat_members is not None and len(message.new_chat_members) > 0):
@@ -1398,7 +1405,6 @@ def get_last_word_cache_key(cid, uid) -> str:
     return f'last_word:{cid}:{uid}'
 
 
-@run_async
 def random_khaleesi(bot, update):
     text = update.message.text
     if text is None:
@@ -1438,17 +1444,18 @@ def ai(bot: telegram.Bot, update: telegram.Update):
 
 
 @chat_guard
+@run_async
 def message(bot, update):
     leave_check(bot, update)
-    Bayanometer.check(bot, update)
     message_reactions(bot, update)
+    random_khaleesi(bot, update)
+    last_word(bot, update)
     PidorWeekly.parse_message(update.message)
     IgorWeekly.parse_message(update.message)
-    last_word(bot, update)
     # WeekWord.add(update.message.text, update.message.chat_id)
-    random_khaleesi(bot, update)
     mat_notify(bot, update)
     tema_warning(bot, update)
+    Bayanometer.check(bot, update)
 
 
 def tema_warning(bot: telegram.Bot, update: telegram.Update):
@@ -1475,13 +1482,18 @@ def tema_warning(bot: telegram.Bot, update: telegram.Update):
     bot.send_message(update.message.chat_id, msg, reply_to_message_id=update.message.message_id)
 
 
+@run_async
 def private(bot: telegram.Bot, update: telegram.Update):
+    """
+    Текст в личку бота.
+    """
     DayOfManager.private_handler(bot, update)
     if is_today_special():
         return
     ai(bot, update)
 
 
+@run_async
 def private_help(bot: telegram.Bot, update: telegram.Update):
     DayOfManager.private_help_handler(bot, update)
 
@@ -1645,6 +1657,7 @@ def callback_last_word(bot, update, query, data):
             pass
 
 
+@run_async
 def callback_handler(bot: telegram.Bot, update: telegram.Update) -> None:
     query = update.callback_query
     data = cache.get(f'callback:{query.data}')

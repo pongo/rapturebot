@@ -3,6 +3,7 @@
 import enum
 import typing
 from datetime import datetime, timedelta
+from threading import Lock
 from time import sleep
 
 import sqlalchemy
@@ -99,6 +100,8 @@ class LeaveCollector:
     """
     Здесь хранятся все входы и ливы из чата.
     """
+    add_lock = Lock()
+    update_ktolivnul_lock = Lock()
 
     def __init__(self, id=None, uid=None, cid=None, date=None, leave_type=None, from_uid=None, reason=None):
         self.id = id
@@ -125,12 +128,13 @@ class LeaveCollector:
             username = f' @{user.username}'
         return f"<b>{user.fullname}</b>{username}".strip()
 
-    @staticmethod
-    def __add(uid, cid, date, from_uid, leave_type):
-        try:
-            LeaveCollectorDB.add(uid=uid, cid=cid, date=date, from_uid=from_uid, leave_type=leave_type)
-        except Exception as e:
-            logger.error(e)
+    @classmethod
+    def __add(cls, uid, cid, date, from_uid, leave_type):
+        with cls.add_lock:
+            try:
+                LeaveCollectorDB.add(uid=uid, cid=cid, date=date, from_uid=from_uid, leave_type=leave_type)
+            except Exception as e:
+                logger.error(e)
 
     @staticmethod
     def add_invite(uid, cid, date, from_uid):
@@ -177,19 +181,21 @@ class LeaveCollector:
 
     @classmethod
     def update_ktolivnul(cls, chat_id: int) -> None:
-        chat_uids_ktolivnul: typing.Set[int] = set([int(x) for x in pure_cache.get(f'ktolivnul:{chat_id}', '').split(',') if x != ''])
-        if len(chat_uids_ktolivnul) == 0:
-            return
-        chat_uids_db: typing.Set[int] = set([x.uid for x in ChatUser.get_all(chat_id)])
-        leaved_uids = chat_uids_db - chat_uids_ktolivnul
-        if len(leaved_uids) == 0:
-            return
-        ktolivnul_uid = CONFIG['ktolivnul']
-        now = datetime.now()
-        for uid in leaved_uids:
-            ChatUser.add(uid, chat_id, left=True)
-            LeaveCollector.add_kick(uid, chat_id, now, ktolivnul_uid)
-            logger.info(f'[update_ktolivnul] kick {chat_id}:{uid}')
+        with cls.update_ktolivnul_lock:
+            chat_uids_ktolivnul = set(
+                [int(x) for x in pure_cache.get(f'ktolivnul:{chat_id}', '').split(',') if x != ''])
+            if len(chat_uids_ktolivnul) == 0:
+                return
+            chat_uids_db = set([x.uid for x in ChatUser.get_all(chat_id)])
+            leaved_uids = chat_uids_db - chat_uids_ktolivnul
+            if len(leaved_uids) == 0:
+                return
+            ktolivnul_uid = CONFIG.get('ktolivnul', 0)
+            now = datetime.now()
+            for uid in leaved_uids:
+                ChatUser.add(uid, chat_id, left=True)
+                LeaveCollector.add_kick(uid, chat_id, now, ktolivnul_uid)
+                logger.info(f'[update_ktolivnul] kick {chat_id}:{uid}')
 
 
 class LeftUsersChecker:

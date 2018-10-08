@@ -4,6 +4,7 @@ import locale
 import random
 import typing
 from datetime import timedelta
+from threading import Lock
 from urllib.parse import urlparse
 
 import pytils
@@ -138,6 +139,9 @@ class UserStatDB(Base):
 
 
 class UserStat:
+    add_lock = Lock()
+    get_lock = Lock()
+
     def __init__(self,
                  id=None,
                  stats_monday=None,
@@ -262,18 +266,16 @@ class UserStat:
         added_stat.stats_monday = monday
         uid = added_stat.uid
         cid = added_stat.cid
-        old_stat = cls.get(monday, uid, cid)
-
-        if old_stat is not None:
+        with cls.add_lock:
+            old_stat = cls.get(monday, uid, cid)
+            key = cls.__get_cache_key(monday, uid, cid)
             try:
-                updated_stat = cls.__update(old_stat, added_stat)
-                cache.set(cls.__get_cache_key(monday, uid, cid), updated_stat, time=USER_CACHE_EXPIRE)
-            except Exception:
-                return
-        else:
-            try:
+                if old_stat is not None:
+                    updated_stat = cls.__update(old_stat, added_stat)
+                    cache.set(key, updated_stat, time=USER_CACHE_EXPIRE)
+                    return
                 UserStatDB.add(added_stat)
-                cache.set(cls.__get_cache_key(monday, uid, cid), added_stat, time=USER_CACHE_EXPIRE)
+                cache.set(key, added_stat, time=USER_CACHE_EXPIRE)
             except Exception as e:
                 logger.error(e)
 
@@ -285,20 +287,21 @@ class UserStat:
                 logger.info(f'Base class. uid {uid}. cid {cid}')
                 return cls.copy(cached)
             return cached
-        try:
-            with session_scope() as db:
-                q = db.query(UserStatDB) \
-                    .filter(UserStatDB.stats_monday == monday,
-                            UserStatDB.cid == cid,
-                            UserStatDB.uid == uid) \
-                    .limit(1) \
-                    .all()
-                if q:
-                    userstat = cls.copy(q[0])
-                    cache.set(cls.__get_cache_key(monday, uid, cid), userstat)
-                    return userstat
-        except Exception as e:
-            logger.error(e)
+        with cls.get_lock:
+            try:
+                with session_scope() as db:
+                    q = db.query(UserStatDB) \
+                        .filter(UserStatDB.stats_monday == monday,
+                                UserStatDB.cid == cid,
+                                UserStatDB.uid == uid) \
+                        .limit(1) \
+                        .all()
+                    if q:
+                        userstat = cls.copy(q[0])
+                        cache.set(cls.__get_cache_key(monday, uid, cid), userstat)
+                        return userstat
+            except Exception as e:
+                logger.error(e)
         return None
 
     @classmethod
@@ -818,6 +821,8 @@ class UserStat:
 
 
 class UserDomains:
+    lock = Lock()
+
     @staticmethod
     def __parse_domain(url):
         parsed_uri = urlparse(url if '://' in url else 'http://{}'.format(url))
@@ -830,13 +835,14 @@ class UserDomains:
 
         # в мемкеше хранятся все домены пользователя за текущую неделю с количеством использований
         monday = get_current_monday()
-        cache_key = cls.__get_user_domain_cache_key(monday, uid, cid)
-        user_domains = cache.get(cache_key)
-        if user_domains is None:
-            user_domains = {}
-        user_domains.setdefault(domain, 0)
-        user_domains[domain] = user_domains[domain] + 1
-        cache.set(cache_key, user_domains, time=USER_CACHE_EXPIRE)
+        with cls.lock:
+            cache_key = cls.__get_user_domain_cache_key(monday, uid, cid)
+            user_domains = cache.get(cache_key)
+            if user_domains is None:
+                user_domains = {}
+            user_domains.setdefault(domain, 0)
+            user_domains[domain] = user_domains[domain] + 1
+            cache.set(cache_key, user_domains, time=USER_CACHE_EXPIRE)
 
         # самый часто используемый домен
         top_domain = max(user_domains, key=user_domains.get)

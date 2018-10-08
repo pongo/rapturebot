@@ -1,5 +1,6 @@
 # coding=UTF-8
 from random import randint
+from threading import Lock
 from typing import List, Union, Optional, Tuple
 
 import telegram
@@ -143,6 +144,7 @@ class Poll:
 
 
 class ChannelMessage:
+    lock = Lock()
     callback_like = 'matshowtime_like_click'
     callback_dislike = 'matshowtime_dislike_click'
 
@@ -171,7 +173,7 @@ class ChannelMessage:
         return cache.get(cls.__get_key(id))
 
     @classmethod
-    def on_poll_click(cls, bot: telegram.Bot, _: telegram.Message, query: telegram.CallbackQuery, data) -> None:
+    def on_poll_click(cls, bot: telegram.Bot, _: telegram.Update, query: telegram.CallbackQuery, data) -> None:
         msg: ChannelMessage = cache.get(cls.__get_key(data['id']))
         if not msg:
             bot.answer_callback_query(query.id, 'Время голосования истекло')
@@ -184,17 +186,18 @@ class ChannelMessage:
             logger.warning(f'[{CACHE_PREFIX}] msg {telegram_message_id} access {uid}')
             return
 
-        poll = Poll(telegram_message_id)
-        if data['value'] == cls.callback_like:
-            voted = poll.like(uid)
-            text = '👍'
-        elif data['value'] == cls.callback_dislike:
-            voted = poll.dislike(uid)
-            text = '👎'
-        else:
-            bot.answer_callback_query(query.id, 'Вы сюда как попали???')
-            logger.warning(f'[{CACHE_PREFIX}] msg {telegram_message_id} access {uid}')
-            return
+        with cls.lock:
+            poll = Poll(telegram_message_id)
+            if data['value'] == cls.callback_like:
+                voted = poll.like(uid)
+                text = '👍'
+            elif data['value'] == cls.callback_dislike:
+                voted = poll.dislike(uid)
+                text = '👎'
+            else:
+                bot.answer_callback_query(query.id, 'Вы сюда как попали???')
+                logger.warning(f'[{CACHE_PREFIX}] msg {telegram_message_id} access {uid}')
+                return
 
         if not voted:
             bot.answer_callback_query(query.id, 'Только один раз')
@@ -296,7 +299,7 @@ class MatshowtimeHandlers:
         matshowtime.send(bot, mat_words)
 
     @classmethod
-    def callback_handler(cls, bot: telegram.Bot, update: telegram.Message, query: telegram.CallbackQuery, data) -> None:
+    def callback_handler(cls, bot: telegram.Bot, update: telegram.Update, query: telegram.CallbackQuery, data) -> None:
         if 'module' not in data or data['module'] != CACHE_PREFIX:
             return
         if data['value'] not in cls.callbacks:

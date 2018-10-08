@@ -1,6 +1,7 @@
 # coding=UTF-8
 
 import typing
+from threading import Lock
 
 import telegram
 from sqlalchemy import Column, Integer, Text, Boolean
@@ -113,6 +114,8 @@ class User:
     """
     Список всех юзеров, даже ливнувших.
     """
+    add_lock = Lock()
+    get_lock = Lock()
 
     def __init__(self, id=None, uid=None, username=None, fullname=None, public=False, female=False):
         self._id = id  # делаем его protected, чтобы не путать с uid
@@ -142,7 +145,8 @@ class User:
             return
         username = user.username
         fullname = ' '.join([user.first_name or '', user.last_name or '']).strip()
-        cls.__add(user.id, username, fullname)
+        with cls.add_lock:
+            cls.__add(user.id, username, fullname)
 
     @classmethod
     def get(cls, uid) -> typing.Optional['User']:
@@ -164,13 +168,14 @@ class User:
             #     return cls.copy(cached)
             return cached
 
-        try:
-            user = UserDB.get(uid)
-            if user:
-                cache.set(cls.__get_cache_key(uid), user, time=USER_CACHE_EXPIRE)
-                return user
-        except Exception as e:
-            logger.error(e)
+        with cls.get_lock:
+            try:
+                user = UserDB.get(uid)
+                if user:
+                    cache.set(cls.__get_cache_key(uid), user, time=USER_CACHE_EXPIRE)
+                    return user
+            except Exception as e:
+                logger.error(e)
         return None
 
     def get_username_or_link(self) -> str:
@@ -196,24 +201,20 @@ class User:
         old_user = cls.get(uid)
         old_user_female = False if old_user is None else old_user.female
         new_user = User(uid=uid, username=username, fullname=fullname, female=old_user_female)
-        if old_user is not None:
-            update = {}
-            if old_user.username != username:
-                update['username'] = username
-            if old_user.fullname != fullname:
-                update['fullname'] = fullname
-            if update:
-                try:
+        try:
+            if old_user is not None:
+                update = {}
+                if old_user.username != username:
+                    update['username'] = username
+                if old_user.fullname != fullname:
+                    update['fullname'] = fullname
+                if update:
                     UserDB.update(uid, update, new_user)
-                except Exception as e:
-                    logger.error(e)
-                    return
-        else:
-            try:
+            else:
                 UserDB.add(new_user)
-            except Exception as e:
-                logger.error(e)
-                return
+        except Exception as e:
+            logger.error(e)
+            return
         cache.set(cls.__get_cache_key(uid), new_user, time=USER_CACHE_EXPIRE)
 
     @staticmethod

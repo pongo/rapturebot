@@ -3,6 +3,7 @@
 import random
 import re
 from datetime import datetime, timedelta
+from threading import Lock
 
 from src.modules.models.user import UserDB
 from src.modules.models.user_stat import UserStat
@@ -10,6 +11,8 @@ from src.utils.cache import cache, USER_CACHE_EXPIRE
 
 
 class IgorWeekly:
+    lock = Lock()
+
     @classmethod
     def get_top_igor(cls, cid, date=None):
         monday = cls.__get_current_monday() if date is None else cls.__get_date_monday(date)
@@ -43,10 +46,9 @@ class IgorWeekly:
             return
         uid = message.from_user.id
         cid = message.chat_id
-        msg_lower = msg.lower()
         entities = message.parse_entities()
 
-        if cls.__has_igor(msg_lower):
+        if cls.__has_igor(msg):
             cls.__add(uid, cid)
 
         if message.reply_to_message is not None:
@@ -79,17 +81,18 @@ class IgorWeekly:
     @classmethod
     def __add(cls, uid, cid, date=None, replay=False):
         monday = cls.__get_current_monday() if date is None else cls.__get_date_monday(date)
-        db = cls.__get_db(monday, cid)
-        value = 1
-        if replay is True:
-            value = 0.4
+        with cls.lock:
+            db = cls.__get_db(monday, cid)
+            value = 1
+            if replay is True:
+                value = 0.4
 
-        if uid in db:
-            db[uid] += value
-        else:
-            db[uid] = value
+            if uid in db:
+                db[uid] += value
+            else:
+                db[uid] = value
 
-        cls.__set_db(db, monday, cid)
+            cls.__set_db(db, monday, cid)
 
     @staticmethod
     def __sort_dict(d):

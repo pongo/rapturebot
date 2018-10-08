@@ -1,4 +1,5 @@
 # coding=UTF-8
+from threading import Lock
 
 from src.utils.cache import cache, USER_CACHE_EXPIRE
 from src.utils.misc import sort_dict
@@ -16,6 +17,8 @@ except ImportError:
 
 
 class WeekWord:
+    lock = Lock()
+
     @classmethod
     def add(cls, text, cid):
         if not pymorphy2:
@@ -33,15 +36,16 @@ class WeekWord:
         normal_forms = (token.normal_form for token in useful_tokens)
 
         monday = get_current_monday()
-        db = cls.__get_db(monday, cid)
-        for word in normal_forms:
-            if len(word) < 3:
-                continue
-            if word in db:
-                db[word] += 1
-            else:
-                db[word] = 1
-        cls.__set_db(db, monday, cid)
+        with cls.lock:
+            db = cls.__get_db(monday, cid)
+            for word in normal_forms:
+                if len(word) < 3:
+                    continue
+                if word in db:
+                    db[word] += 1
+                else:
+                    db[word] = 1
+            cls.__set_db(db, monday, cid)
 
     @classmethod
     def get_top_word(cls, monday, cid):

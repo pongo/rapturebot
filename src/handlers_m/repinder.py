@@ -1,4 +1,5 @@
 # coding=UTF-8
+from threading import Lock
 
 import telegram
 
@@ -8,8 +9,9 @@ from src.utils.cache import cache, FEW_DAYS
 from src.utils.handlers_helpers import chat_guard, collect_stats, command_guard
 from src.utils.time_helpers import today_str
 
+repinder_lock = Lock()
 
-def can_use_repinder(bot: telegram.Bot, chat_id: int, user_id: int) -> bool:
+def can_use_repinder(_: telegram.Bot, __: int, user_id: int) -> bool:
     """
     Этот пользователь может использовать репиндер?
     """
@@ -42,7 +44,7 @@ def is_delayed() -> bool:
     return False
 
 
-def access_denied(bot: telegram.Bot, message: telegram.Message) -> None:
+def access_denied(_: telegram.Bot, message: telegram.Message) -> None:
     """
     Непрошенный гость.
     """
@@ -70,14 +72,15 @@ def repinder_guard(f):
 @repinder_guard
 def repinder(bot: telegram.Bot, update: telegram.Update) -> None:
     key = f'pipinder:stickersets:{today_str()}'
-    today_stickersets_names: list = cache.get(key, [])
+    with repinder_lock:
+        today_stickersets_names: list = cache.get(key, [])
 
-    # первый элемент списка - это и есть текущий пак.
-    # удаляем его и заново вызываем пипиндер
-    try:
-        today_stickersets_names.pop(0)
-    except Exception:
-        pass
+        # первый элемент списка - это и есть текущий пак.
+        # удаляем его и заново вызываем пипиндер
+        try:
+            today_stickersets_names.pop(0)
+        except Exception:
+            pass
 
-    cache.set(key, today_stickersets_names, time=FEW_DAYS)
+        cache.set(key, today_stickersets_names, time=FEW_DAYS)
     send_pipinder(bot, update)

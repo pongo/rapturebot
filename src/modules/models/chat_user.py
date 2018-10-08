@@ -1,5 +1,6 @@
 # coding=UTF-8
 import typing
+from threading import Lock
 
 from sqlalchemy import Column, Integer, BigInteger, Boolean, func
 
@@ -131,6 +132,8 @@ class ChatUser:
     """
     Список всех юзеров в конкретном чате, даже ливнувших.
     """
+    add_lock = Lock()
+    get_lock = Lock()
 
     def __init__(self, id=None, uid=None, cid=None, left=False):
         self.id = id
@@ -151,28 +154,24 @@ class ChatUser:
         )
 
     @classmethod
-    def add(cls, uid, cid, left=False):
+    def add(cls, uid: int, cid: int, left: bool = False) -> None:
         if uid == cache.get('bot_id'):
             return
-        new_user = ChatUser(uid=uid, cid=cid, left=left)
-        old_user = cls.get(uid, cid)
-        if old_user is not None:
-            update = {}
-            if old_user.left != left:
-                update['left'] = left
-            if update:
-                try:
-                    ChatUserDB.update(uid, cid, update, new_user)
-                except Exception as e:
-                    logger.error(e)
-                    return
-        else:
+        with cls.add_lock:
+            new_user = ChatUser(uid=uid, cid=cid, left=left)
+            old_user = cls.get(uid, cid)
             try:
-                ChatUserDB.add(new_user)
+                if old_user is not None:
+                    update = {}
+                    if old_user.left != left:
+                        update['left'] = left
+                    if update:
+                        ChatUserDB.update(uid, cid, update, new_user)
+                else:
+                    ChatUserDB.add(new_user)
+                cache.set(cls.__get_key(uid, cid), new_user, time=USER_CACHE_EXPIRE)
             except Exception as e:
                 logger.error(e)
-                return
-        cache.set(cls.__get_key(uid, cid), new_user, time=USER_CACHE_EXPIRE)
 
     @classmethod
     def get(cls, uid, cid) -> typing.Optional['ChatUser']:
@@ -183,10 +182,11 @@ class ChatUser:
                 return cls.copy(cached)
             return cached
         try:
-            chatuser = ChatUserDB.get(uid, cid)
-            if chatuser:
-                cache.set(cls.__get_key(uid, cid), chatuser, time=USER_CACHE_EXPIRE)
-                return chatuser
+            with cls.get_lock:
+                chatuser = ChatUserDB.get(uid, cid)
+                if chatuser:
+                    cache.set(cls.__get_key(uid, cid), chatuser, time=USER_CACHE_EXPIRE)
+                    return chatuser
         except Exception as e:
             logger.error(e)
         return None

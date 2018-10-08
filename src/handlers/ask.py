@@ -4,7 +4,7 @@
 import telegram
 from telegram.ext import run_async
 
-from src.handlers_m.khaleesi import check_base_khaleesi
+from src.handlers.khaleesi import check_base_khaleesi
 from src.modules.ask import Ask
 from src.utils.handlers_decorators import chat_guard, collect_stats, command_guard
 

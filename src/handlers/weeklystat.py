@@ -13,7 +13,7 @@ from telegram.ext import run_async
 import emoji_fixed as emoji
 import src.config as config
 from src.config import CMDS
-from src.handlers_m.topmat import send_topmat
+from src.handlers.topmat import send_topmat
 from src.modules.models.igor_weekly import IgorWeekly
 from src.modules.models.pidor_weekly import PidorWeekly
 from src.modules.models.reply_top import ReplyTop, ReplyLove

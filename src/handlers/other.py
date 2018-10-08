@@ -8,8 +8,8 @@ from telegram import ParseMode, ChatAction, InlineKeyboardButton, InlineKeyboard
 from telegram.ext import run_async
 
 from src.config import CHATRULES, CMDS, CONFIG
-from src.handlers_m.khaleesi import check_base_khaleesi
-from src.handlers_m.last_word import get_last_word_cache_key
+from src.handlers.khaleesi import check_base_khaleesi
+from src.handlers.last_word import get_last_word_cache_key
 from src.modules.models.leave_collector import LeaveCollector
 from src.modules.models.user import User
 from src.modules.reduplicator import reduplicate

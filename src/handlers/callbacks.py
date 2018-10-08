@@ -4,8 +4,8 @@ import logging
 import telegram
 from telegram.ext import run_async
 
-from src.handlers_m.last_word import callback_last_word
-from src.handlers_m.on_off import callback_off
+from src.handlers.last_word import callback_last_word
+from src.handlers.on_off import callback_off
 from src.modules.bayanometer import Bayanometer
 from src.modules.dayof.day_manager import DayOfManager
 from src.modules.matshowtime import MatshowtimeHandlers

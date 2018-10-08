@@ -13,7 +13,7 @@ from telegram import ParseMode
 from telegram.ext import run_async
 
 from src.config import CONFIG
-from src.handlers_m.other import send_huificator
+from src.handlers.other import send_huificator
 from src.modules.dayof.day_manager import DayOfManager
 from src.modules.dayof.helper import is_today_special
 from src.modules.models.reply_top import LoveDumpTable

@@ -2,7 +2,7 @@
 
 from datetime import time
 
-from src.handlers_m.weeklystat import weekly_stats
+from src.handlers.weeklystat import weekly_stats
 from src.modules.jobs import daily_midnight, lefts_check, daily_afternoon, health_log
 
 

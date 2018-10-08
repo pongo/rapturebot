@@ -9,10 +9,10 @@ from telegram.ext import run_async
 
 import src.config as config
 from src.config import CMDS, CONFIG
-from src.handlers_m.last_word import last_word
-from src.handlers_m.mat_notify import mat_notify
-from src.handlers_m.orzik import orzik_correction
-from src.handlers_m.welcome import send_welcome
+from src.handlers.last_word import last_word
+from src.handlers.mat_notify import mat_notify
+from src.handlers.orzik import orzik_correction
+from src.handlers.welcome import send_welcome
 from src.modules.bayanometer import Bayanometer
 from src.modules.khaleesi import Khaleesi
 from src.modules.models.chat_user import ChatUser

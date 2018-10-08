@@ -12,6 +12,7 @@ from src.utils.cache import cache, USER_CACHE_EXPIRE
 
 class IgorWeekly:
     lock = Lock()
+    re_inside = re.compile(r"[ие]гор", re.IGNORECASE)
 
     @classmethod
     def get_top_igor(cls, cid, date=None):
@@ -69,13 +70,11 @@ class IgorWeekly:
                 cls.__add(entity.user.id, cid, replay=True)
                 continue
 
-    @staticmethod
-    def __has_igor(msg):
+    @classmethod
+    def __has_igor(cls, msg):
         msg_lower = msg.lower().replace('ё', 'е')
-        re_inside = r"[ие]гор"
-        if re.search(re_inside, msg_lower, re.IGNORECASE):
+        if cls.re_inside.search(msg_lower):
             return True
-
         return False
 
     @classmethod

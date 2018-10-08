@@ -12,6 +12,8 @@ from src.utils.cache import cache, USER_CACHE_EXPIRE
 
 class PidorWeekly:
     lock = Lock()
+    re_words = re.compile(r"\b(ге[йяи]|геев|анал|аналы|аналь\S+|анус|очко|жоп[ау]|жопой|поп[ау]|попой|попк[ау]|попкой|говн[оа]|говном|пенис\S*|член\S*|пизд\S+|гомос\S+|гомик\S*|\S+сексуал\S*|климов\S*|педерас\S+|пидор\S*|пидар\S*|педик\S+|подвор\S+|iphone\S*|айфон\S*|samsung|самсунг\S*|смузи|барбер\S*|рокет\S*|хипстер\S*|лгбт\S*|бабочк\S+|м[ао]к[ао]син\S*|ахтунг\S*|толерант\S+|политкорр?ект\S+|стрижк\S+|бород\S+|аниме\S*|саратов\S*|фемк\S+|\S+изм\S*|dtf|дтф|в[еэ]йп\S*|гироскутер\S*|мизог\S+|козел|козл\S+|муда[кч]\S*|сволоч\S+|ресторан\S*|кача[лт]\S+|мыло|читер\S*|читы?|культур\S+|сра[тл]\S+|насра[тл]\S+|гад\S*|блогг?ер\S*)\b", re.IGNORECASE)
+    re_inside = re.compile(r"п[еи]д[оа]р\S*", re.IGNORECASE)
 
     @classmethod
     def get_top_pidor(cls, cid, date=None):
@@ -69,18 +71,13 @@ class PidorWeekly:
                 cls.__add(entity.user.id, cid, replay=True)
                 continue
 
-    @staticmethod
-    def __has_pidor(msg):
+    @classmethod
+    def __has_pidor(cls, msg):
         msg_lower = msg.lower().replace('ё', 'е')
-
-        re_words = r"\b(ге[йяи]|геев|анал|аналы|аналь\S+|анус|очко|жоп[ау]|жопой|поп[ау]|попой|попк[ау]|попкой|говн[оа]|говном|пенис\S*|член\S*|пизд\S+|гомос\S+|гомик\S*|\S+сексуал\S*|климов\S*|педерас\S+|пидор\S*|пидар\S*|педик\S+|подвор\S+|iphone\S*|айфон\S*|samsung|самсунг\S*|смузи|барбер\S*|рокет\S*|хипстер\S*|лгбт\S*|бабочк\S+|м[ао]к[ао]син\S*|ахтунг\S*|толерант\S+|политкорр?ект\S+|стрижк\S+|бород\S+|аниме\S*|саратов\S*|фемк\S+|\S+изм\S*|dtf|дтф|в[еэ]йп\S*|гироскутер\S*|мизог\S+|козел|козл\S+|муда[кч]\S*|сволоч\S+|ресторан\S*|кача[лт]\S+|мыло|читер\S*|читы?|культур\S+|сра[тл]\S+|насра[тл]\S+|гад\S*|блогг?ер\S*)\b"
-        if re.search(re_words, msg_lower, re.IGNORECASE):
+        if cls.re_words.search(msg_lower):
             return True
-
-        re_inside = r"п[еи]д[оа]р\S*"
-        if re.search(re_inside, msg_lower, re.IGNORECASE):
+        if cls.re_inside.search(msg_lower):
             return True
-
         return False
 
     @classmethod

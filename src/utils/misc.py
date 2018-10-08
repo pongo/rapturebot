@@ -75,3 +75,11 @@ def retry(exceptions=Exception, tries=4, delay=3, backoff=2, logger=None, silenc
                 return f(*args, **kwargs)
         return f_retry  # true decorator
     return deco_retry
+
+def chunks(l, n: int):
+    """
+    Yield successive n-sized chunks from l.
+    https://stackoverflow.com/a/312464/136559
+    """
+    for i in range(0, len(l), n):
+        yield l[i:i + n]

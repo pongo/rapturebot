@@ -12,6 +12,8 @@ from src.modules.models.chat_user import ChatUser
 from src.modules.models.user import User
 from src.utils.cache import cache, YEAR
 from src.utils.handlers_helpers import check_admin
+from src.utils.misc import chunks
+from src.utils.telegram_helpers import dsp
 
 CACHE_KEY = 'music'
 
@@ -202,7 +204,14 @@ def send_list_replay(bot: telegram.Bot, chat_id: int, message_id: int, uids: Ite
     Бот отправляет в чат реплай, тегая участников музкружка.
     """
     formatted_chat_users = format_chat_users(chat_id, uids)
-    text = f'#музкружок {" ".join(formatted_chat_users)}'
+    hashtag = '#музкружок '
+    for chunk in chunks(formatted_chat_users, 5):
+        text = f'{hashtag}{" ".join(chunk)}'
+        hashtag = ''
+        dsp(send_replay, bot, chat_id, message_id, text)
+
+
+def send_replay(bot, chat_id, message_id, text):
     bot.send_message(chat_id, text, reply_to_message_id=message_id, parse_mode='HTML')
 
 

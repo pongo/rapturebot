@@ -33,7 +33,6 @@ from src.modules.models.pidor_weekly import PidorWeekly
 from src.modules.models.reply_top import ReplyTop, ReplyLove
 from src.modules.models.user import User
 from src.modules.models.user_stat import UserStat
-from src.modules.models.week_word import WeekWord
 from src.modules.random_khaleesi import RandomKhaleesi
 from src.modules.reduplicator import reduplicate
 from src.modules.spoiler import SpoilerHandlers
@@ -858,16 +857,6 @@ def send_igorweekly(bot: telegram.Bot, chat_id: int, prev_monday: datetime):
         bot.sendMessage(chat_id, f'{header}{body}\n\n{user.get_username_or_link()}', parse_mode=ParseMode.HTML)
 
 
-def send_weekword(bot, chat_id, prev_monday):
-    word = WeekWord.get_top_word(prev_monday, chat_id)
-    if not word:
-        return
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    os.makedirs(os.path.dirname(current_dir + '/tmp/weekword/'), exist_ok=True)
-    with open(current_dir + '/tmp/weekword/{date}_{chat_id}.json'.format(date=prev_monday.strftime("%Y%m%d"), chat_id=chat_id), 'w', encoding='utf-8') as f:
-        f.write(json.dumps(word, ensure_ascii=False, indent=2))
-
-
 @run_async
 def weekly_stats(bot: telegram.Bot, _) -> None:
     today = datetime.today()
@@ -904,7 +893,6 @@ def send_weekly_for_chat(bot: telegram.Bot, chat_id: int, disabled_commands: typ
     sleep(1)
     dsp(send_topmat, bot, chat_id, chat_id, prev_monday)
     sleep(1)
-    # send_weekword(bot, chat_id, prev_monday)
 
 
 @chat_guard
@@ -1451,7 +1439,6 @@ def message(bot, update):
     last_word(bot, update)
     PidorWeekly.parse_message(update.message)
     IgorWeekly.parse_message(update.message)
-    # WeekWord.add(update.message.text, update.message.chat_id)
     mat_notify(bot, update)
     Bayanometer.check(bot, update)
 
@@ -1515,8 +1502,6 @@ def __private(bot: telegram.Bot, update: telegram.Update):
                 ('Анонимка', 40),
                 ('Дикая антилопа', 20),
             ])
-
-        WeekWord.add(prepared_text, CONFIG['anon_chat_id'])
 
         # начинаем предложения с больших букв
         # для этого мы делаем запрос к апи

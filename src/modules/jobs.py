@@ -1,6 +1,5 @@
 # coding=UTF-8
 from datetime import datetime
-from time import sleep
 
 import telegram
 from telegram.ext import run_async
@@ -23,7 +22,6 @@ def daily_midnight(bot: telegram.Bot, _):
     for chat in get_config_chats():
         if 'daily_full_moon_check' in chat.enabled_commands:
             send_alert_if_full_moon(bot, chat.chat_id)
-            sleep(0.5)
 
     for chat in get_config_chats():
         if is_command_enabled_for_chat(chat.chat_id, 'weeklystat'):

@@ -13,6 +13,7 @@ from telegram.ext import run_async
 from src.config import CONFIG
 from src.handlers import command_guard, chat_guard, collect_stats
 from src.utils.cache import cache
+from src.utils.telegram_helpers import dsp
 
 TMP_DIR = '../../tmp/weather/'
 full_moon_lock = Lock()
@@ -67,7 +68,7 @@ def send_weather_now(bot: telegram.Bot, update: telegram.Update) -> None:
 @run_async
 def send_alert_if_full_moon(bot: telegram.Bot, chat_id: int) -> None:
     """
-    Сегодня полнолуние? Оповещаем чат.
+    Сегодня полнолуние? Оповещает чат.
     """
     # т.к. используется run_async, то мы можем одновременно вызвать этот метод.
     # но мы не хотим делать несколько одинаковых запросов к апи.
@@ -78,7 +79,15 @@ def send_alert_if_full_moon(bot: telegram.Bot, chat_id: int) -> None:
             full_moon = full_moon_request()
             cache.set('weather:full_moon', full_moon, time=6 * 60 * 60)  # 6 hours
     if full_moon:
-        bot.send_message(chat_id, "Сегодня:\n\nПОЛНОЛУНИЕ 🌑 БЕРЕГИСЬ ОБОРОТНЕЙ", parse_mode='HTML')
+        # отправляется через очередь
+        dsp(_send_full_moon_alert, bot, chat_id)
+
+
+def _send_full_moon_alert(bot, chat_id):
+    """
+    Вынес в отдельную функцию, чтобы использовать в `dsp`
+    """
+    bot.send_message(chat_id, "Сегодня:\n\nПОЛНОЛУНИЕ 🌑 БЕРЕГИСЬ ОБОРОТНЕЙ", parse_mode='HTML')
 
 
 def full_moon_request() -> bool:

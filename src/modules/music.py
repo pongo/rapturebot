@@ -116,6 +116,14 @@ def find_users(message: telegram.Message, usernames: List[str]) -> Tuple[List[st
             found_uids.add(uid)
             found_usernames.append(user.fullname)
 
+    # команда без юзернеймов, но с реплаем
+    if not found_uids and message.reply_to_message:
+        uid = message.reply_to_message.from_user.id
+        user = User.get(uid)
+        if user:
+            found_uids.add(uid)
+            found_usernames.append(user.username if user.username else user.fullname)
+
     return not_found_usernames, found_uids, found_usernames
 
 
@@ -126,9 +134,9 @@ def get_manage_users_text(action: str, not_found_usernames, found_usernames) -> 
     """
     text = ''
     if found_usernames:
-        text = f'{action}: {", ".join(found_usernames)}'
+        text = f'{action}: {" ".join(found_usernames)}'
     if not_found_usernames:
-        text += f'\n\nНе найдены: {", ".join(not_found_usernames)}'
+        text += f'\n\nНе найдены: {" ".join(not_found_usernames)}'
     if not text:
         text = 'Ошибка'
     return text.strip()
@@ -144,7 +152,7 @@ def add_users(bot: telegram.Bot, message: telegram.Message, usernames: List[str]
         music_uids = get_music_users(chat_id)
         music_uids.update(found_uids)
         set_music_users(chat_id, music_uids)
-    text = get_manage_users_text('Добавлены', not_found_usernames, found_usernames)
+    text = get_manage_users_text('Добавлены в музкружок', not_found_usernames, found_usernames)
     bot.send_message(chat_id, text, reply_to_message_id=message.message_id)
 
 
@@ -158,7 +166,7 @@ def del_users(bot: telegram.Bot, message: telegram.Message, usernames: List[str]
         music_uids = get_music_users(chat_id)
         music_uids = music_uids - found_uids
         set_music_users(chat_id, music_uids)
-    text = get_manage_users_text('Удалены', not_found_usernames, found_usernames)
+    text = get_manage_users_text('Удалены из музкружка', not_found_usernames, found_usernames)
     bot.send_message(chat_id, text, reply_to_message_id=message.message_id)
 
 
@@ -263,17 +271,21 @@ def music(bot: telegram.Bot, update: telegram.Update) -> None:
         return
 
     # без текста, без реплая
+    send_music_help(bot, chat_id, message, music_users)
+
+
+def send_music_help(bot: telegram.Bot, chat_id: int, message: telegram.Message,
+                    music_users: Iterable[int]) -> None:
+    """
+    Отправляет справку по команде и список музкружка.
+    """
     formatted_users = format_users(chat_id, music_users)
     text = textwrap.dedent(
         f"""
-        Команда для музкружка. Использование:
-
-        • /music текст — бот делает реплай сообщения с тегами музкружка.
-        • /music (без текста, но с реплаем) — бот делает реплай к реплаю.
-        • вместо /music можно брать короткую /m
-
-        Админы чата и люди музкружка могут добавлять и удалять участников при помощи команд \
-/musicadd и /musicdel.
+        Команда для музкружка. Отправьте реплай с командой /music и бот сделает реплай к реплаю с тегами музкружка. Можно использовать короткую команду /m.
+        
+        "/musicadd @username" — добавить участника в музкружок. Только админы чата и люди \
+музкружка могут добавлять. Удалять аналогично командой /musicdel.
 
         Люди музкружка ({len(formatted_users)}): {", ".join(formatted_users)}
         """).strip()
@@ -289,8 +301,12 @@ def musicadd(bot: telegram.Bot, update: telegram.Update) -> None:
     """
     message = update.message
     args = get_args(message.text)
-    if args:
+    if args or message.reply_to_message:
         add_users(bot, message, args)
+        return
+    bot.send_message(message.chat_id,
+                     f'Для добавления в музкружок укажи юзернейм. Например:\n\n/musicadd @username',
+                     reply_to_message_id=message.message_id)
 
 
 @only_who_can_manage_music_users
@@ -300,5 +316,9 @@ def musicdel(bot: telegram.Bot, update: telegram.Update) -> None:
     """
     message = update.message
     args = get_args(message.text)
-    if args:
+    if args or message.reply_to_message:
         del_users(bot, message, args)
+        return
+    bot.send_message(message.chat_id,
+                     f'Для удаления из музкружка укажи юзернейм. Например:\n\n/musicdel @username',
+                     reply_to_message_id=message.message_id)

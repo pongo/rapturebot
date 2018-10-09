@@ -115,15 +115,7 @@ def find_users(message: telegram.Message, usernames: List[str]) -> Tuple[List[st
                 continue
             found_uids.add(uid)
             found_usernames.append(user.fullname)
-
-    # команда без юзернеймов, но с реплаем
-    if not found_uids and message.reply_to_message:
-        uid = message.reply_to_message.from_user.id
-        user = User.get(uid)
-        if user:
-            found_uids.add(uid)
-            found_usernames.append(user.username if user.username else user.fullname)
-
+    
     return not_found_usernames, found_uids, found_usernames
 
 
@@ -301,7 +293,7 @@ def musicadd(bot: telegram.Bot, update: telegram.Update) -> None:
     """
     message = update.message
     args = get_args(message.text)
-    if args or message.reply_to_message:
+    if args:
         add_users(bot, message, args)
         return
     bot.send_message(message.chat_id,
@@ -316,7 +308,7 @@ def musicdel(bot: telegram.Bot, update: telegram.Update) -> None:
     """
     message = update.message
     args = get_args(message.text)
-    if args or message.reply_to_message:
+    if args:
         del_users(bot, message, args)
         return
     bot.send_message(message.chat_id,

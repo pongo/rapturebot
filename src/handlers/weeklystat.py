@@ -3,7 +3,6 @@ import logging
 import random
 import typing
 from datetime import datetime, timedelta
-from time import sleep
 
 import pytils
 import telegram
@@ -103,14 +102,15 @@ def send_top_kroshka(bot, chat_id, monday):
 
 
 def send_alllove(bot, chat_id, prev_monday):
-    bot.send_message(chat_id, ReplyLove.get_all_love(chat_id, date=prev_monday,
-                                                     header='Вся страсть за неделю'),
-                     parse_mode=telegram.ParseMode.HTML)
-    sleep(1)
-    bot.send_message(chat_id, ReplyLove.get_all_love_outbound(chat_id, date=prev_monday,
-                                                              header='Вся исходящая страсть за неделю',
-                                                              no_love_show_only_count=True),
-                     parse_mode=telegram.ParseMode.HTML)
+    alllove = ReplyLove.get_all_love(chat_id, date=prev_monday, header='Вся страсть за неделю')
+    bot.send_message(chat_id, alllove, parse_mode=telegram.ParseMode.HTML)
+
+
+def send_alllove_outbound(bot, chat_id, prev_monday):
+    alllove = ReplyLove.get_all_love_outbound(chat_id, date=prev_monday,
+                                              header='Вся исходящая страсть за неделю',
+                                              no_love_show_only_count=True)
+    bot.send_message(chat_id, alllove, parse_mode=telegram.ParseMode.HTML)
 
 
 def send_replytop(bot, chat_id, prev_monday):
@@ -216,22 +216,15 @@ def send_weekly_for_chat(bot: telegram.Bot, chat_id: int, disabled_commands: typ
                          enabled_commands: typing.List[str], prev_monday: datetime) -> None:
     dsp(send_stats, bot, chat_id, 'Стата за прошлую неделю',
         CMDS['admins']['all_stat']['name'], prev_monday)
-    sleep(1)
     dsp(send_stats, bot, chat_id, 'Стата за прошлую неделю',
         CMDS['admins']['silent_guys']['name'], prev_monday, tag_salo=True)
-    sleep(1)
     if 'weeklystat:top_kroshka' not in disabled_commands:
         dsp(send_top_kroshka, bot, chat_id, prev_monday)
-        sleep(1)
     if 'weeklystat:pidorweekly' not in disabled_commands:
         dsp(send_pidorweekly, bot, chat_id, prev_monday)
-        sleep(1)
     if 'weeklystat:igorweekly' in enabled_commands:
         dsp(send_igorweekly, bot, chat_id, prev_monday)
-        sleep(1)
     dsp(send_replytop, bot, chat_id, prev_monday)
-    sleep(1)
     dsp(send_alllove, bot, chat_id, prev_monday)
-    sleep(1)
+    dsp(send_alllove_outbound, bot, chat_id, prev_monday)
     dsp(send_topmat, bot, chat_id, chat_id, prev_monday)
-    sleep(1)

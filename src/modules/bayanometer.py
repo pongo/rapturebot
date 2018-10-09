@@ -142,7 +142,7 @@ class Photo:
             # background.show()
             return background
 
-    def __init__(self, message_id: int, date: datetime):
+    def __init__(self, message_id: int, date: datetime.datetime):
         self.message_id = message_id
         self.date = date
 
@@ -264,7 +264,7 @@ class Photo:
 class URL:
     data_type = "url"
 
-    def __init__(self, message_id: int, date: datetime):
+    def __init__(self, message_id: int, date: datetime.datetime):
         self.message_id = message_id
         self.date = date
 

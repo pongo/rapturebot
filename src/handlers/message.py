@@ -31,6 +31,19 @@ logger = logging.getLogger(__name__)
 re_img = re.compile(r"\.(jpg|jpeg|png)$", re.IGNORECASE)
 
 
+@run_async
+@chat_guard
+def message(bot, update):
+    leave_check(bot, update)
+    message_reactions(bot, update)
+    random_khaleesi(bot, update)
+    last_word(bot, update)
+    mat_notify(bot, update)
+    Bayanometer.check(bot, update)
+    PidorWeekly.parse_message(update.message)
+    IgorWeekly.parse_message(update.message)
+
+
 def send_gdeleha(bot, chat_id, msg_id, user_id):
     if user_id in CONFIG.get('leha_ids', []) or user_id in CONFIG.get('leha_anya', []):
         bot.sendMessage(chat_id, "Леха — это ты!", reply_to_message_id=msg_id)
@@ -342,16 +355,3 @@ def random_khaleesi(bot, update):
         RandomKhaleesi.increase_khaleesi_time(chat_id)
         bot.sendMessage(chat_id, '{} 🐉'.format(khaleesed),
                         reply_to_message_id=update.message.message_id)
-
-
-@run_async
-@chat_guard
-def message(bot, update):
-    leave_check(bot, update)
-    message_reactions(bot, update)
-    random_khaleesi(bot, update)
-    last_word(bot, update)
-    PidorWeekly.parse_message(update.message)
-    IgorWeekly.parse_message(update.message)
-    mat_notify(bot, update)
-    Bayanometer.check(bot, update)

@@ -208,15 +208,24 @@ def send_list_replay(bot: telegram.Bot, chat_id: int, message_id: int, uids: Ite
     Бот отправляет в чат реплай, тегая участников музкружка.
     """
     formatted_chat_users = format_chat_users(chat_id, uids)
-    hashtag = '#музкружок '
+    first = True
+    first_message_id = None
+    # якобы телеграм не уведомляет если в сообщении больше 5 тегов
+    # разбиваем на части
     for chunk in chunks(formatted_chat_users, 5):
-        text = f'{hashtag}{" ".join(chunk)}'
-        hashtag = ''
-        dsp(send_replay, bot, chat_id, message_id, text)
+        joined = ' '.join(chunk)
+        # в первом сообщении указывается хештег и реплай идет к сообщению с музыкой
+        if first:
+            first = False
+            first_msg = send_replay(bot, chat_id, message_id, f'#музкружок {joined}')
+            first_message_id = first_msg.message_id
+            continue
+        # в последющих сообщениях тегаем первое
+        dsp(send_replay, bot, chat_id, first_message_id, joined)
 
 
-def send_replay(bot, chat_id, message_id, text):
-    bot.send_message(chat_id, text, reply_to_message_id=message_id, parse_mode='HTML')
+def send_replay(bot: telegram.Bot, chat_id: int, message_id: int, text: str) -> telegram.Message:
+    return bot.send_message(chat_id, text, reply_to_message_id=message_id, parse_mode='HTML')
 
 
 def send_sorry(bot: telegram.Bot, chat_id: int, message_id: int) -> None:

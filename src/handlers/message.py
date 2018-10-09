@@ -2,7 +2,6 @@
 import logging
 import random
 import re
-import typing
 
 import telegram
 from telegram.ext import run_async
@@ -21,7 +20,7 @@ from src.modules.models.leave_collector import LeaveCollector
 from src.modules.models.pidor_weekly import PidorWeekly
 from src.modules.models.user import User
 from src.modules.random_khaleesi import RandomKhaleesi
-from src.utils.cache import cache, TWO_DAYS, USER_CACHE_EXPIRE, MONTH
+from src.utils.cache import cache, TWO_DAYS, USER_CACHE_EXPIRE
 from src.utils.handlers_decorators import chat_guard, collect_stats, command_guard
 from src.utils.handlers_helpers import is_command_enabled_for_chat, \
     check_command_is_off, check_admin
@@ -110,7 +109,6 @@ def message_reactions(bot: telegram.Bot, update: telegram.Update):
             monday_stickersets = set()
         monday_stickersets.add(update.message.sticker.set_name)
         cache.set(cache_key, monday_stickersets, time=USER_CACHE_EXPIRE)
-        stickers_tag(bot, update)
 
     msg = update.message.text
     if msg is None:
@@ -182,21 +180,6 @@ def handle_photos_in_urls(bot: telegram.Bot, update: telegram.Update) -> None:
             if re_img.search(entity_text):
                 photo_reactions(bot, update, img_url=entity_text)
                 return
-
-
-def stickers_tag(bot: telegram.Bot, update: telegram.Update) -> None:
-    if 'stickers_tag' not in CONFIG:
-        return
-    message = update.message
-    chat_id = message.chat_id
-    if chat_id != CONFIG.get('anon_chat_id'):
-        return
-    uids: typing.List[int] = CONFIG['stickers_tag'].get(message.sticker.file_id, [])
-    if len(uids) == 0:
-        return
-    users = [User.get(uid) for uid in uids]
-    usernames = [user.get_username_or_link() for user in users if user]
-    bot.send_message(chat_id, ' '.join(usernames))
 
 
 def photo_reactions(bot: telegram.Bot, update: telegram.Update, img_url=None):

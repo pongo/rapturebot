@@ -10,6 +10,7 @@ from telegram.ext import run_async
 from src.config import CHATRULES, CMDS, CONFIG
 from src.handlers.khaleesi import check_base_khaleesi
 from src.handlers.last_word import get_last_word_cache_key
+from src.handlers.message import send_gdeleha
 from src.modules.models.leave_collector import LeaveCollector
 from src.modules.models.user import User
 from src.modules.reduplicator import reduplicate
@@ -221,3 +222,14 @@ def leave(bot, update):
         result = "За 3 дня ничего не произошло"
 
     bot.sendMessage(chat_id, result, parse_mode='HTML', reply_markup=reply_markup)
+
+
+@run_async
+@chat_guard
+@collect_stats
+@command_guard
+def gdeleha(bot, update):
+    chat_id = update.message.chat_id
+    user_id = update.message.from_user.id
+    msg_id = update.message.message_id
+    send_gdeleha(bot, chat_id, msg_id, user_id)

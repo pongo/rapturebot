@@ -31,17 +31,6 @@ logger = logging.getLogger(__name__)
 re_img = re.compile(r"\.(jpg|jpeg|png)$", re.IGNORECASE)
 
 
-@run_async
-@chat_guard
-@collect_stats
-@command_guard
-def gdeleha(bot, update):
-    chat_id = update.message.chat_id
-    user_id = update.message.from_user.id
-    msg_id = update.message.message_id
-    send_gdeleha(bot, chat_id, msg_id, user_id)
-
-
 def send_gdeleha(bot, chat_id, msg_id, user_id):
     if user_id in CONFIG.get('leha_ids', []) or user_id in CONFIG.get('leha_anya', []):
         bot.sendMessage(chat_id, "Леха — это ты!", reply_to_message_id=msg_id)

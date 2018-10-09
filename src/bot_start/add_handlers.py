@@ -6,14 +6,14 @@ from src.config import CMDS
 from src.handlers import khaleesi, ask, pipinder, repinder, topmat
 from src.handlers.callbacks import callback_handler
 from src.handlers.ment_handler import ment_handler
-from src.handlers.message import gdeleha, pidor, message
+from src.handlers.message import pidor, message
 from src.handlers.music_handler import musicadd_handler, musicdel_handler, music_handler
 from src.handlers.mylove import mylove, alllove, private_mylove
 from src.handlers.mystat import mystat, whois, private_whois, private_mystat
 from src.handlers.on_off import off_cmd, off_cmd_for_user, on_cmd, on_cmd_for_user
 from src.handlers.orzik import orzik, lord
 from src.handlers.other import rules, love, papa, pomogite, huificator, leave, expert, anketa, \
-    putin, changelog
+    putin, changelog, gdeleha
 from src.handlers.weeklystat import stats
 from src.handlers.welcome import welcome
 from src.modules import private

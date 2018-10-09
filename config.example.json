@@ -137,9 +137,5 @@
     "channel_id": -1234
   },
 
-  "--ktolivnul": 1234,
-  "--ducks_trigger": {
-    "re_pattern": "триггер",
-    "variants": ["🦆", "🐸", "🐀", "🐉", "🐷", "🙈"]
-  }
+  "--ktolivnul": 1234
 }

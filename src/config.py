@@ -1,7 +1,6 @@
 # coding=UTF-8
 import functools
 import json
-import re
 from typing import List, NamedTuple
 
 from src.utils.misc import get_int
@@ -38,8 +37,6 @@ for cmd in CMDS.get('text_cmds', []):
     VALID_CMDS.append(cmd)
 
 google_vision_client = None
-
-re_ducks_trigger = re.compile(CONFIG['ducks_trigger']['re_pattern'], re.IGNORECASE | re.MULTILINE) if 'ducks_trigger' in CONFIG else None
 
 
 class ChatInConfig(NamedTuple):

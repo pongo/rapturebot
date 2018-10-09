@@ -3,6 +3,7 @@ import random
 from typing import List
 
 import telegram
+from telegram.ext import run_async
 
 from src.config import CONFIG
 from src.modules.antimat import Antimat
@@ -11,6 +12,7 @@ from src.utils.cache import pure_cache, FEW_DAYS, USER_CACHE_EXPIRE
 from src.utils.time_helpers import get_current_monday_str
 
 
+@run_async
 def mat_notify(bot: telegram.Bot, update: telegram.Update):
     message = update.message
     text = message.text if message.text else message.caption

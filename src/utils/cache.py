@@ -1,18 +1,19 @@
 # coding=UTF-8
+import pickle
 from typing import Optional, List, Union, Set
 
 import redis
 
-try:
-    import cPickle as pickle  # type:ignore
-except ImportError:
-    import pickle  # type:ignore
-
 from src.config import CONFIG
 
 if 'cache' in CONFIG:
-    _redis = redis.StrictRedis(host=CONFIG['cache']['redis']['host'], port=CONFIG['cache']['redis']['port'], db=CONFIG['cache']['redis']['db'])
-    _pure_redis = redis.StrictRedis(host=CONFIG['cache']['redis']['host'], port=CONFIG['cache']['redis']['port'], db=CONFIG['cache']['redis']['db'], charset='utf-8', decode_responses=True)
+    _redis = redis.StrictRedis(host=CONFIG['cache']['redis']['host'],
+                               port=CONFIG['cache']['redis']['port'],
+                               db=CONFIG['cache']['redis']['db'])
+    _pure_redis = redis.StrictRedis(host=CONFIG['cache']['redis']['host'],
+                                    port=CONFIG['cache']['redis']['port'],
+                                    db=CONFIG['cache']['redis']['db'], charset='utf-8',
+                                    decode_responses=True)
 else:
     # print("Can't connect to Redis")
     _redis = None
@@ -26,6 +27,7 @@ FEW_DAYS = 4 * 24 * 60 * 60  # 4 дня
 SIX_MONTHS = 6 * MONTH
 YEAR = 31556926  # год
 TWO_YEARS = 2 * YEAR
+
 
 class Cache:
     @staticmethod
@@ -50,7 +52,8 @@ class Cache:
 
         See: https://stackoverflow.com/a/27561399/136559
         """
-        _redis.eval("for i, name in ipairs(redis.call('KEYS', ARGV[1])) do redis.call('DEL', name); end", 0, pattern)
+        lua = "for i, name in ipairs(redis.call('KEYS', ARGV[1])) do redis.call('DEL', name); end"
+        _redis.eval(lua, 0, pattern)
 
 
 class PureCache:

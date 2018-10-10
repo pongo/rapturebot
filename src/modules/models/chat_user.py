@@ -6,7 +6,7 @@ from threading import Lock
 from sqlalchemy import Column, Integer, BigInteger, Boolean, func
 
 from src.config import CONFIG
-from src.utils.cache import USER_CACHE_EXPIRE
+from src.utils.cache import USER_CACHE_EXPIRE, bot_id
 from src.utils.cache import cache
 from src.utils.db import Base, add_to_db, retry, session_scope
 
@@ -159,7 +159,7 @@ class ChatUser:
 
     @classmethod
     def add(cls, uid: int, cid: int, left: bool = False) -> None:
-        if uid == cache.get('bot_id'):
+        if uid == bot_id():
             return
         with cls.add_lock:
             new_user = ChatUser(uid=uid, cid=cid, left=left)

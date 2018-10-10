@@ -10,7 +10,7 @@ import pytils
 from src.config import CONFIG
 from src.modules.models.chat_user import ChatUser
 from src.modules.models.user import UserDB, User
-from src.utils.cache import cache, USER_CACHE_EXPIRE
+from src.utils.cache import cache, USER_CACHE_EXPIRE, bot_id
 from src.utils.misc import sort_dict, get_int
 from src.utils.time_helpers import get_current_monday, get_date_monday, get_yesterday
 
@@ -434,8 +434,7 @@ class LoveDumpTable:
 
     @staticmethod
     def __get_user_fullname(uid: int) -> str:
-        bot_id = cache.get('bot_id')
-        if bot_id and uid == bot_id:
+        if uid == bot_id():
             return 'Бот 🤖'
         user = User.get(uid)
         fullname = uid if not user else user.fullname

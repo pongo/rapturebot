@@ -126,3 +126,7 @@ class PureCache:
 
 cache = Cache()
 pure_cache = PureCache()
+_bot_id = None
+
+def bot_id():
+    return _bot_id

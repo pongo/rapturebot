@@ -16,7 +16,7 @@ from src.config import CONFIG
 from src.modules.antimat import Antimat
 from src.modules.models.chat_user import ChatUser, ChatUserDB
 from src.modules.models.user import UserDB, User
-from src.utils.cache import USER_CACHE_EXPIRE
+from src.utils.cache import USER_CACHE_EXPIRE, bot_id
 from src.utils.cache import cache
 from src.utils.db import Base, add_to_db, retry, session_scope
 from src.utils.misc import sort_dict
@@ -266,7 +266,7 @@ class UserStat:
 
     @classmethod
     def add(cls, added_stat: 'UserStat') -> None:
-        if added_stat.uid == cache.get('bot_id'):
+        if added_stat.uid == bot_id():
             return
         monday = get_current_monday()
         added_stat.stats_monday = monday

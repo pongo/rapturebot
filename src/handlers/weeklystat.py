@@ -18,7 +18,7 @@ from src.modules.models.pidor_weekly import PidorWeekly
 from src.modules.models.reply_top import ReplyTop, ReplyLove
 from src.modules.models.user import User
 from src.modules.models.user_stat import UserStat
-from src.utils.cache import cache, MONTH
+from src.utils.cache import cache, MONTH, bot_id
 from src.utils.handlers_decorators import chat_guard, collect_stats, command_guard
 from src.utils.handlers_helpers import is_command_enabled_for_chat, \
     get_command_name, check_admin
@@ -118,8 +118,7 @@ def send_replytop(bot, chat_id, prev_monday):
     msg = "<b>Кто кого реплаит</b>\n\n"
 
     def __get_user_fullname(uid):
-        bot_id = cache.get('bot_id')
-        if bot_id and uid == bot_id:
+        if uid == bot_id():
             return 'Бот 🤖'
         user = User.get(uid)
         fullname = uid if not user else user.fullname

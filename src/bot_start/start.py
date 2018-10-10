@@ -8,6 +8,7 @@ from telegram.ext import Updater
 from telegram.ext.messagequeue import DelayQueueError
 
 import src.config as config
+import src.utils.cache as cache_file
 from src.bot_start.add_handlers import add_chat_handlers, add_private_handlers, add_other_handlers
 from src.bot_start.add_jobs import add_jobs
 from src.bot_start.google_cloud import auth_google_vision
@@ -93,7 +94,7 @@ def start_bot():
         updater.start_polling()
 
     add_jobs(updater)
-    cache.set('bot_id', bot.id)
+    cache_file._bot_id = bot.id
     return updater
 
 

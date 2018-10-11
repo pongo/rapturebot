@@ -1,5 +1,4 @@
 # coding=UTF-8
-import logging
 import random
 import typing
 
@@ -19,8 +18,9 @@ from src.utils.callback_helpers import get_callback_data
 from src.utils.handlers_decorators import chat_guard, collect_stats, command_guard
 from src.utils.handlers_helpers import is_command_enabled_for_chat, \
     check_admin
+from src.utils.logger_helpers import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 @run_async

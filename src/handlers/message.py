@@ -1,5 +1,4 @@
 # coding=UTF-8
-import logging
 import random
 import re
 
@@ -24,9 +23,10 @@ from src.utils.cache import cache, TWO_DAYS, USER_CACHE_EXPIRE, pure_cache
 from src.utils.handlers_decorators import chat_guard, collect_stats, command_guard
 from src.utils.handlers_helpers import is_command_enabled_for_chat, \
     check_command_is_off, check_admin
+from src.utils.logger_helpers import get_logger
 from src.utils.time_helpers import get_current_monday_str, today_str
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 re_img = re.compile(r"\.(jpg|jpeg|png)$", re.IGNORECASE)
 
 

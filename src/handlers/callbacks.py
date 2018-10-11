@@ -1,5 +1,4 @@
 # coding=UTF-8
-import logging
 
 import telegram
 from telegram.ext import run_async
@@ -11,8 +10,9 @@ from src.modules.dayof.day_manager import DayOfManager
 from src.modules.matshowtime import MatshowtimeHandlers
 from src.modules.spoiler import SpoilerHandlers
 from src.utils.cache import cache
+from src.utils.logger_helpers import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 @run_async

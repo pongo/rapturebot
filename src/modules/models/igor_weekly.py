@@ -1,5 +1,3 @@
-# coding=UTF-8
-
 import random
 import re
 from datetime import datetime, timedelta
@@ -8,6 +6,9 @@ from threading import Lock
 from src.modules.models.user import UserDB
 from src.modules.models.user_stat import UserStat
 from src.utils.cache import cache, USER_CACHE_EXPIRE
+from src.utils.logger_helpers import get_logger
+
+logger = get_logger(__name__)
 
 
 class IgorWeekly:
@@ -81,6 +82,7 @@ class IgorWeekly:
     @classmethod
     def __add(cls, uid, cid, date=None, replay=False):
         monday = cls.__get_current_monday() if date is None else cls.__get_date_monday(date)
+        logger.debug(f'lock {cid}:{uid}')
         with cls.lock:
             db = cls.__get_db(monday, cid)
             value = 1

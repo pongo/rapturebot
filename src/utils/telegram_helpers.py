@@ -1,5 +1,4 @@
 # coding=UTF-8
-import logging
 import time
 from functools import wraps
 from typing import List, Optional
@@ -7,9 +6,10 @@ from typing import List, Optional
 import telegram
 from telegram.ext import DelayQueue
 
+from src.utils.logger_helpers import get_logger
 from src.utils.mwt import MWT
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 dsp = DelayQueue(burst_limit=20, time_limit_ms=1017)
 
 

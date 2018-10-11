@@ -10,9 +10,10 @@
     }
   },
   "logging": {
+    "file": null,
     "format": "[%(asctime)s][%(levelname)s][%(name)s] - %(message)s",
     "level": "INFO",
-    "file": null
+    "src_level": "INFO"
   },
   "--telegram_proxy": {
     "proxy_url": "socks5://127.0.0.1:1080",

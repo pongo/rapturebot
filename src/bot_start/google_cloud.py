@@ -1,9 +1,10 @@
 # coding=UTF-8
 
-import logging
 import os
 
-logger = logging.getLogger(__name__)
+from src.utils.logger_helpers import get_logger
+
+logger = get_logger(__name__)
 
 
 # noinspection PyPackageRequirements

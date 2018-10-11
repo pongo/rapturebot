@@ -7,8 +7,10 @@ from src.config import CONFIG
 from src.handlers.pipinder import send_pipinder
 from src.utils.cache import cache, FEW_DAYS
 from src.utils.handlers_decorators import chat_guard, collect_stats, command_guard
+from src.utils.logger_helpers import get_logger
 from src.utils.time_helpers import today_str
 
+logger = get_logger(__name__)
 repinder_lock = Lock()
 
 def can_use_repinder(_: telegram.Bot, __: int, user_id: int) -> bool:
@@ -72,6 +74,7 @@ def repinder_guard(f):
 @repinder_guard
 def repinder(bot: telegram.Bot, update: telegram.Update) -> None:
     key = f'pipinder:stickersets:{today_str()}'
+    logger.debug(f'repinder_lock. chat: {update.message.chat_id}')
     # лок, чтобы операция прошла за раз
     with repinder_lock:
         today_stickersets_names: list = cache.get(key, [])

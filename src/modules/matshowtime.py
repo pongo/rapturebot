@@ -1,5 +1,4 @@
 # coding=UTF-8
-import logging
 import time
 from random import randint
 from threading import Lock
@@ -11,9 +10,10 @@ from src.config import CONFIG
 from src.modules.antimat import Antimat
 from src.utils.cache import pure_cache, TWO_YEARS, cache, MONTH
 from src.utils.callback_helpers import get_callback_data
+from src.utils.logger_helpers import get_logger
 from src.utils.telegram_helpers import telegram_retry, dsp
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 CACHE_PREFIX = 'matshowtime'
 
 

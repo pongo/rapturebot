@@ -1,5 +1,4 @@
 # coding=UTF-8
-import logging
 
 import telegram
 
@@ -7,8 +6,9 @@ from src.modules.models.user import User
 from src.utils.handlers_decorators import chat_guard, collect_stats, command_guard
 from src.utils.handlers_helpers import is_cmd_delayed, is_command_enabled_for_chat, \
     check_admin, CommandConfig
+from src.utils.logger_helpers import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 @chat_guard

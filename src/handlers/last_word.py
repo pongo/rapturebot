@@ -1,11 +1,11 @@
 # coding=UTF-8
-import logging
 
 import telegram
 
 from src.utils.cache import cache, TWO_YEARS
+from src.utils.logger_helpers import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def get_last_word_cache_key(cid, uid) -> str:

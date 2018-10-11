@@ -1,6 +1,5 @@
 # coding=UTF-8
 
-import logging
 import typing
 
 import telegram
@@ -13,8 +12,9 @@ from src.modules.models.user import User
 from src.utils.handlers_decorators import chat_guard, collect_stats, command_guard, \
     only_users_from_main_chat
 from src.utils.handlers_helpers import check_admin
+from src.utils.logger_helpers import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 @run_async

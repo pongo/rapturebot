@@ -1,13 +1,13 @@
 # coding=UTF-8
-import logging
 
 import telegram
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 
 from src.modules.dayof.valentine_day import Web
+from src.utils.logger_helpers import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def create_app(bot: telegram.Bot):

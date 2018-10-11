@@ -1,6 +1,5 @@
 # coding=UTF-8
 import enum
-import logging
 import random
 import re
 import textwrap
@@ -18,9 +17,10 @@ from src.modules.models.chat_user import ChatUser
 from src.modules.models.user import User
 from src.utils.cache import cache, USER_CACHE_EXPIRE
 from src.utils.callback_helpers import get_callback_data
+from src.utils.logger_helpers import get_logger
 from src.utils.text_helpers import lstrip_every_line
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 CACHE_PREFIX = 'fsb_day'
 
 

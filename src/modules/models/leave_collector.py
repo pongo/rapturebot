@@ -1,7 +1,6 @@
 # coding=UTF-8
 
 import enum
-import logging
 import typing
 from datetime import datetime, timedelta
 from threading import Lock
@@ -16,9 +15,10 @@ from src.modules.models.chat_user import ChatUser
 from src.modules.models.user import User
 from src.utils.cache import cache, TWO_YEARS, FEW_DAYS, pure_cache
 from src.utils.db import Base, add_to_db, session_scope, retry
+from src.utils.logger_helpers import get_logger
 from src.utils.telegram_helpers import telegram_retry
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class LeaveCollectorDB(Base):
@@ -186,6 +186,7 @@ class LeaveCollector:
 
     @classmethod
     def update_ktolivnul(cls, chat_id: int) -> None:
+        logger.debug(f'update_ktolivnul_lock {chat_id}')
         # лок, чтобы работа прошла за раз
         # иначе можно кого-то отметить дважды ливнувшим
         with cls.update_ktolivnul_lock:

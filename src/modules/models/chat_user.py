@@ -1,5 +1,3 @@
-# coding=UTF-8
-import logging
 import typing
 from threading import Lock
 
@@ -9,8 +7,9 @@ from src.config import CONFIG
 from src.utils.cache import USER_CACHE_EXPIRE, bot_id
 from src.utils.cache import cache
 from src.utils.db import Base, add_to_db, retry, session_scope
+from src.utils.logger_helpers import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class ChatUserDB(Base):

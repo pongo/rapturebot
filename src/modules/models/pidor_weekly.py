@@ -1,5 +1,3 @@
-# coding=UTF-8
-
 import random
 import re
 from datetime import datetime, timedelta
@@ -8,11 +6,16 @@ from threading import Lock
 from src.modules.models.user import UserDB
 from src.modules.models.user_stat import UserStat
 from src.utils.cache import cache, USER_CACHE_EXPIRE
+from src.utils.logger_helpers import get_logger
+
+logger = get_logger(__name__)
 
 
 class PidorWeekly:
     lock = Lock()
-    re_words = re.compile(r"\b(ге[йяи]|геев|анал|аналы|аналь\S+|анус|очко|жоп[ау]|жопой|поп[ау]|попой|попк[ау]|попкой|говн[оа]|говном|пенис\S*|член\S*|пизд\S+|гомос\S+|гомик\S*|\S+сексуал\S*|климов\S*|педерас\S+|пидор\S*|пидар\S*|педик\S+|подвор\S+|iphone\S*|айфон\S*|samsung|самсунг\S*|смузи|барбер\S*|рокет\S*|хипстер\S*|лгбт\S*|бабочк\S+|м[ао]к[ао]син\S*|ахтунг\S*|толерант\S+|политкорр?ект\S+|стрижк\S+|бород\S+|аниме\S*|саратов\S*|фемк\S+|\S+изм\S*|dtf|дтф|в[еэ]йп\S*|гироскутер\S*|мизог\S+|козел|козл\S+|муда[кч]\S*|сволоч\S+|ресторан\S*|кача[лт]\S+|мыло|читер\S*|читы?|культур\S+|сра[тл]\S+|насра[тл]\S+|гад\S*|блогг?ер\S*)\b", re.IGNORECASE)
+    re_words = re.compile(
+        r"\b(ге[йяи]|геев|анал|аналы|аналь\S+|анус|очко|жоп[ау]|жопой|поп[ау]|попой|попк[ау]|попкой|говн[оа]|говном|пенис\S*|член\S*|пизд\S+|гомос\S+|гомик\S*|\S+сексуал\S*|климов\S*|педерас\S+|пидор\S*|пидар\S*|педик\S+|подвор\S+|iphone\S*|айфон\S*|samsung|самсунг\S*|смузи|барбер\S*|рокет\S*|хипстер\S*|лгбт\S*|бабочк\S+|м[ао]к[ао]син\S*|ахтунг\S*|толерант\S+|политкорр?ект\S+|стрижк\S+|бород\S+|аниме\S*|саратов\S*|фемк\S+|\S+изм\S*|dtf|дтф|в[еэ]йп\S*|гироскутер\S*|мизог\S+|козел|козл\S+|муда[кч]\S*|сволоч\S+|ресторан\S*|кача[лт]\S+|мыло|читер\S*|читы?|культур\S+|сра[тл]\S+|насра[тл]\S+|гад\S*|блогг?ер\S*)\b",
+        re.IGNORECASE)
     re_inside = re.compile(r"п[еи]д[оа]р\S*", re.IGNORECASE)
 
     @classmethod
@@ -84,6 +87,7 @@ class PidorWeekly:
     @classmethod
     def __add(cls, uid, cid, date=None, replay=False):
         monday = cls.__get_current_monday() if date is None else cls.__get_date_monday(date)
+        logger.debug(f'lock {cid}:{uid}')
         with cls.lock:
             db = cls.__get_db(monday, cid)
             value = 1

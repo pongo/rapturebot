@@ -1,6 +1,5 @@
 # coding=UTF-8
 
-import logging
 import typing
 from threading import Lock
 
@@ -10,9 +9,10 @@ from sqlalchemy import Column, Integer, Text, Boolean
 from src.modules.models.chat_user import ChatUser
 from src.utils.cache import cache, USER_CACHE_EXPIRE
 from src.utils.db import Base, add_to_db, retry, session_scope
+from src.utils.logger_helpers import get_logger
 from src.utils.misc import get_int
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class UserDB(Base):
@@ -186,6 +186,7 @@ class User:
         if cached:
             return cached
 
+        logger.debug(f'get_lock {uid}')
         # лок, чтобы в редис попало то, что в бд
         with cls.get_lock:
             try:

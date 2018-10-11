@@ -2,7 +2,6 @@
 import collections
 import functools
 import hashlib
-import logging
 import re
 import textwrap
 from datetime import datetime
@@ -19,11 +18,12 @@ from src.modules.models.chat_user import ChatUser
 from src.modules.models.user import User
 from src.utils.cache import cache, USER_CACHE_EXPIRE, pure_cache
 from src.utils.callback_helpers import get_callback_data
+from src.utils.logger_helpers import get_logger
 from src.utils.misc import get_int
 from src.utils.misc import retry
 from src.utils.text_helpers import lstrip_every_line
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 CACHE_PREFIX = 'valentine_day'
 MODULE_NAME = 'valentine_day'
 HEARTS = ['♥️', '❤️', '💛', '💚', '💙', '💜', '🖤', '💔']

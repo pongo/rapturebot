@@ -1,14 +1,14 @@
 # coding=UTF-8
-import logging
 import random
 from typing import Union, Optional
 
 from src.config import CMDS, VALID_CMDS, CONFIG
 from src.modules.khaleesi import Khaleesi
 from src.utils.cache import cache, MONTH
+from src.utils.logger_helpers import get_logger
 from src.utils.telegram_helpers import get_chat_admins
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def is_command_enabled_for_chat(chat_id: Union[int, str], cmd_name: Optional[str]) -> bool:

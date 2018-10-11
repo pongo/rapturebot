@@ -1,5 +1,4 @@
 # coding=UTF-8
-import logging
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
@@ -10,8 +9,9 @@ from src.utils.callback_helpers import remove_inline_keyboard, get_callback_data
 from src.utils.handlers_decorators import chat_guard, collect_stats, command_guard
 from src.utils.handlers_helpers import get_command_name, is_valid_command, check_command_is_off, \
     check_admin
+from src.utils.logger_helpers import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def off_all_cmds(bot, update):

@@ -1,4 +1,3 @@
-# coding=UTF-8
 import json
 import os
 from datetime import datetime
@@ -11,8 +10,11 @@ from src.config import CONFIG
 from src.modules.models.chat_user import ChatUser
 from src.modules.models.user import UserDB, User
 from src.utils.cache import cache, USER_CACHE_EXPIRE, bot_id
+from src.utils.logger_helpers import get_logger
 from src.utils.misc import sort_dict, get_int
 from src.utils.time_helpers import get_current_monday, get_date_monday, get_yesterday
+
+logger = get_logger(__name__)
 
 
 class ReplyTopDBHelper:
@@ -48,6 +50,7 @@ class ReplyTopDBHelper:
         """
         Добавляет статистику по страсти
         """
+        logger.debug(f'[{self.name}] lock {cid}:{from_uid}-->{to_uid}')
         with self.lock:
             db = self.get_db(date, cid)
             self.__count_replays(db, from_uid, to_uid)

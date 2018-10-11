@@ -13,10 +13,12 @@ from telegram.ext import run_async
 from src.config import CONFIG
 from src.utils.cache import cache
 from src.utils.handlers_decorators import chat_guard, collect_stats, command_guard
+from src.utils.logger_helpers import get_logger
 from src.utils.telegram_helpers import dsp
 
 TMP_DIR = '../../tmp/weather/'
 full_moon_lock = Lock()
+logger = get_logger(__name__)
 
 
 @run_async
@@ -75,6 +77,7 @@ def send_alert_if_full_moon(bot: telegram.Bot, chat_id: int) -> None:
     # т.к. используется run_async, то мы можем одновременно вызвать этот метод.
     # но мы не хотим делать несколько одинаковых запросов к апи.
     # поэтому используем блокировку и сохраняем результат запроса в редис.
+    logger.debug(f'full_moon_lock')
     with full_moon_lock:
         full_moon: Optional[bool] = cache.get('weather:full_moon', None)
         if full_moon is None:

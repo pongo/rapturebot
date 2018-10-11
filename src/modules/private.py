@@ -1,7 +1,5 @@
 # coding=UTF-8
-
 import json
-import logging
 import random
 import re
 from datetime import datetime
@@ -20,9 +18,10 @@ from src.modules.models.reply_top import LoveDumpTable
 from src.modules.models.user import User
 from src.utils.cache import cache
 from src.utils.handlers_decorators import only_users_from_main_chat
+from src.utils.logger_helpers import get_logger
 from src.utils.misc import weighted_choice
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def startup_time(bot: telegram.Bot, update: telegram.Update) -> None:

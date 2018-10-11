@@ -1,7 +1,6 @@
 # coding=UTF-8
 
 import locale
-import logging
 import random
 import typing
 from datetime import timedelta
@@ -19,10 +18,11 @@ from src.modules.models.user import UserDB, User
 from src.utils.cache import USER_CACHE_EXPIRE, bot_id
 from src.utils.cache import cache
 from src.utils.db import Base, add_to_db, retry, session_scope
+from src.utils.logger_helpers import get_logger
 from src.utils.misc import sort_dict
 from src.utils.time_helpers import get_current_monday, get_date_monday
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class UserStatDB(Base):
@@ -273,6 +273,7 @@ class UserStat:
         uid = added_stat.uid
         cid = added_stat.cid
         key = cls.__get_cache_key(monday, uid, cid)
+        logger.debug(f'add_lock {cid}:{uid}')
         # стата обновляется постоянно, поэтому лок сразу
         with cls.add_lock:
             old_stat = cls.get(monday, uid, cid)
@@ -291,6 +292,7 @@ class UserStat:
         cached = cache.get(cls.__get_cache_key(monday, uid, cid))
         if cached:
             return cached
+        logger.debug(f'get_lock {cid}:{uid}')
         # лок, чтобы в редис попали точно такие же данные, как в бд
         with cls.get_lock:
             try:
@@ -638,13 +640,6 @@ class UserStat:
         user = User.get(uid)
         return user
 
-    # @staticmethod
-    # def __add_all_msg_count_cache(monday, cid):
-    #     key = 'all_msg_{}_{}'.format(monday.strftime("%Y%m%d"), cid)
-    #     cached = cache.incr(key)
-    #     if cached is None:
-    #         cache.set(key, str(1))
-
     @staticmethod
     def __get_all_msg_count(monday, cid):
         # key = 'all_msg_{}_{}'.format(monday.strftime("%Y%m%d"), cid)
@@ -846,6 +841,7 @@ class UserDomains:
 
         # в мемкеше хранятся все домены пользователя за текущую неделю с количеством использований
         monday = get_current_monday()
+        logger.debug(f'update_user_top_domain_lock {cid}:{uid}')
         with cls.lock:
             cache_key = cls.__get_user_domain_cache_key(monday, uid, cid)
             user_domains = cache.get(cache_key)

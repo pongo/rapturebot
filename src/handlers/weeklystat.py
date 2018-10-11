@@ -1,5 +1,4 @@
 # coding=UTF-8
-import logging
 import random
 import typing
 from datetime import datetime, timedelta
@@ -22,10 +21,11 @@ from src.utils.cache import cache, MONTH, bot_id
 from src.utils.handlers_decorators import chat_guard, collect_stats, command_guard
 from src.utils.handlers_helpers import is_command_enabled_for_chat, \
     get_command_name, check_admin
+from src.utils.logger_helpers import get_logger
 from src.utils.misc import get_int
 from src.utils.telegram_helpers import dsp
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 @run_async

@@ -161,6 +161,7 @@ class ChatUser:
         if uid == bot_id():
             return
         new_user = ChatUser(uid=uid, cid=cid, left=left)
+        old_user = cls.get(uid, cid)
 
         # эти данные в бд меняются редко, поэтому они сразу сохраняются в редис,
         # чтобы не локать лишний раз
@@ -168,7 +169,6 @@ class ChatUser:
 
         # проверка, нужно ли обновлять бд
         # блокировка (она в методе __add) начнется только если данные изменились
-        old_user = cls.get(uid, cid)
         if old_user is not None:
             update = {}
             if old_user.left != left:

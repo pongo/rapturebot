@@ -146,11 +146,9 @@ def add_private_handlers(dp):
     dp.add_handler(CommandHandler('anon', private.anon, filters=Filters.private & Filters.command))
 
     # должно идти в конце
-    dp.add_handler(MessageHandler(
-        Filters.private & (
-                    Filters.text | Filters.sticker | Filters.photo | Filters.voice | Filters.document),
-        private,
-        edited_updates=True))
+    private_filters = Filters.private & (
+            Filters.text | Filters.sticker | Filters.photo | Filters.voice | Filters.document)
+    dp.add_handler(MessageHandler(private_filters, private.private, edited_updates=True))
 
 
 def add_other_handlers(dp):

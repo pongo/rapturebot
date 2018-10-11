@@ -272,9 +272,10 @@ class UserStat:
         added_stat.stats_monday = monday
         uid = added_stat.uid
         cid = added_stat.cid
+        key = cls.__get_cache_key(monday, uid, cid)
+        # стата обновляется постоянно, поэтому лок сразу
         with cls.add_lock:
             old_stat = cls.get(monday, uid, cid)
-            key = cls.__get_cache_key(monday, uid, cid)
             try:
                 if old_stat is not None:
                     updated_stat = cls.__update(old_stat, added_stat)
@@ -293,6 +294,7 @@ class UserStat:
                 logger.info(f'Base class. uid {uid}. cid {cid}')
                 return cls.copy(cached)
             return cached
+        # лок, чтобы в редис попали точно такие же данные, как в бд
         with cls.get_lock:
             try:
                 with session_scope() as db:

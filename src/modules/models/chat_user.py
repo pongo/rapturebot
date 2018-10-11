@@ -161,19 +161,36 @@ class ChatUser:
     def add(cls, uid: int, cid: int, left: bool = False) -> None:
         if uid == bot_id():
             return
+        new_user = ChatUser(uid=uid, cid=cid, left=left)
+
+        # эти данные в бд меняются редко, поэтому они сразу сохраняются в редис,
+        # чтобы не локать лишний раз
+        cache.set(cls.__get_key(uid, cid), new_user, time=USER_CACHE_EXPIRE)
+
+        # проверка, нужно ли обновлять бд
+        # блокировка (она в методе __add) начнется только если данные изменились
+        old_user = cls.get(uid, cid)
+        if old_user is not None:
+            update = {}
+            if old_user.left != left:
+                update['left'] = left
+            if update:
+                cls.__add(new_user, update)
+            return
+        cls.__add(new_user)
+
+    @classmethod
+    def __add(cls, new_user: 'ChatUser', update: dict = None) -> None:
+        """
+        Добавляет или изменяет чатюзера в бд
+        """
+        logger.debug(f'add_lock {new_user.cid}:{new_user.uid}')
         with cls.add_lock:
-            new_user = ChatUser(uid=uid, cid=cid, left=left)
-            old_user = cls.get(uid, cid)
             try:
-                if old_user is not None:
-                    update = {}
-                    if old_user.left != left:
-                        update['left'] = left
-                    if update:
-                        ChatUserDB.update(uid, cid, update, new_user)
-                else:
-                    ChatUserDB.add(new_user)
-                cache.set(cls.__get_key(uid, cid), new_user, time=USER_CACHE_EXPIRE)
+                if update:
+                    ChatUserDB.update(new_user.uid, new_user.cid, update, new_user)
+                    return
+                ChatUserDB.add(new_user)
             except Exception as e:
                 logger.error(e)
 
@@ -185,14 +202,17 @@ class ChatUser:
                 logger.info(f'[chatuser] Base class. {uid}:{cid}')
                 return cls.copy(cached)
             return cached
-        try:
-            with cls.get_lock:
+
+        logger.debug(f'get_lock {cid}:{uid}')
+        # лок, чтобы в редис попало то, что в бд
+        with cls.get_lock:
+            try:
                 chatuser = ChatUserDB.get(uid, cid)
                 if chatuser:
                     cache.set(cls.__get_key(uid, cid), chatuser, time=USER_CACHE_EXPIRE)
                     return chatuser
-        except Exception as e:
-            logger.error(e)
+            except Exception as e:
+                logger.error(e)
         return None
 
     @classmethod

@@ -147,8 +147,28 @@ class User:
             return
         username = user.username
         fullname = ' '.join([user.first_name or '', user.last_name or '']).strip()
-        with cls.add_lock:
-            cls.__add(user.id, username, fullname)
+
+        uid = user.id
+        old_user = cls.get(uid)
+        old_user_female = False if old_user is None else old_user.female
+        new_user = User(uid=uid, username=username, fullname=fullname, female=old_user_female)
+
+        # пользователя нужно всегда обновлять в редисе (продлевать кэш, так сказать)
+        # но в базе он меняется редко. поэтому сразу обновляем редис
+        cache.set(cls.__get_cache_key(uid), new_user, time=USER_CACHE_EXPIRE)
+
+        # и только потом проверяем, нужно ли обновить в базе
+        # если нужно, то __add вызовет блокировку потока
+        if old_user is not None:
+            update = {}
+            if old_user.username != username:
+                update['username'] = username
+            if old_user.fullname != fullname:
+                update['fullname'] = fullname
+            if update:
+                cls.__add(new_user, update)
+            return
+        cls.__add(new_user)
 
     @classmethod
     def get(cls, uid) -> typing.Optional['User']:
@@ -170,6 +190,7 @@ class User:
             #     return cls.copy(cached)
             return cached
 
+        # лок, чтобы в редис попало то, что в бд
         with cls.get_lock:
             try:
                 user = UserDB.get(uid)
@@ -199,25 +220,16 @@ class User:
         return None
 
     @classmethod
-    def __add(cls, uid, username, fullname) -> None:
-        old_user = cls.get(uid)
-        old_user_female = False if old_user is None else old_user.female
-        new_user = User(uid=uid, username=username, fullname=fullname, female=old_user_female)
-        try:
-            if old_user is not None:
-                update = {}
-                if old_user.username != username:
-                    update['username'] = username
-                if old_user.fullname != fullname:
-                    update['fullname'] = fullname
+    def __add(cls, new_user: 'User', update: dict = None) -> None:
+        logger.debug(f'add_lock @{new_user.username}:{new_user.uid}')
+        with cls.add_lock:
+            try:
                 if update:
-                    UserDB.update(uid, update, new_user)
-            else:
+                    UserDB.update(new_user.uid, update, new_user)
+                    return
                 UserDB.add(new_user)
-        except Exception as e:
-            logger.error(e)
-            return
-        cache.set(cls.__get_cache_key(uid), new_user, time=USER_CACHE_EXPIRE)
+            except Exception as e:
+                logger.error(e)
 
     @staticmethod
     def __get_cache_key(uid) -> str:

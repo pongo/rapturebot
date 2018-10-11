@@ -103,7 +103,6 @@ class LeaveCollector:
     """
     Здесь хранятся все входы и ливы из чата.
     """
-    add_lock = Lock()
     update_ktolivnul_lock = Lock()
 
     def __init__(self, id=None, uid=None, cid=None, date=None, leave_type=None, from_uid=None,
@@ -134,12 +133,11 @@ class LeaveCollector:
 
     @classmethod
     def __add(cls, uid, cid, date, from_uid, leave_type):
-        with cls.add_lock:
-            try:
-                LeaveCollectorDB.add(uid=uid, cid=cid, date=date, from_uid=from_uid,
-                                     leave_type=leave_type)
-            except Exception as e:
-                logger.error(e)
+        try:
+            LeaveCollectorDB.add(uid=uid, cid=cid, date=date, from_uid=from_uid,
+                                 leave_type=leave_type)
+        except Exception as e:
+            logger.error(e)
 
     @staticmethod
     def add_invite(uid, cid, date, from_uid):
@@ -188,6 +186,8 @@ class LeaveCollector:
 
     @classmethod
     def update_ktolivnul(cls, chat_id: int) -> None:
+        # лок, чтобы работа прошла за раз
+        # иначе можно кого-то отметить дважды ливнувшим
         with cls.update_ktolivnul_lock:
             chat_uids_ktolivnul = set(
                 [int(x) for x in pure_cache.get(f'ktolivnul:{chat_id}', '').split(',') if x != ''])

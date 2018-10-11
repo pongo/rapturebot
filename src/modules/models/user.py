@@ -10,6 +10,7 @@ from sqlalchemy import Column, Integer, Text, Boolean
 from src.modules.models.chat_user import ChatUser
 from src.utils.cache import cache, USER_CACHE_EXPIRE
 from src.utils.db import Base, add_to_db, retry, session_scope
+from src.utils.misc import get_int
 
 logger = logging.getLogger(__name__)
 
@@ -177,17 +178,12 @@ class User:
         if isinstance(uid, ChatUser):
             uid = uid.uid
         if isinstance(uid, str):
-            try:
-                uid = int(uid)
-            except Exception as e:
-                logger.error(e)
+            uid = get_int(uid)
+            if uid is None:
                 return None
 
         cached = cache.get(cls.__get_cache_key(uid))
         if cached:
-            # if isinstance(cached, Base):
-            #     logger.info(f'[user] Base class. uid {uid}')
-            #     return cls.copy(cached)
             return cached
 
         # лок, чтобы в редис попало то, что в бд

@@ -290,9 +290,6 @@ class UserStat:
     def get(cls, monday, uid, cid) -> typing.Optional['UserStat']:
         cached = cache.get(cls.__get_cache_key(monday, uid, cid))
         if cached:
-            if isinstance(cached, Base):
-                logger.info(f'Base class. uid {uid}. cid {cid}')
-                return cls.copy(cached)
             return cached
         # лок, чтобы в редис попали точно такие же данные, как в бд
         with cls.get_lock:

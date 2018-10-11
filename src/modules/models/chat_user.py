@@ -198,9 +198,6 @@ class ChatUser:
     def get(cls, uid, cid) -> typing.Optional['ChatUser']:
         cached = cache.get(cls.__get_key(uid, cid))
         if cached:
-            if isinstance(cached, Base):
-                logger.info(f'[chatuser] Base class. {uid}:{cid}')
-                return cls.copy(cached)
             return cached
 
         logger.debug(f'get_lock {cid}:{uid}')

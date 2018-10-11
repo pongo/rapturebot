@@ -20,11 +20,11 @@ from src.modules.models.leave_collector import LeaveCollector
 from src.modules.models.pidor_weekly import PidorWeekly
 from src.modules.models.user import User
 from src.modules.random_khaleesi import RandomKhaleesi
-from src.utils.cache import cache, TWO_DAYS, USER_CACHE_EXPIRE
+from src.utils.cache import cache, TWO_DAYS, USER_CACHE_EXPIRE, pure_cache
 from src.utils.handlers_decorators import chat_guard, collect_stats, command_guard
 from src.utils.handlers_helpers import is_command_enabled_for_chat, \
     check_command_is_off, check_admin
-from src.utils.time_helpers import get_current_monday_str
+from src.utils.time_helpers import get_current_monday_str, today_str
 
 logger = logging.getLogger(__name__)
 re_img = re.compile(r"\.(jpg|jpeg|png)$", re.IGNORECASE)
@@ -41,6 +41,7 @@ def message(bot, update):
     Bayanometer.check(bot, update)
     PidorWeekly.parse_message(update.message)
     IgorWeekly.parse_message(update.message)
+    pure_cache.incr(f"metrics:messages:{today_str()}")
 
 
 def send_gdeleha(bot, chat_id, msg_id, user_id):

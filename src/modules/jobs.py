@@ -11,6 +11,7 @@ from src.modules.models.reply_top import ReplyDumper
 from src.modules.weather import send_alert_if_full_moon
 from src.utils.cache import pure_cache, FEW_DAYS
 from src.utils.handlers_helpers import is_command_enabled_for_chat
+from src.utils.time_helpers import today_str
 
 
 @run_async
@@ -34,6 +35,14 @@ def daily_afternoon(bot: telegram.Bot, _):
 def lefts_check(bot: telegram.Bot, _):
     LeaveCollector.check_left_users(bot)
 
-def health_log(*_):
+def health_log(bot: telegram.Bot, _) -> None:
     now = datetime.now()
-    pure_cache.append_list(f"health_log:{now.strftime('%Y%m%d')}", now.strftime('%H:%M'), time=FEW_DAYS)
+    try:
+        me = bot.get_me()
+        answer = f' @{me.username}'
+    except Exception as e:
+        answer = f' error: {e}'
+
+    messages_metric = pure_cache.get(f"metrics:messages:{today_str()}", '0')
+    value = f"{now.strftime('%H:%M')} - {messages_metric} - {answer}"
+    pure_cache.append_list(f"health_log:{now.strftime('%Y%m%d')}", value, time=FEW_DAYS)

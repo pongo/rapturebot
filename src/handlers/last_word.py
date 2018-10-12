@@ -1,6 +1,7 @@
 # coding=UTF-8
 
 import telegram
+from telegram.ext import run_async
 
 from src.utils.cache import cache, TWO_YEARS
 from src.utils.logger_helpers import get_logger
@@ -36,10 +37,12 @@ def callback_last_word(bot: telegram.Bot, _: telegram.Update, query, data):
             pass
 
 
+@run_async
 def last_word(_: telegram.Bot, update: telegram.Update):
     message = update.message
-    if message.left_chat_member is not None or (
-            message.new_chat_members is not None and len(message.new_chat_members) > 0):
+    left = message.left_chat_member is not None
+    join = message.new_chat_members is not None and len(message.new_chat_members) > 0
+    if left or join:
         return
     cache.set(get_last_word_cache_key(update.message.chat_id, update.message.from_user.id),
               (message.message_id, message.date), time=TWO_YEARS)

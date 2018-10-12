@@ -3,6 +3,8 @@ import re
 from datetime import datetime, timedelta
 from threading import Lock
 
+from telegram.ext import run_async
+
 from src.modules.models.user import UserDB
 from src.modules.models.user_stat import UserStat
 from src.utils.cache import cache, USER_CACHE_EXPIRE
@@ -42,6 +44,7 @@ class IgorWeekly:
         return uid
 
     @classmethod
+    @run_async
     def parse_message(cls, message):
         msg = message.text
         if msg is None:

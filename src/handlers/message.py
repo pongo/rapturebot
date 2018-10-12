@@ -139,13 +139,6 @@ def message_reactions(bot: telegram.Bot, update: telegram.Update) -> None:
             and not check_command_is_off(chat_id, CMDS['common']['orzik']['name']) \
             and 'орзик' in msg_lower:
         orzik_correction(bot, update)
-    if is_command_enabled_for_chat(chat_id, "ebalo_zavali") \
-            and (re.search(r"утр[оаеи]\S*[^!?.]* добр[оыеиа]\S+|добр[оыеиа]\S+[^!?.]* утр[оаие]\S*",
-                           msg_lower, re.IGNORECASE) or
-                 re.search(r"[чш]т?[аое]\s+((у вас тут)|(тут у вас))", msg_lower, re.IGNORECASE)):
-        bot.send_message(chat_id, 'Да завали ты уже ебало своё блять чмо ты сраное',
-                         reply_to_message_id=msg_id)
-        return
     if is_command_enabled_for_chat(chat_id, CMDS['common']['gdeleha']['name']) \
             and re_gdeleha.search(msg_lower):
         send_gdeleha(bot, chat_id, msg_id, user_id)

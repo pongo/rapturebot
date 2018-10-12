@@ -5,6 +5,7 @@ from threading import Lock
 from typing import List, Tuple, Optional
 
 import pytils
+from telegram.ext import run_async
 
 from src.config import CONFIG
 from src.modules.models.chat_user import ChatUser
@@ -193,6 +194,7 @@ class ReplyTop:
         return copy
 
     @classmethod
+    @run_async
     def parse_message(cls, message):
         from_uid = message.from_user.id
         cid = message.chat_id

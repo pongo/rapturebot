@@ -9,7 +9,7 @@ from telegram.ext import run_async
 from src.config import CHATRULES, CMDS, CONFIG
 from src.handlers.khaleesi import check_base_khaleesi
 from src.handlers.last_word import get_last_word_cache_key
-from src.handlers.message import send_gdeleha
+from src.handlers.message import send_gdeleha, send_pidor
 from src.modules.models.leave_collector import LeaveCollector
 from src.modules.models.user import User
 from src.modules.reduplicator import reduplicate
@@ -90,6 +90,17 @@ def papa(bot, update):
     ]
     chat_id = update.message.chat_id
     bot.sendMessage(chat_id, random.choice(phrases))
+
+@run_async
+@chat_guard
+@collect_stats
+@command_guard
+def kick(bot: telegram.Bot, update: telegram.Update) -> None:
+    message = update.message
+    chat_id = message.chat_id
+    user_id = message.from_user.id
+    text = 'Ты и сам можешь.' if check_admin(bot, chat_id, user_id) else 'Анус себе покикай.'
+    bot.send_message(chat_id, text, reply_to_message_id=message.message_id)
 
 
 @run_async
@@ -233,3 +244,10 @@ def gdeleha(bot, update):
     user_id = update.message.from_user.id
     msg_id = update.message.message_id
     send_gdeleha(bot, chat_id, msg_id, user_id)
+
+
+@chat_guard
+@collect_stats
+@command_guard
+def pidor(bot, update):
+    send_pidor(bot, update)

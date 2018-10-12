@@ -22,12 +22,13 @@ from src.modules.random_khaleesi import RandomKhaleesi
 from src.utils.cache import cache, TWO_DAYS, USER_CACHE_EXPIRE, pure_cache
 from src.utils.handlers_decorators import chat_guard, collect_stats, command_guard
 from src.utils.handlers_helpers import is_command_enabled_for_chat, \
-    check_command_is_off, check_admin
+    check_command_is_off
 from src.utils.logger_helpers import get_logger
 from src.utils.time_helpers import get_current_monday_str, today_str
 
 logger = get_logger(__name__)
 re_img = re.compile(r"\.(jpg|jpeg|png)$", re.IGNORECASE)
+re_gdeleha = re.compile(r"(где л[её]ха|л[её]ха где)[!?.]*\s*$", re.IGNORECASE | re.MULTILINE)
 
 
 @run_async
@@ -35,20 +36,23 @@ re_img = re.compile(r"\.(jpg|jpeg|png)$", re.IGNORECASE)
 def message(bot, update):
     leave_check(bot, update)
     message_reactions(bot, update)
+    check_photo_reactions(bot, update)
     random_khaleesi(bot, update)
     last_word(bot, update)
     mat_notify(bot, update)
     Bayanometer.check(bot, update)
     PidorWeekly.parse_message(update.message)
     IgorWeekly.parse_message(update.message)
+    update_stickers(bot, update)
     pure_cache.incr(f"metrics:messages:{today_str()}")
 
 
+@run_async
 def send_gdeleha(bot, chat_id, msg_id, user_id):
     if user_id in CONFIG.get('leha_ids', []) or user_id in CONFIG.get('leha_anya', []):
         bot.sendMessage(chat_id, "Леха — это ты!", reply_to_message_id=msg_id)
         return
-    bot.sendSticker(chat_id, random.choice([
+    send_random_sticker(bot, chat_id, [
         'BQADAgADXgIAAolibATmbw713OR4OAI',
         'BQADAgADYwIAAolibATGN2HOX9g1wgI',
         'BQADAgADZQIAAolibAS0oUsHQK3DeQI',
@@ -65,13 +69,11 @@ def send_gdeleha(bot, chat_id, msg_id, user_id):
         'BQADAgADiAIAAolibARZHNSejUISQAI',
         'BQADAgADigIAAolibAS_n7DVTejNhAI',
         'BQADAgADnQIAAolibAQE8V7GaofXLgI',
-    ]))
+    ])
 
 
-@chat_guard
-@collect_stats
-@command_guard
-def pidor(bot, update):
+@run_async
+def send_pidor(bot, update):
     chat_id = update.message.chat_id
     msg_id = update.message.message_id
     net_ty_stickers = [
@@ -96,21 +98,18 @@ def send_kek(bot: telegram.Bot, chat_id):
     bot.send_sticker(chat_id, sticker)
 
 
+@run_async
+def send_random_sticker(bot: telegram.Bot, chat_id, stickers) -> None:
+    bot.send_sticker(chat_id, random.choice(stickers))
+
+
 @chat_guard
 @collect_stats
 @command_guard
-def message_reactions(bot: telegram.Bot, update: telegram.Update):
-    if len(update.message.photo) > 0:
-        photo_reactions(bot, update)
-
-    if update.message.sticker:
-        cache_key = f'pipinder:monday_stickersets:{get_current_monday_str()}'
-        monday_stickersets = cache.get(cache_key)
-        if not monday_stickersets:
-            monday_stickersets = set()
-        monday_stickersets.add(update.message.sticker.set_name)
-        cache.set(cache_key, monday_stickersets, time=USER_CACHE_EXPIRE)
-
+def message_reactions(bot: telegram.Bot, update: telegram.Update) -> None:
+    """
+    Реакция на текст в сообщении
+    """
     msg = update.message.text
     if msg is None:
         return
@@ -118,19 +117,20 @@ def message_reactions(bot: telegram.Bot, update: telegram.Update):
     chat_id = update.message.chat_id
     msg_lower = msg.lower()
     msg_id = update.message.message_id
+    user_id = update.message.from_user.id
     if msg_lower == 'сы':
-        bot.sendSticker(chat_id, random.choice([
+        send_random_sticker(bot, chat_id, [
             'BQADAgADpAADbUmmAAGH7b4k7tGlngI',
             'BQADAgADoAADbUmmAAF4FOlT87nh6wI',
-        ]))
+        ])
         return
     if msg_lower == 'без':
-        bot.sendSticker(chat_id, random.choice([
+        send_random_sticker(bot, chat_id, [
             'BQADAgADXgADRd4ECHiiriOI0A51Ag',
             'BQADAgADWgADRd4ECHfSw52J6tn5Ag',
             'BQADAgADXAADRd4ECC4HwcwErfUcAg',
             'BQADAgADzQADRd4ECNFByeY4RuioAg',
-        ]))
+        ])
         return
     if msg_lower == 'кек':
         send_kek(bot, chat_id)
@@ -147,31 +147,35 @@ def message_reactions(bot: telegram.Bot, update: telegram.Update):
                          reply_to_message_id=msg_id)
         return
     if is_command_enabled_for_chat(chat_id, CMDS['common']['gdeleha']['name']) \
-            and re.search(r"(где л[её]ха|л[её]ха где)[!?.]*\s*$", msg_lower,
-                          re.IGNORECASE | re.MULTILINE):
-        user_id = update.message.from_user.id
+            and re_gdeleha.search(msg_lower):
         send_gdeleha(bot, chat_id, msg_id, user_id)
         return
 
-    user_id = update.message.from_user.id
+    words_lower = msg_lower.split()
+    if 'пидор' in words_lower:
+        send_pidor(bot, update)
 
-    # hardfix warning
-    if len(msg.split()) > 0 and msg.split()[0] == '/kick':
-        if check_admin(bot, chat_id, user_id):
-            bot.sendMessage(chat_id, 'Ты и сам можешь.', reply_to_message_id=msg_id)
-        else:
-            bot.sendMessage(chat_id, 'Анус себе покикай.', reply_to_message_id=msg_id)
+
+@run_async
+def update_stickers(_: telegram.Bot, update: telegram.Update) -> None:
+    """
+    Добавление стикера в использованные
+    """
+    if not update.message.sticker:
         return
-
-    # TODO: get rid of separate /pidor command
-    pidor_string = msg_lower.split()
-    if 'пидор' in pidor_string or '/pidor' in pidor_string:
-        pidor(bot, update)
-
-    handle_photos_in_urls(bot, update)
+    cache_key = f'pipinder:monday_stickersets:{get_current_monday_str()}'
+    monday_stickersets = set(cache.get(cache_key, set()))
+    monday_stickersets.add(update.message.sticker.set_name)
+    cache.set(cache_key, monday_stickersets, time=USER_CACHE_EXPIRE)
 
 
-def handle_photos_in_urls(bot: telegram.Bot, update: telegram.Update) -> None:
+def check_photo_reactions(bot: telegram.Bot, update: telegram.Update) -> None:
+    if update.message.photo:
+        photo_reactions(bot, update)
+    check_photos_in_urls(bot, update)
+
+
+def check_photos_in_urls(bot: telegram.Bot, update: telegram.Update) -> None:
     """
     Парсит entities сообщения на случай если картинка указана ссылкой.
     """
@@ -205,6 +209,7 @@ def photo_reactions(bot: telegram.Bot, update: telegram.Update, img_url=None):
     call_cats_vision_api(bot, update, key_media_group, img_url)
 
 
+# noinspection PyPackageRequirements
 @run_async
 def call_cats_vision_api(bot: telegram.Bot, update: telegram.Update, key_media_group: str,
                          img_url=None):
@@ -216,6 +221,7 @@ def call_cats_vision_api(bot: telegram.Bot, update: telegram.Update, key_media_g
         from google.cloud.vision import types as google_types
         file = bot.get_file(update.message.photo[-1].file_id)
         content = bytes(file.download_as_bytearray())
+        # noinspection PyUnresolvedReferences
         image = google_types.Image(content=content)
     # но если передана ссылка, то и гуглу отдаем только ссылку
     # чтобы не заниматься самим вопросом загрузки каких-то непонятных ссылок

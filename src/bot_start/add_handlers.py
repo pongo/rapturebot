@@ -6,14 +6,14 @@ from src.config import CMDS
 from src.handlers import khaleesi, ask, pipinder, repinder, topmat
 from src.handlers.callbacks import callback_handler
 from src.handlers.ment_handler import ment_handler
-from src.handlers.message import pidor, message
+from src.handlers.message import message
 from src.handlers.music_handler import musicadd_handler, musicdel_handler, music_handler
 from src.handlers.mylove import mylove, alllove, private_mylove
 from src.handlers.mystat import mystat, whois, private_whois, private_mystat
 from src.handlers.on_off import off_cmd, off_cmd_for_user, on_cmd, on_cmd_for_user
 from src.handlers.orzik import orzik, lord
 from src.handlers.other import rules, love, papa, pomogite, huificator, leave, expert, anketa, \
-    putin, changelog, gdeleha
+    putin, changelog, gdeleha, kick, pidor
 from src.handlers.weeklystat import stats
 from src.handlers.welcome import welcome
 from src.modules import private
@@ -48,7 +48,7 @@ def add_chat_handlers(dp):
     dp.add_handler(CommandHandler(CMDS['common']['who_is']['name'], whois, filters=cmd_filter))
     dp.add_handler(CommandHandler(CMDS['common']['rules']['name'], rules, filters=cmd_filter))
     dp.add_handler(CommandHandler(CMDS['common']['gdeleha']['name'], gdeleha, filters=cmd_filter))
-    dp.add_handler(CommandHandler(CMDS['common']['saratov']['name'], pidor, filters=cmd_filter))
+    dp.add_handler(CommandHandler(CMDS['common']['pidor']['name'], pidor, filters=cmd_filter))
     dp.add_handler(CommandHandler(CMDS['common']['zayac']['name'], love, filters=cmd_filter))
     dp.add_handler(CommandHandler(CMDS['common']['london']['name'], papa, filters=cmd_filter))
     dp.add_handler(CommandHandler(CMDS['common']['pomogite']['name'], pomogite, filters=cmd_filter))
@@ -86,6 +86,7 @@ def add_chat_handlers(dp):
     dp.add_handler(CommandHandler(CMDS['hidden']['expert']['name'], expert, filters=cmd_filter))
     dp.add_handler(CommandHandler(CMDS['hidden']['anketa']['name'], anketa, filters=cmd_filter))
     dp.add_handler(CommandHandler(CMDS['hidden']['putin']['name'], putin, filters=cmd_filter))
+    dp.add_handler(CommandHandler(CMDS['hidden']['kick']['name'], kick, filters=cmd_filter))
     dp.add_handler(CommandHandler('changelog', changelog, filters=cmd_filter))
     dp.add_handler(CommandHandler('lord', lord, filters=cmd_filter))
     dp.add_handler(CommandHandler('ask', ask.chat, filters=cmd_filter))

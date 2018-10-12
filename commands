@@ -20,7 +20,7 @@
       "name": "love",
       "description": "Ебучий заяц"
     },
-    "saratov": {
+    "pidor": {
       "name": "pidor",
       "description": "Нет ты!"
     },
@@ -93,6 +93,10 @@
     "musicdel": {
       "name": "musicdel",
       "description": "musicdel"
+    },
+    "kick": {
+      "name": "kick",
+      "description": "kick"
     }
   },
   "admins": {

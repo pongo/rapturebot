@@ -67,7 +67,7 @@ def start_bot():
     """
     Инициализация бота
     """
-    updater = Updater(token=CONFIG['bot_token'], workers=50, request_kwargs=get_request_data())
+    updater = Updater(token=CONFIG['bot_token'], workers=32, request_kwargs=get_request_data())
     bot = updater.bot
     dp = updater.dispatcher
     dp.logger.addHandler(CriticalHandler())  # в логгер библиотеки добавляем свой обработчик

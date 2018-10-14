@@ -3,12 +3,12 @@ import datetime
 import random
 from typing import Optional, List, Type, Dict, Union
 
-import pytils
 import telegram
 
 from src.modules.khaleesi import Khaleesi
 from src.modules.models.chat_user import ChatUser
 from src.modules.models.user import User
+from src.plugins.night_watch.night_watch_plugin import get_hour
 from src.utils.cache import Cache
 from src.utils.misc import weighted_choice
 
@@ -33,7 +33,9 @@ class MentConfig:
 
 
 class Command:
-    def __init__(self, chat_id: int, from_uid: int, target_uid: int, target_message_id: int, reply_has_text: Optional[bool] = None, args: List[str] = None, target_is_reply: bool = False) -> None:
+    def __init__(self, chat_id: int, from_uid: int, target_uid: int, target_message_id: int,
+                 reply_has_text: Optional[bool] = None, args: List[str] = None,
+                 target_is_reply: bool = False) -> None:
         self.chat_id = chat_id
         self.from_uid = from_uid
         self.target_uid = target_uid
@@ -90,15 +92,6 @@ def parse_command(message: telegram.Message) -> Command:
     return result
 
 
-def get_hour(now: datetime.datetime) -> str:
-    """
-    Отсылка к Пратчетту.
-    """
-    hour = int(now.strftime("%I"))
-    plural = pytils.numeral.sum_string(hour, pytils.numeral.MALE, 'час, часа, часов')
-    return f'{plural} и все спокойно!'.upper()
-
-
 def khaleesi(text: str, show_sign: bool = True) -> str:
     sign = '🐉' if show_sign else ''
     return f'{Khaleesi.khaleesi(text).strip()} {sign}'.strip()
@@ -120,7 +113,8 @@ def get_random_user(chat_id: int, user_cls: Type[User], chat_user_cls: Type[Chat
 
 
 def send_message(bot, cmd, text) -> None:
-    bot.send_message(cmd.chat_id, text, reply_to_message_id=cmd.target_message_id, disable_web_page_preview=True,
+    bot.send_message(cmd.chat_id, text, reply_to_message_id=cmd.target_message_id,
+                     disable_web_page_preview=True,
                      parse_mode='HTML')
 
 
@@ -137,7 +131,8 @@ def find_user_id(username: str, message: telegram.Message, user_cls: Type[User])
     return None
 
 
-def call_without_args(bot: telegram.Bot, cmd: Command, user_cls: Type[User], chat_user_cls: Type[ChatUser], ment_config: MentConfig) -> None:
+def call_without_args(bot: telegram.Bot, cmd: Command, user_cls: Type[User],
+                      chat_user_cls: Type[ChatUser], ment_config: MentConfig) -> None:
     """
     Команду вызвали без аргументов и без реплая.
     """
@@ -147,11 +142,11 @@ def call_without_args(bot: telegram.Bot, cmd: Command, user_cls: Type[User], cha
         return
 
     what_should_we_do = weighted_choice([
-        ('stickers',    20),  # постим стикер
-        ('hour',        25),  # городская стража
-        ('phrase',      30),  # случайная фраза
+        ('stickers', 20),  # постим стикер
+        ('hour', 25),  # городская стража
+        ('phrase', 30),  # случайная фраза
         ('random_user', 20),  # этот не мент
-        ('rap',         5),   # читаем рэп
+        ('rap', 5),  # читаем рэп
     ])
 
     text = None
@@ -170,7 +165,8 @@ def call_without_args(bot: telegram.Bot, cmd: Command, user_cls: Type[User], cha
     bot.send_sticker(cmd.chat_id, random.choice(ment_config.call_without_args.stickers))
 
 
-def call_with_args(bot: telegram.Bot, message: telegram.Message, cmd: Command, user_cls: Type[User], cache: Cache, ment_config: MentConfig) -> None:
+def call_with_args(bot: telegram.Bot, message: telegram.Message, cmd: Command, user_cls: Type[User],
+                   cache: Cache, ment_config: MentConfig) -> None:
     """
     Команду вызвали без реплая и с аргументами (предположительно юзернеймом).
     """
@@ -181,7 +177,8 @@ def call_with_args(bot: telegram.Bot, message: telegram.Message, cmd: Command, u
     username = cmd.args[0]
     uid = find_user_id(username, message, user_cls)
     if uid is None:
-        not_found = random.choice(('А про кого вы спрашиваете?', 'А нет такого', 'Не могу найти такую'))
+        not_found = random.choice(
+            ('А про кого вы спрашиваете?', 'А нет такого', 'Не могу найти такую'))
         send_message(bot, cmd, khaleesi(f'{not_found} 🤷‍♂️🐉', show_sign=False))
         return
 
@@ -197,7 +194,8 @@ def call_with_args(bot: telegram.Bot, message: telegram.Message, cmd: Command, u
     send_message(bot, cmd, khaleesi(text))
 
 
-def ment(bot: telegram.Bot, update: telegram.Update, cache: Cache, user_cls: Type[User], chat_user_cls: Type[ChatUser], ment_config: MentConfig) -> None:
+def ment(bot: telegram.Bot, update: telegram.Update, cache: Cache, user_cls: Type[User],
+         chat_user_cls: Type[ChatUser], ment_config: MentConfig) -> None:
     cmd = parse_command(update.message)
     # не реплай
     if not cmd.target_is_reply:

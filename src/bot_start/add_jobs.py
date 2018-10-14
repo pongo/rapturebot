@@ -3,7 +3,7 @@
 from datetime import time
 
 from src.handlers.weeklystat import weekly_stats
-from src.modules.jobs import daily_midnight, lefts_check, daily_afternoon, health_log
+from src.modules.jobs import daily_midnight, daily_afternoon, health_log, every_hour
 
 
 def add_jobs(updater):
@@ -26,7 +26,7 @@ def add_jobs(updater):
     )
 
     updater.job_queue.run_repeating(
-        lefts_check, first=65,
+        every_hour, first=65,
         interval=60 * 60  # раз в час
     )
 

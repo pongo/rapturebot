@@ -11,8 +11,6 @@ import telegram
 from src.config import CONFIG
 from src.modules.khaleesi import Khaleesi
 
-CACHE_KEY = 'night_watch'
-
 
 def go_go_watchmen(bot: telegram.Bot) -> None:
     """

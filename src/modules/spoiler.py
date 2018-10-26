@@ -151,17 +151,27 @@ class Spoiler:
                                       f"Ошибка. Не могу найти спойлер {data['spoiler_id']}",
                                       show_alert=True)
             return
-        bot.answerCallbackQuery(query.id, url=f"t.me/{bot.username}?start={query.data}")
+
         uid = query.from_user.id
-        if not spoiler.show(bot, uid):
-            logger.info(f"[spoiler] {uid} can't show spoiler {spoiler.spoiler_id}")
-            user = User.get(uid)
-            username = '' if not user else user.get_username_or_link()
-            bot.send_message(query.message.chat_id,
-                             f'{username} Не могу отправить спойлер. Нажми Start в личке бота @{bot.username} и попробуй вновь',
-                             parse_mode=telegram.ParseMode.HTML)
+        if len(spoiler.body) <= 200:
+            bot.answer_callback_query(query.id, spoiler.body, show_alert=True)
+            logger.info(f'[spoiler] {uid} show popup spoiler {spoiler.spoiler_id}')
             return
-        logger.info(f'[spoiler] {uid} show spoiler {spoiler.spoiler_id}')
+
+        bot.answerCallbackQuery(query.id, url=f"t.me/{bot.username}?start={query.data}")
+        if not spoiler.show(bot, uid):
+            cls.__cant_send(bot, query.message.chat_id, uid, spoiler.spoiler_id)
+            return
+        logger.info(f'[spoiler] {uid} show private spoiler {spoiler.spoiler_id}')
+
+    @classmethod
+    def __cant_send(cls, bot: telegram.Bot, chat_id: int, uid: int, spoiler_id: int) -> None:
+        logger.info(f"[spoiler] {uid} can't show spoiler {spoiler_id}")
+        user = User.get(uid)
+        username = '' if not user else user.get_username_or_link()
+        text = f'{username} Не могу отправить спойлер. Нажми Start в личке бота \
+@{bot.username} и попробуй вновь'
+        bot.send_message(chat_id, text, parse_mode=telegram.ParseMode.HTML)
 
     # @classmethod
     # def on_reply_click(cls, bot: telegram.Bot, _: telegram.Message, query: telegram.CallbackQuery, data) -> None:

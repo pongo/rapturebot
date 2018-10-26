@@ -62,6 +62,7 @@ class LeaveCollectorDB(Base):
                                   uid, MAX(date) date 
                                 FROM leave_logs 
                                 WHERE date >= {days_ago} 
+                                AND cid = {cid} 
                                 GROUP BY uid) t2
                           ON t1.uid = t2.uid 
                           AND t1.date = t2.date 
@@ -87,6 +88,7 @@ class LeaveCollectorDB(Base):
                                     uid, MAX(date) date 
                                 FROM leave_logs 
                                 WHERE date >= {days_ago} 
+                                AND cid = {cid} 
                                 GROUP BY uid) t2
                           ON t1.uid = t2.uid 
                           AND t1.date = t2.date 

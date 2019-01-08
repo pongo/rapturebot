@@ -21,7 +21,7 @@ from src.modules.matshowtime import MatshowtimeHandlers
 from src.modules.spoiler import SpoilerHandlers
 from src.modules.time import time_handler
 from src.modules.weather import weather
-from src.plugins.i_stat.command_handlers import send_personal_stat as cmd_i
+from src.plugins.i_stat.command_handlers import send_personal_stat_handler as cmd_i
 
 cmd_filter = Filters.group
 

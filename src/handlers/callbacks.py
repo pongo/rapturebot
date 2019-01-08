@@ -9,6 +9,7 @@ from src.modules.bayanometer import Bayanometer
 from src.modules.dayof.day_manager import DayOfManager
 from src.modules.matshowtime import MatshowtimeHandlers
 from src.modules.spoiler import SpoilerHandlers
+from src.plugins.i_stat.command_handlers import callback_handler as istat_callback_handler
 from src.utils.cache import cache
 from src.utils.logger_helpers import get_logger
 
@@ -40,4 +41,7 @@ def callback_handler(bot: telegram.Bot, update: telegram.Update) -> None:
         return
     if data['name'] == 'matshowtime':
         MatshowtimeHandlers.callback_handler(bot, update, query, data)
+        return
+    if data['name'] == 'i_stat':
+        istat_callback_handler(bot, update, query, data)
         return

@@ -8,6 +8,7 @@ from src.modules.models.chat_user import ChatUser
 from src.modules.models.reply_top import ReplyTop
 from src.modules.models.user import User
 from src.modules.models.user_stat import UserStat
+from src.plugins.i_stat.add_message_handler import IStatAddMessage
 from src.utils.handlers_helpers import check_command_is_off, get_command_name, \
     send_chat_access_denied, is_command_enabled_for_chat, check_user_is_plohish
 
@@ -79,6 +80,7 @@ def collect_stats(func):
                                                  update.message,
                                                  update.message.parse_entities()))
         ReplyTop.parse_message(update.message)
+        IStatAddMessage.add_message(update.message)
         return func(bot, update)
 
     return decorator

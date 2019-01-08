@@ -67,6 +67,10 @@
     "music": {
       "name": "music",
       "description": "Музкружок"
+    },
+    "i": {
+      "name": "i",
+      "description": "Я-я-я-я-я-я"
     }
   },
   "hidden": {

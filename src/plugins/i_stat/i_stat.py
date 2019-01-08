@@ -7,7 +7,7 @@ import telegram
 
 from src.modules.models.user import User
 
-re_personal_pronouns = re.compile(r"\b(я|меня|мне|мной|мною|мну)\b", re.IGNORECASE)
+re_personal_pronouns = re.compile(r"\b(я|меня|мне|мной|мною|мну|мя)\b", re.IGNORECASE)
 
 
 def parse_pronouns(text: str) -> List[Tuple[str, int]]:

@@ -95,9 +95,9 @@ def format_msg(title: str, stats: dict) -> str:
 
     header = lstrip_every_line(textwrap.dedent(
         f"""
-        Матерщинников: {stats['header_stats']['mat_users']} из {stats['header_stats']['all_active_users']}, {stats['header_stats']['mat_users_percent']:.0f}%
-        Сообщений с матом: {stats['header_stats']['mat_msg']} из {stats['header_stats']['all_msg']}, {stats['header_stats']['mat_msg_percent']:.0f}%
-        Матерных слов: {stats['header_stats']['mat_words']} из {stats['header_stats']['all_words']}, {stats['header_stats']['mat_words_percent']:.0f}%
+        Матерщинников: {stats['header_stats']['mat_users']} из {stats['header_stats']['all_active_users']} ({stats['header_stats']['mat_users_percent']:.0f}%)
+        Сообщений с матом: {stats['header_stats']['mat_msg']} из {stats['header_stats']['all_msg']} ({stats['header_stats']['mat_msg_percent']:.0f}%)
+        Матерных слов: {stats['header_stats']['mat_words']} из {stats['header_stats']['all_words']} ({stats['header_stats']['mat_words_percent']:.0f}%)
         """)).strip()
 
     umsgs = '\n'.join(format_user_row(row) for row in stats['users_msg_stats'])

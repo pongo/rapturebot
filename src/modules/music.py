@@ -14,7 +14,10 @@ from src.utils.cache import cache, YEAR
 from src.utils.handlers_helpers import check_admin
 from src.utils.misc import chunks
 from src.utils.telegram_helpers import dsp
+from src.utils.telegram_helpers import telegram_retry
+from src.utils.logger_helpers import get_logger
 
+logger = get_logger(__name__)
 CACHE_KEY = 'music'
 
 
@@ -224,6 +227,7 @@ def send_list_replay(bot: telegram.Bot, chat_id: int, message_id: int, uids: Ite
         dsp(send_replay, bot, chat_id, first_message_id, joined)
 
 
+@telegram_retry(logger=logger, silence=False, default=None, title='send_replay')
 def send_replay(bot: telegram.Bot, chat_id: int, message_id: int, text: str) -> telegram.Message:
     return bot.send_message(chat_id, text, reply_to_message_id=message_id, parse_mode='HTML')
 

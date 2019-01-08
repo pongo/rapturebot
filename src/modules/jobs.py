@@ -9,7 +9,6 @@ from src.modules.dayof.day_manager import DayOfManager
 from src.modules.models.leave_collector import LeaveCollector
 from src.modules.models.reply_top import ReplyDumper
 from src.modules.weather import send_alert_if_full_moon
-from src.plugins.night_watch.night_watch_plugin import go_go_watchmen
 from src.utils.cache import pure_cache, FEW_DAYS
 from src.utils.handlers_helpers import is_command_enabled_for_chat
 from src.utils.time_helpers import today_str
@@ -36,7 +35,7 @@ def daily_afternoon(bot: telegram.Bot, _):
 
 
 def every_hour(bot: telegram.Bot, _) -> None:
-    go_go_watchmen(bot)
+    # go_go_watchmen(bot)
     LeaveCollector.check_left_users(bot)
 
 

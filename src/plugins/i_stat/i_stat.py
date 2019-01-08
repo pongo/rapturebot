@@ -55,9 +55,31 @@ class ChatStatistician(object):
         header = f'{user.get_username_or_link()} говорил{fem_a} о себе {all_count}.'
 
         c = Counter(stat.counts)
-        body = '\n'.join((f'<b>{count}</b>. {word}' for word, count in c.most_common()))
+        body = '\n'.join((f'<b>{count}.</b> {word}' for word, count in c.most_common()))
 
         return f'{header}\n\n{body}'.strip()
+
+    def show_chat_stat(self) -> str:
+        def get_all_words() -> str:
+            c = Counter(self.db.all.counts)
+            return '\n'.join((f'<b>{count}.</b> {word}' for word, count in c.most_common()))
+
+        def fullname(uid: int) -> str:
+            user = User.get(uid)
+            fullname = uid if not user else user.fullname
+            return fullname
+
+        def get_users() -> str:
+            users_ = {uid:stat.all_count for uid, stat in self.db.users.items()}
+            c = Counter(users_)
+            return '\n'.join(
+                (f'<b>{count}.</b> {fullname(uid)}' for uid, count in c.most_common(15))
+            )
+
+        all_count = self.db.all.all_count
+        users = get_users()
+        words = get_all_words()
+        return f'Больше всего о себе говорили:\n\n{users}\n\nСлова ({all_count}):\n{words}'.strip()
 
 
 class ChatStat(object):

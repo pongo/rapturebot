@@ -67,10 +67,6 @@
     "music": {
       "name": "music",
       "description": "Музкружок"
-    },
-    "i": {
-      "name": "i",
-      "description": "Я-я-я-я-я-я"
     }
   },
   "hidden": {
@@ -101,6 +97,14 @@
     "kick": {
       "name": "kick",
       "description": "kick"
+    },
+    "i": {
+      "name": "i",
+      "description": "Я-я-я-я-я-я"
+    },
+    "iall": {
+      "name": "iall",
+      "description": "iall"
     }
   },
   "admins": {
@@ -143,6 +147,7 @@
     "khaleesi": ["khaliisy", "khalisy", "khalisi", "khaliisi", "khalesi", "khaleesy", "khalesy"],
     "huyamda": ["huyambda", "huyamba"],
     "weather": ["p", "w", "pogoda"],
-    "music": ["m"]
+    "music": ["m"],
+    "iall": ["iall", "alli"]
   }
 }

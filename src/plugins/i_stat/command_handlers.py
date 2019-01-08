@@ -20,20 +20,31 @@ callback_show = 'istat_show_click'
 @command_guard
 def send_personal_stat_handler(bot: telegram.Bot, update: telegram.Update) -> None:
     message: telegram.Message = update.message
-    chat_id = message.chat_id
-    message_id = update.message.message_id
 
-    reply_to_msg = update.message.reply_to_message
+    reply_to_msg = message.reply_to_message
     if reply_to_msg:
         user_id = reply_to_msg.from_user.id
     else:
-        splitted = update.message.text.split()
+        splitted = message.text.split()
         if len(splitted) == 2:
             user_id = User.get_id_by_name(splitted[1])
         else:
-            user_id = update.message.from_user.id
+            user_id = message.from_user.id
 
-    send_personal_stat(bot, chat_id, user_id, reply_to_message_id=message_id)
+    send_personal_stat(bot, message.chat_id, user_id, reply_to_message_id=message.message_id)
+
+
+@run_async
+@chat_guard
+@collect_stats
+@command_guard
+def send_all_stat_handler(bot: telegram.Bot, update: telegram.Update) -> None:
+    message: telegram.Message = update.message
+    chat_id = message.chat_id
+    rs = RedisChatStatistician(chat_id)
+    rs.load()
+    text = rs.chat_statistician.show_chat_stat()
+    bot.send_message(chat_id, text, parse_mode=ParseMode.HTML)
 
 
 def callback_handler(bot: telegram.Bot, _: telegram.Update,

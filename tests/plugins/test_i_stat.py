@@ -16,7 +16,7 @@ sys.modules['src.utils.db'] = MagicMock()
 
 class ParsePronounsTest(unittest.TestCase):
     def test_parse_personal_pronouns(self):
-        self.assertIsNone(parse_pronouns('Вернуть None'))
+        self.assertListEqual([], parse_pronouns('Вернуть None'))
         self.assertListEqual([('я', 1)], parse_pronouns('Я говорю'))
         self.assertListEqual([('я', 7)], parse_pronouns('Я я, я. (я) Я! я? я: это яя'))
         self.assertListEqual(

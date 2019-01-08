@@ -10,12 +10,21 @@ from src.modules.models.user import User
 re_personal_pronouns = re.compile(r"\b(я|меня|мне|мной|мною|мну)\b", re.IGNORECASE)
 
 
-def parse_pronouns(text: str) -> Optional[List[Tuple[str, int]]]:
+def parse_pronouns(text: str) -> List[Tuple[str, int]]:
     words = re_personal_pronouns.findall(text.lower())
     if not words:
-        return None
+        return []
     c = Counter(words)
     return c.most_common()
+
+
+def is_foreign_forward(message: telegram.Message, from_uid: Optional[int] = None) -> bool:
+    if from_uid is None:
+        from_uid = message.from_user.id
+    if message.forward_date is not None:
+        if message.forward_from is None or message.forward_from.id != from_uid:
+            return True
+    return False
 
 
 class ChatStatistician(object):
@@ -23,23 +32,16 @@ class ChatStatistician(object):
         self.db = ChatStat()
 
     def add_message(self, message: telegram.Message) -> None:
-        from_uid = message.from_user.id
-
-        # чужие форварды не учитываем
-        if message.forward_date is not None:
-            if message.forward_from is None or message.forward_from.id != from_uid:
-                return
+        if is_foreign_forward(message):
+            return
 
         text = message.text if message.text else message.caption
         if text is None:
             return
 
         counts = parse_pronouns(text)
-        if counts is None:
-            return
-
         for word, count in counts:
-            self.db.add(from_uid, word, count)
+            self.db.add(message.from_user.id, word, count)
 
     def show_personal_stat(self, user_id: int) -> str:
         user = User.get(user_id)

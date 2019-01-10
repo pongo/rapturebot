@@ -1,4 +1,3 @@
-# coding=UTF-8
 import functools
 import itertools
 import random

@@ -1,4 +1,3 @@
-# coding=UTF-8
 import datetime
 import unittest
 from unittest.mock import MagicMock, Mock

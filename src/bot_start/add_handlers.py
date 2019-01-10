@@ -1,5 +1,3 @@
-# coding=UTF-8
-
 from telegram.ext import CommandHandler, MessageHandler, Filters, CallbackQueryHandler
 
 from src.config import CMDS

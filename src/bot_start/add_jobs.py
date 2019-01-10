@@ -1,5 +1,3 @@
-# coding=UTF-8
-
 from datetime import time
 
 from src.handlers.weeklystat import weekly_stats

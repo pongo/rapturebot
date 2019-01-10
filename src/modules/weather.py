@@ -1,4 +1,3 @@
-# coding=UTF-8
 import json
 import os
 from multiprocessing.dummy import Pool as ThreadPool

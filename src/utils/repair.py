@@ -1,4 +1,3 @@
-# coding=UTF-8
 from src.config import CONFIG
 
 

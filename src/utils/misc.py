@@ -1,5 +1,3 @@
-# coding=UTF-8
-
 import functools
 import random
 import time

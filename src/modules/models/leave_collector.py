@@ -1,5 +1,3 @@
-# coding=UTF-8
-
 import enum
 import typing
 from datetime import datetime, timedelta

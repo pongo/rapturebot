@@ -1,5 +1,3 @@
-# coding=UTF-8
-
 import telegram
 
 from src.config import CONFIG

@@ -1,6 +1,3 @@
-# coding=UTF-8
-
-
 import telegram
 from telegram.ext import run_async
 

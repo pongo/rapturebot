@@ -1,5 +1,3 @@
-# coding=UTF-8
-
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
 from src.config import CONFIG

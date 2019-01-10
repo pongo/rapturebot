@@ -1,4 +1,3 @@
-# coding=UTF-8
 import time
 from random import randint
 from threading import Lock

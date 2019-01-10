@@ -1,4 +1,3 @@
-# coding=UTF-8
 import random
 from collections import OrderedDict
 from collections import deque

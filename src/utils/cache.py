@@ -1,4 +1,3 @@
-# coding=UTF-8
 import pickle
 from typing import Optional, List, Union, Set
 

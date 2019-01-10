@@ -1,4 +1,3 @@
-# coding=UTF-8
 from src.utils.cache import cache
 
 

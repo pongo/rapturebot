@@ -1,4 +1,3 @@
-# coding=UTF-8
 import random
 from datetime import datetime
 from typing import Optional

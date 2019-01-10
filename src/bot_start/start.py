@@ -1,4 +1,3 @@
-# coding=UTF-8
 import logging
 from datetime import datetime
 from time import sleep

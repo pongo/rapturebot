@@ -1,4 +1,3 @@
-# coding=UTF-8
 from typing import Tuple, Optional
 
 import telegram

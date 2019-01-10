@@ -1,4 +1,3 @@
-# coding=UTF-8
 # noqa: E402
 
 import datetime

@@ -1,5 +1,3 @@
-# coding=UTF-8
-
 import telegram
 from telegram import ParseMode, ChatAction
 from telegram.ext import run_async

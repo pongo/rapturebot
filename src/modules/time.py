@@ -1,4 +1,3 @@
-# coding=UTF-8
 import typing
 
 import arrow

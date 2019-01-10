@@ -1,4 +1,3 @@
-# coding=UTF-8
 import time
 from functools import wraps
 from typing import List, Optional

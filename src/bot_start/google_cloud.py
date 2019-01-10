@@ -1,5 +1,3 @@
-# coding=UTF-8
-
 import os
 
 from src.utils.logger_helpers import get_logger

@@ -1,4 +1,3 @@
-# coding=UTF-8
 import time
 
 # еще можно использовать встроенный в питон lru_cache

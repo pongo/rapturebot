@@ -1,4 +1,3 @@
-# coding=UTF-8
 import re
 from functools import wraps
 from random import randint

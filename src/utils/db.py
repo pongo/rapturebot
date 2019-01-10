@@ -1,5 +1,3 @@
-# coding=UTF-8
-
 from contextlib import contextmanager
 
 from sqlalchemy import create_engine

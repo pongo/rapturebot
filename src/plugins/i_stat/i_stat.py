@@ -7,7 +7,7 @@ import telegram
 
 from src.modules.models.user import User
 
-re_personal_pronouns = re.compile(r"\b(я|меня|мне|мной|мною|мну|мя)\b", re.IGNORECASE)
+re_personal_pronouns = re.compile(r"\b(я|меня|мне|мной|мною|мну|мя|йа)\b", re.IGNORECASE)
 
 
 def parse_pronouns(text: str) -> List[Tuple[str, int]]:
@@ -43,6 +43,9 @@ class ChatStatistician(object):
         for word, count in counts:
             self.db.add(message.from_user.id, word, count)
 
+    def reset(self, user_id: int) -> None:
+        self.db.reset(user_id)
+
     def show_personal_stat(self, user_id: int) -> str:
         user = User.get(user_id)
         if not user:
@@ -55,14 +58,14 @@ class ChatStatistician(object):
         header = f'{user.get_username_or_link()} говорил{fem_a} о себе {all_count}.'
 
         c = Counter(stat.counts)
-        body = '\n'.join((f'<b>{count}.</b> {word}' for word, count in c.most_common()))
+        body = '\n'.join((f'<b>{count}.</b> {word}' for word, count in c.most_common() if count > 0))
 
         return f'{header}\n\n{body}'.strip()
 
     def show_chat_stat(self) -> str:
         def get_all_words() -> str:
             c = Counter(self.db.all.counts)
-            return '\n'.join((f'<b>{count}.</b> {word}' for word, count in c.most_common()))
+            return '\n'.join((f'<b>{count}.</b> {word}' for word, count in c.most_common() if count > 0))
 
         def fullname(uid: int) -> str:
             user = User.get(uid)
@@ -70,10 +73,10 @@ class ChatStatistician(object):
             return fullname
 
         def get_users() -> str:
-            users_ = {uid:stat.all_count for uid, stat in self.db.users.items()}
+            users_ = {uid: stat.all_count for uid, stat in self.db.users.items()}
             c = Counter(users_)
             return '\n'.join(
-                (f'<b>{count}.</b> {fullname(uid)}' for uid, count in c.most_common(15))
+                (f'<b>{count}.</b> {fullname(uid)}' for uid, count in c.most_common(15) if count > 0)
             )
 
         all_count = self.db.all.all_count
@@ -91,6 +94,14 @@ class ChatStat(object):
         self.all.add(word, count)
         self.__add_user(from_uid, word, count)
 
+    def reset(self, user_id: int) -> None:
+        user = self.users.setdefault(user_id, UserStat())
+
+        for word, count in user.counts.items():
+            self.all.remove(word, count)
+
+        self.users.pop(user_id, None)
+
     def __add_user(self, user_id: int, word: str, count: int) -> None:
         user = self.users.setdefault(user_id, UserStat())
         user.add(word, count)
@@ -106,3 +117,12 @@ class UserStat(object):
         current_count = self.counts.get(word, 0)
         self.counts[word] = current_count + count
         self.all_count += count
+
+    def remove(self, word: str, count: int) -> None:
+        current_count = self.counts.get(word, 0)
+        self.counts[word] = current_count - count
+        self.all_count -= count
+
+    def reset(self) -> None:
+        self.all_count = 0
+        self.counts.clear()

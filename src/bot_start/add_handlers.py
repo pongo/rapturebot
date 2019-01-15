@@ -19,7 +19,8 @@ from src.modules.matshowtime import MatshowtimeHandlers
 from src.modules.spoiler import SpoilerHandlers
 from src.modules.time import time_handler
 from src.modules.weather import weather
-from src.plugins.i_stat.command_handlers import send_personal_stat_handler as cmd_i, send_all_stat_handler as cmd_iall
+from src.plugins.i_stat.command_handlers import send_personal_stat_handler as cmd_i, \
+    send_all_stat_handler as cmd_iall, ban_handler as cmd_iban
 
 cmd_filter = Filters.group
 
@@ -108,6 +109,7 @@ def add_chat_handlers(dp):
     dp.add_handler(CommandHandler(CMDS['hidden']['i']['name'], cmd_i, filters=cmd_filter))
     dp.add_handler(CommandHandler(CMDS['hidden']['iall']['name'], cmd_iall, filters=cmd_filter))
     dp.add_handler(CommandHandler('alli', cmd_iall, filters=cmd_filter))
+    dp.add_handler(CommandHandler('iban', cmd_iban, filters=cmd_filter))
 
     # должно идти в конце
     dp.add_handler(MessageHandler(Filters.group & Filters.all, message))

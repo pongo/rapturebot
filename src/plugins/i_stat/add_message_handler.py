@@ -11,8 +11,8 @@ class IStatAddMessage(object):
 
     @classmethod
     def add_message(cls, message: telegram.Message) -> None:
-        if is_banned(message.chat_id, message.from_user.id):
-            return
+        # if is_banned(message.chat_id, message.from_user.id):
+        #     return
 
         with cls.lock:
             rs = RedisChatStatistician(message.chat_id)

@@ -109,7 +109,7 @@ def add_chat_handlers(dp):
     dp.add_handler(CommandHandler(CMDS['hidden']['i']['name'], cmd_i, filters=cmd_filter))
     dp.add_handler(CommandHandler(CMDS['hidden']['iall']['name'], cmd_iall, filters=cmd_filter))
     dp.add_handler(CommandHandler('alli', cmd_iall, filters=cmd_filter))
-    dp.add_handler(CommandHandler('iban', cmd_iban, filters=cmd_filter))
+    # dp.add_handler(CommandHandler('iban', cmd_iban, filters=cmd_filter))
 
     # должно идти в конце
     dp.add_handler(MessageHandler(Filters.group & Filters.all, message))

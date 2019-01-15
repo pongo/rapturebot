@@ -56,7 +56,6 @@ def send_all_stat_handler(bot: telegram.Bot, update: telegram.Update) -> None:
 def ban_handler(bot: telegram.Bot, update: telegram.Update) -> None:
     message: telegram.Message = update.message
     chat_id = message.chat_id
-    # splitted = message.text.split(' ')
     user_id = message.from_user.id
     msg_id = message.message_id
 

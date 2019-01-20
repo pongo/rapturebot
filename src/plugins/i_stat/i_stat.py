@@ -60,9 +60,9 @@ class ChatStatistician(object):
             return
 
         user_id = message.from_user.id
-        self.db.add_message(user_id)
-
         counts = parse_pronouns(text)
+        if counts:
+            self.db.add_message(user_id)
         for word, count in counts:
             self.db.add_word(user_id, word, count)
 

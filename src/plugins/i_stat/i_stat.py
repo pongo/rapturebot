@@ -59,9 +59,12 @@ class ChatStatistician(object):
         if text is None:
             return
 
+        user_id = message.from_user.id
+        self.db.add_message(user_id)
+
         counts = parse_pronouns(text)
         for word, count in counts:
-            self.db.add(message.from_user.id, word, count)
+            self.db.add_word(user_id, word, count)
 
     def reset(self, user_id: int) -> None:
         self.db.reset(user_id)
@@ -75,7 +78,8 @@ class ChatStatistician(object):
 
         fem_a = 'а' if user.female else ''
         all_count = pytils.numeral.get_plural(stat.all_count, 'раз, раза, раз')
-        header = f'{user.get_username_or_link()} говорил{fem_a} о себе {all_count}.'
+        msg_count = pytils.numeral.get_plural(getattr(stat, 'messages_count', 0), 'сообщении, сообщениях, сообщениях')
+        header = f'{user.get_username_or_link()} говорил{fem_a} о себе {all_count} в {msg_count}.'
 
         c = Counter(stat.counts)
         body = '\n'.join((f'<b>{count}.</b> {word}' for word, count in c.most_common() if count > 0))
@@ -100,7 +104,7 @@ class ChatStatistician(object):
         all_count = self.db.all.all_count
         users = get_users()
         words = get_all_words()
-        return f'Больше всего о себе говорили:\n\n{users}\n\nСлова ({all_count}):\n{words}'.strip()
+        return f'Больше всего о себе говорили (это количество слов):\n\n{users}\n\nСлова ({all_count}):\n{words}'.strip()
 
 
 class ChatStat(object):
@@ -108,9 +112,15 @@ class ChatStat(object):
         self.all = UserStat()
         self.users: Dict[int, UserStat] = dict()
 
-    def add(self, from_uid: int, word: str, count: int) -> None:
-        self.all.add(word, count)
-        self.__add_user(from_uid, word, count)
+    def add_word(self, user_id: int, word: str, count: int) -> None:
+        self.all.add_word(word, count)
+        self.__add_user(user_id, word, count)
+
+    def add_message(self, user_id: int) -> None:
+        self.all.add_message()
+        user = self.users.setdefault(user_id, UserStat())
+        user.add_message()
+        self.users[user_id] = user
 
     def reset(self, user_id: int) -> None:
         user = self.users.setdefault(user_id, UserStat())
@@ -122,7 +132,7 @@ class ChatStat(object):
 
     def __add_user(self, user_id: int, word: str, count: int) -> None:
         user = self.users.setdefault(user_id, UserStat())
-        user.add(word, count)
+        user.add_word(word, count)
         self.users[user_id] = user
 
 
@@ -130,11 +140,17 @@ class UserStat(object):
     def __init__(self):
         self.all_count = 0
         self.counts: Dict[str, int] = dict()
+        self.messages_count = 0
 
-    def add(self, word, count=1) -> None:
+    def add_word(self, word, count=1) -> None:
         current_count = self.counts.get(word, 0)
         self.counts[word] = current_count + count
         self.all_count += count
+
+    def add_message(self) -> None:
+        if not hasattr(self, 'messages_count'):
+            self.messages_count = 0
+        self.messages_count += 1
 
     def remove(self, word: str, count: int) -> None:
         current_count = self.counts.get(word, 0)

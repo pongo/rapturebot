@@ -6,6 +6,7 @@ import pytils
 import telegram
 
 from src.modules.models.user import User
+from src.modules.models.user_stat import UserStat as ModelUserStat
 
 re_personal_pronouns = re.compile(r"\b(я|меня|мне|мной|мною)\b", re.IGNORECASE)
 
@@ -25,6 +26,25 @@ def is_foreign_forward(message: telegram.Message, from_uid: Optional[int] = None
         if message.forward_from is None or message.forward_from.id != from_uid:
             return True
     return False
+
+
+def get_users_msg_stats(stats: List[Tuple[ModelUserStat, User]], users_i_count: Dict[int, int]) -> list:
+    result = []
+    for user_stat, user in stats:
+        i_count = users_i_count.get(user.uid, 0)
+        if i_count == 0:
+            continue
+        all_count = getattr(user_stat, 'words_count', 0)
+        if all_count < 30:
+            continue
+        i_percent = i_count / all_count * 100
+        result.append({
+            'uid': user.uid,
+            'all': all_count,
+            'i_count': i_count,
+            'i_percent': i_percent
+        })
+    return sorted(result, key=lambda x: x['i_percent'], reverse=True)
 
 
 class ChatStatistician(object):
@@ -62,22 +82,20 @@ class ChatStatistician(object):
 
         return f'{header}\n\n{body}'.strip()
 
-    def show_chat_stat(self) -> str:
+    def show_chat_stat(self, chat_stats: List[Tuple[ModelUserStat, User]]) -> str:
         def get_all_words() -> str:
             c = Counter(self.db.all.counts)
             return '\n'.join((f'<b>{count}.</b> {word}' for word, count in c.most_common() if count > 0))
 
-        def fullname(uid: int) -> str:
-            user = User.get(uid)
-            fullname = uid if not user else user.fullname
-            return fullname
-
         def get_users() -> str:
-            users_ = {uid: stat.all_count for uid, stat in self.db.users.items()}
-            c = Counter(users_)
-            return '\n'.join(
-                (f'<b>{count}.</b> {fullname(uid)}' for uid, count in c.most_common(15) if count > 0)
-            )
+            def format_user_row(row) -> str:
+                user = User.get(row['uid'])
+                fullname = row['uid'] if not user else user.fullname
+                return f"<b>{row['i_percent']:.0f} %. {fullname}</b> — {row['i_count']} из {row['all']}"
+
+            users_i_count = {uid: stat.all_count for uid, stat in self.db.users.items()}
+            users_msg_stats = get_users_msg_stats(chat_stats, users_i_count)
+            return '\n'.join(format_user_row(row) for row in users_msg_stats)
 
         all_count = self.db.all.all_count
         users = get_users()

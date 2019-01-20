@@ -5,6 +5,7 @@ from telegram import ParseMode
 from telegram.ext import run_async
 
 from src.modules.models.user import User
+from src.modules.models.user_stat import UserStat
 from src.plugins.i_stat.banhammer import banhammer, BanStatus
 from src.plugins.i_stat.db import RedisChatStatistician
 from src.utils.callback_helpers import get_callback_data
@@ -43,9 +44,11 @@ def send_personal_stat_handler(bot: telegram.Bot, update: telegram.Update) -> No
 def send_all_stat_handler(bot: telegram.Bot, update: telegram.Update) -> None:
     message: telegram.Message = update.message
     chat_id = message.chat_id
+    chat_stats = UserStat.get_chat_stats(chat_id)
+
     rs = RedisChatStatistician(chat_id)
     rs.load()
-    text = rs.chat_statistician.show_chat_stat()
+    text = rs.chat_statistician.show_chat_stat(chat_stats)
     bot.send_message(chat_id, text, parse_mode=ParseMode.HTML)
 
 

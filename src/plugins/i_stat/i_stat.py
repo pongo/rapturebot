@@ -28,14 +28,14 @@ def is_foreign_forward(message: telegram.Message, from_uid: Optional[int] = None
     return False
 
 
-def get_users_msg_stats(stats: List[Tuple[ModelUserStat, User]], users_i_count: Dict[int, int]) -> list:
+def get_users_msg_stats(stats: List[Tuple[ModelUserStat, User]], users_i_count: Dict[int, int], all_count_limit: int = 30) -> list:
     result = []
     for user_stat, user in stats:
         i_count = users_i_count.get(user.uid, 0)
         if i_count == 0:
             continue
         all_count = getattr(user_stat, 'words_count', 0)
-        if all_count < 30:
+        if all_count < all_count_limit:
             continue
         i_percent = i_count / all_count * 100
         result.append({
@@ -99,6 +99,8 @@ class ChatStatistician(object):
 
             users_i_count = {uid: stat.all_count for uid, stat in self.db.users.items()}
             users_msg_stats = get_users_msg_stats(chat_stats, users_i_count)
+            if not users_msg_stats:
+                users_msg_stats = get_users_msg_stats(chat_stats, users_i_count, 1)
             return '\n'.join(format_user_row(row) for row in users_msg_stats)
 
         all_count = self.db.all.all_count

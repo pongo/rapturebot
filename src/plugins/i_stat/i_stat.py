@@ -104,7 +104,7 @@ class ChatStatistician(object):
         all_count = self.db.all.all_count
         users = get_users()
         words = get_all_words()
-        return f'Больше всего о себе говорили (это количество слов):\n\n{users}\n\nСлова ({all_count}):\n{words}'.strip()
+        return f'Больше всего о себе говорили:\n\nПо словам:\n{users}\n\nСлова ({all_count}):\n{words}'.strip()
 
 
 class ChatStat(object):

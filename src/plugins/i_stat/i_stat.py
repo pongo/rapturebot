@@ -28,23 +28,28 @@ def is_foreign_forward(message: telegram.Message, from_uid: Optional[int] = None
     return False
 
 
-def get_users_msg_stats(stats: List[Tuple[ModelUserStat, User]], users_i_count: Dict[int, int], all_count_limit: int = 30) -> list:
-    result = []
-    for user_stat, user in stats:
-        i_count = users_i_count.get(user.uid, 0)
-        if i_count == 0:
-            continue
-        all_count = getattr(user_stat, 'words_count', 0)
-        if all_count < all_count_limit:
-            continue
-        i_percent = i_count / all_count * 100
-        result.append({
-            'uid': user.uid,
-            'all': all_count,
-            'i_count': i_count,
-            'i_percent': i_percent
-        })
-    return sorted(result, key=lambda x: x['i_percent'], reverse=True)
+def get_users_msg_stats(stats: List[Tuple[ModelUserStat, User]], users_i_count: Dict[int, int], all_key) -> list:
+    def get_stat(all_count_limit: int) -> list:
+        result_ = []
+        for user_stat, user in stats:
+            i_count = users_i_count.get(user.uid, 0)
+            if i_count == 0:
+                continue
+            all_count = getattr(user_stat, all_key, 0)
+            if all_count < all_count_limit:
+                continue
+            i_percent = i_count / all_count * 100
+            result_.append({
+                'uid': user.uid,
+                'all': all_count,
+                'i_count': i_count,
+                'i_percent': i_percent
+            })
+        return result_
+    result = get_stat(30)
+    if not result:
+        result = get_stat(1)
+    return sorted(result, key=lambda x: x['i_percent'], reverse=True)[:15]
 
 
 class ChatStatistician(object):
@@ -98,15 +103,17 @@ class ChatStatistician(object):
                 return f"<b>{row['i_percent']:.0f} %. {fullname}</b> — {row['i_count']} из {row['all']}"
 
             users_i_count = {uid: stat.all_count for uid, stat in self.db.users.items()}
-            users_msg_stats = get_users_msg_stats(chat_stats, users_i_count)
-            if not users_msg_stats:
-                users_msg_stats = get_users_msg_stats(chat_stats, users_i_count, 1)
-            return '\n'.join(format_user_row(row) for row in users_msg_stats)
+            by_messages = get_users_msg_stats(chat_stats, users_i_count, 'text_messages_count')
+            by_words = get_users_msg_stats(chat_stats, users_i_count, 'words_count')
+
+            by_messages_str = '\n'.join(format_user_row(row) for row in by_messages)
+            by_words_str = '\n'.join(format_user_row(row) for row in by_words)
+            return f'По сообщениям:\n{by_messages_str}\n\nПо словам:\n{by_words_str}'
 
         all_count = self.db.all.all_count
         users = get_users()
         words = get_all_words()
-        return f'Больше всего о себе говорили:\n\nПо словам:\n{users}\n\nСлова ({all_count}):\n{words}'.strip()
+        return f'Больше всего о себе говорили:\n\n{users}\n\nСлова ({all_count}):\n{words}'.strip()
 
 
 class ChatStat(object):

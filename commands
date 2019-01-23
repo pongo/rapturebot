@@ -105,6 +105,10 @@
     "iall": {
       "name": "iall",
       "description": "iall"
+    },
+    "hakeem": {
+      "name": "hakeem",
+      "description": "hakeem"
     }
   },
   "admins": {
@@ -148,6 +152,7 @@
     "huyamda": ["huyambda", "huyamba"],
     "weather": ["p", "w", "pogoda"],
     "music": ["m"],
-    "iall": ["iall", "alli"]
+    "iall": ["iall", "alli"],
+    "hakeem": ["hakeem", "hakem", "hakim", "hakiim", "hackim", "hackeem", "huakem", "huakim", "hoakim", "hoakem", "hoakeem"]
   }
 }

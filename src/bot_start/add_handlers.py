@@ -19,6 +19,7 @@ from src.modules.matshowtime import MatshowtimeHandlers
 from src.modules.spoiler import SpoilerHandlers
 from src.modules.time import time_handler
 from src.modules.weather import weather
+from src.plugins.hakeem import hakeem
 from src.plugins.i_stat.command_handlers import send_personal_stat_handler as cmd_i, \
     send_all_stat_handler as cmd_iall, ban_handler as cmd_iban
 
@@ -97,6 +98,18 @@ def add_chat_handlers(dp):
     dp.add_handler(CommandHandler('alllove', alllove, filters=cmd_filter))
     dp.add_handler(CommandHandler('allllove', alllove, filters=cmd_filter))
     dp.add_handler(CommandHandler('alllllove', alllove, filters=cmd_filter))
+
+    dp.add_handler(CommandHandler('hakeem', hakeem, filters=cmd_filter))
+    dp.add_handler(CommandHandler('hakem', hakeem, filters=cmd_filter))
+    dp.add_handler(CommandHandler('hakim', hakeem, filters=cmd_filter))
+    dp.add_handler(CommandHandler('hakiim', hakeem, filters=cmd_filter))
+    dp.add_handler(CommandHandler('hackim', hakeem, filters=cmd_filter))
+    dp.add_handler(CommandHandler('hackeem', hakeem, filters=cmd_filter))
+    dp.add_handler(CommandHandler('huakem', hakeem, filters=cmd_filter))
+    dp.add_handler(CommandHandler('huakim', hakeem, filters=cmd_filter))
+    dp.add_handler(CommandHandler('hoakim', hakeem, filters=cmd_filter))
+    dp.add_handler(CommandHandler('hoakem', hakeem, filters=cmd_filter))
+    dp.add_handler(CommandHandler('hoakeem', hakeem, filters=cmd_filter))
 
     dp.add_handler(
         CommandHandler(CMDS['common']['music']['name'], music_handler, filters=cmd_filter))

@@ -114,7 +114,8 @@ class Spoiler:
 
     def send(self, bot: telegram.Bot) -> bool:
         buttons = self.get_buttons()
-        text = self.__get_header_text(self.uid, self.header)
+        small_spoiler = len(self.body) <= 200
+        text = self.__get_header_text(self.uid, self.header, small_spoiler)
         self.msg_id = TelegramWrapper.send_message(bot, text, chat_id=self.cid, buttons=buttons)
         if not self.msg_id:
             return False
@@ -211,10 +212,11 @@ class Spoiler:
         raise Exception("Can't generate id")
 
     @classmethod
-    def __get_header_text(cls, uid: int, header: str) -> str:
+    def __get_header_text(cls, uid: int, header: str, small_spoiler: bool = False) -> str:
         user = User.get(uid)
         name = 'анонима' if not user else user.fullname
-        return f'<b>Спойлер от {name}</b>\n\n{header}'
+        small = 'Короткий спойлер' if small_spoiler else 'Спойлер'
+        return f'<b>{small} от {name}</b>\n\n{header}'
 
 
 class SpoilerCreator:

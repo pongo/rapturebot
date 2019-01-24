@@ -22,6 +22,7 @@ from src.modules.weather import weather
 from src.plugins.hakeem import hakeem
 from src.plugins.i_stat.command_handlers import send_personal_stat_handler as cmd_i, \
     send_all_stat_handler as cmd_iall, ban_handler as cmd_iban
+from src.plugins.valentine_day.valentine_day import val
 
 cmd_filter = Filters.group
 
@@ -163,6 +164,8 @@ def add_private_handlers(dp):
     dp.add_handler(
         CommandHandler('topmat', topmat.private_topmat, filters=Filters.private & Filters.command))
     dp.add_handler(CommandHandler('anon', private.anon, filters=Filters.private & Filters.command))
+
+    dp.add_handler(CommandHandler('val', val, filters=Filters.private & Filters.command))
 
     # должно идти в конце
     private_filters = Filters.private & (

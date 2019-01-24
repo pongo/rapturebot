@@ -5,6 +5,7 @@ import telegram
 from src.config import get_config_chats
 from src.modules.dayof.fsb_day import FSBDay
 from src.modules.dayof.valentine_day import ValentineDay
+from src.plugins.valentine_day.valentine_day import callback_handler as valentine_callback_handler
 from src.utils.telegram_helpers import dsp
 
 
@@ -35,7 +36,8 @@ class DayOfManager:
     @staticmethod
     def callback_handler(bot, update, query, data) -> None:
         FSBDay.callback_handler(bot, update, query, data)
-        ValentineDay.callback_handler(bot, update, query, data)
+        # ValentineDay.callback_handler(bot, update, query, data)
+        valentine_callback_handler(bot, update, query, data)
 
     @staticmethod
     def private_handler(bot: telegram.Bot, update: telegram.Update):

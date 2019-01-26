@@ -102,9 +102,10 @@ class ChatStatistician(object):
                 fullname = row['uid'] if not user else user.fullname
                 return f"<b>{row['i_percent']:.0f} %. {fullname}</b> — {row['i_count']} из {row['all']}"
 
-            users_i_count = {uid: stat.all_count for uid, stat in self.db.users.items()}
-            by_messages = get_users_msg_stats(chat_stats, users_i_count, 'text_messages_count')
-            by_words = get_users_msg_stats(chat_stats, users_i_count, 'words_count')
+            users_i_msg_count = {uid: stat.messages_count for uid, stat in self.db.users.items()}
+            users_i_all_count = {uid: stat.all_count for uid, stat in self.db.users.items()}
+            by_messages = get_users_msg_stats(chat_stats, users_i_msg_count, 'text_messages_count')
+            by_words = get_users_msg_stats(chat_stats, users_i_all_count, 'words_count')
 
             by_messages_str = '\n'.join(format_user_row(row) for row in by_messages)
             by_words_str = '\n'.join(format_user_row(row) for row in by_words)

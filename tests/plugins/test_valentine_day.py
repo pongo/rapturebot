@@ -89,7 +89,7 @@ class CardCreationTest(unittest.TestCase):
         self.assertEqual(self.other, actual.to_user)
         self.assertEqual(self.user, actual.from_user)
         self.assertEqual(['1', '2', '3'], actual.hearts)
-        self.assertEqual('Какие сердечки будут обрамлять текст?', actual.get_message_text())
+        self.assertIn('Какие сердечки будут обрамлять текст?', actual.get_message_text())
         self.assertEqual(
             [['[1]', '[2]', '[3]']],
             [[str(b) for b in line] for line in (actual.get_message_buttons())])
@@ -109,7 +109,7 @@ class CardCreationTest(unittest.TestCase):
         self.assertEqual(other, actual.to_user)
         self.assertEqual(user, actual.from_user)
         self.assertEqual('2', actual.heart)
-        self.assertEqual(
+        self.assertIn(
             'В какой чат отправить открытку? Отправка произойдет немедленно.',
             actual.get_message_text())
         self.assertEqual(
@@ -125,9 +125,85 @@ class CardCreationTest(unittest.TestCase):
         self.assertEqual(-1, actual.chat_id)
 
 
+class RevnClickTest(unittest.TestCase):
+    def setUp(self):
+        chat1 = VChat(-1)
+        user = VChatsUser(1, {chat1}, False)
+        other = VChatsUser(2, {chat1}, False)
+        self.card = Card('-', user, other, '-', -1)
+        self.emoji = self.card.revn_emoji
+
+    def test_author_click(self):
+        actual = self.card.revn(1, False)
+        actual2 = self.card.revn(1, True)
+
+        self.assertEqual('Это твоя валентинка, тебе нельзя', actual.text)
+        self.assertEqual('Это твоя валентинка, тебе нельзя', actual2.text)
+        self.assertFalse(actual.success)
+        self.assertFalse(actual2.success)
+        self.assertEqual(self.emoji, self.card.revn_emoji)
+
+    def test_already_clicked(self):
+        actual = self.card.revn(2, True)
+        actual2 = self.card.revn(10, True)
+
+        self.assertIn('нажимать один раз', actual.text)
+        self.assertIn('нажимать один раз', actual2.text)
+        self.assertFalse(actual.success)
+        self.assertFalse(actual2.success)
+        self.assertEqual(self.emoji, self.card.revn_emoji)
+
+    def test_success(self):
+        emoji = self.card.revn_emoji
+        actual = self.card.revn(10, False)
+
+        self.assertIsNone(actual.text)
+        self.assertTrue(actual.success)
+        self.assertNotEqual(emoji, self.card.revn_emoji)
+
+
+class MigClickTest(unittest.TestCase):
+    def setUp(self):
+        chat1 = VChat(-1)
+        male = VChatsUser(1, {chat1}, False)
+        female = VChatsUser(2, {chat1}, True)
+        self.card = Card('-', male, female, '-', -1)
+        self.cardForMale = Card('-', female, male, '-', -1)
+
+    def test_author_click(self):
+        actual = self.card.mig(1, False, '@-')
+
+        self.assertEqual('Бесы попутали?', actual.text)
+        self.assertFalse(actual.success)
+
+    def test_not_a_target(self):
+        actual = self.card.mig(10, False, '@-')
+
+        self.assertEqual('Не твоя Валя, вот ты и бесишься', actual.text)
+        self.assertFalse(actual.success)
+
+    def test_already_clicked(self):
+        actual = self.card.mig(2, True, '@-')
+        actual2 = self.cardForMale.mig(1, True, '@-')
+
+        self.assertEqual('Ты уже подмигнула', actual.text)
+        self.assertEqual('Ты уже подмигнул', actual2.text)
+        self.assertFalse(actual.success)
+
+    def test_success(self):
+        actual = self.card.mig(2, False, '@-')
+        actual2 = self.cardForMale.mig(1, False, '@-')
+
+        self.assertEqual('Подмигивание прошло успешно 😉. Теперь он знает', actual.text)
+        self.assertEqual('@- тебе подмигнула', actual.notify_text)
+        self.assertEqual('Подмигивание прошло успешно 😉. Теперь она знает', actual2.text)
+        self.assertEqual('@- тебе подмигнул', actual2.notify_text)
+        self.assertTrue(actual.success)
+
+
 class NextEmojiTest(unittest.TestCase):
     def test_next_emoji(self):
         self.assertEqual('💩', next_emoji(''))
-        self.assertEqual('😐', next_emoji('🤔'))
-        self.assertEqual('😣', next_emoji('☹️'))
+        self.assertEqual('😑', next_emoji('🤔'))
+        self.assertEqual('😞', next_emoji('☹️'))
         self.assertEqual('💩', next_emoji('💩'))

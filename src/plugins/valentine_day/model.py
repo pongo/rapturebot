@@ -1,3 +1,4 @@
+import random
 from typing import List, Union, Set, TYPE_CHECKING, cast, NewType, NamedTuple, Dict, Optional, \
     Sequence, Tuple
 
@@ -170,7 +171,7 @@ class CardDraft:
     """
 
     def __init__(self, text: str, from_user: VChatsUser, to_user: VChatsUser) -> None:
-        self.text = text
+        self.text = text.strip()
         self.from_user = from_user
         self.to_user = to_user
         self.message_id = None
@@ -231,10 +232,19 @@ class Card(CardDraft):
     Отправленная открытка
     """
 
+    class RevnAnswer(NamedTuple):
+        text: Optional[str] = None
+        success: bool = False
+
+    class MigAnswer(NamedTuple):
+        text: Optional[str] = None
+        success: bool = False
+        notify_text: Optional[str] = None
+
     def __init__(self, text: str, from_user: VChatsUser, to_user: VChatsUser,
                  heart: str, chat_id: int) -> None:
         super().__init__(text, from_user, to_user)
-        self.heart = heart
+        self.heart = heart.strip()
         self.chat_id = chat_id
         self.revn_emoji = '🤔'
 
@@ -250,20 +260,39 @@ class Card(CardDraft):
             [about_button]
         ]
 
-    def is_author(self, click_user_id: int) -> bool:
-        return click_user_id != self.from_user.user_id
+    def revn(self, user_id: int, already_clicked: bool) -> 'Card.RevnAnswer':
+        if self._is_author(user_id):
+            return self.RevnAnswer('Это твоя валентинка, тебе нельзя')
 
-    def revn(self) -> None:
+        if already_clicked:
+            man_name = get_man_name(user_id)
+            return self.RevnAnswer(f'{man_name} нажимать один раз')
+
         self.revn_emoji = next_emoji(self.revn_emoji)
+        return self.RevnAnswer(success=True)
 
-    def cant_mig(self, click_user_id: int) -> Optional[str]:
-        # сам себе подмигивает
-        if click_user_id == self.from_user.user_id:
-            return 'Бесы попутали?'
-        # подмигивать может только адресат
-        if click_user_id != self.to_user.user_id:
-            return 'Не твоя Валя, вот ты и бесишься'
-        return None
+    def mig(self, user_id: int, already_clicked: bool, username: str) -> 'Card.MigAnswer':
+        if self._is_author(user_id):
+            return self.MigAnswer('Бесы попутали?')
+
+        if not self._is_target(user_id):
+            return self.MigAnswer('Не твоя Валя, вот ты и бесишься')
+
+        to_gender = 'а' if self.to_user.female else ''
+        if already_clicked:
+            return self.MigAnswer(f'Ты уже подмигнул{to_gender}')
+
+        from_gender = 'она' if self.from_user.female else 'он'
+        return self.MigAnswer(
+            text=f'Подмигивание прошло успешно 😉. Теперь {from_gender} знает',
+            success=True,
+            notify_text=f'{username} тебе подмигнул{to_gender}')
+
+    def _is_author(self, user_id: int) -> bool:
+        return user_id == self.from_user.user_id
+
+    def _is_target(self, user_id: int) -> bool:
+        return user_id == self.to_user.user_id
 
 
 def check_errors(text: str, mentions: Set[Union[VChatsUser, VUnknownUser]],
@@ -317,3 +346,10 @@ def next_emoji(emoji: str) -> str:
         return revn_emojis[index + 1]
     except (ValueError, IndexError):
         return '💩'
+
+
+def get_man_name(user_id: int) -> str:
+    random.seed(user_id)
+    name = random.choice(('Орзик', 'Девочка', 'Мальчик', 'Человек'))
+    random.seed()
+    return name

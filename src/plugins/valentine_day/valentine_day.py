@@ -16,6 +16,7 @@ from src.utils.callback_helpers import get_callback_data
 from src.utils.mwt import MWT
 
 callbacks = {}
+HTML = telegram.ParseMode.HTML
 
 
 @run_async
@@ -36,21 +37,21 @@ def val(bot: telegram.Bot, update: telegram.Update) -> None:
     message: telegram.Message = update.message
     user_id = message.from_user.id
     from_user = get_vuser(user_id)
-
     entities = message.parse_entities().items()
     mentions = get_mentions(entities)
     text_html = remove_first_command(replace_text_mentions(message.text, entities))
 
     answer = command_val(text_html, mentions, from_user, get_random_hearts(user_id))
+
     if isinstance(answer, str):
-        bot.send_message(user_id, answer, parse_mode=telegram.ParseMode.HTML)
+        bot.send_message(user_id, answer, parse_mode=HTML)
         return
 
     if isinstance(answer, CardDraftSelectHeart):
         cache.set(f'{CACHE_PREFIX}:draft:card:{user_id}', answer, time=TWO_DAYS)
         bot.send_message(user_id, answer.get_message_text(),
                          reply_markup=get_reply_markup(answer.get_message_buttons()),
-                         parse_mode=telegram.ParseMode.HTML)
+                         parse_mode=HTML)
 
 
 def draft_heart_button_click_handler(bot: telegram.Bot, _: telegram.Update,
@@ -72,7 +73,7 @@ def draft_heart_button_click_handler(bot: telegram.Bot, _: telegram.Update,
     answer = draft.select_heart(heart, chat_names)
 
     cache.set(f'{CACHE_PREFIX}:draft:card:{user_id}', answer, time=TWO_DAYS)
-    query.edit_message_text(text=answer.get_message_text(), parse_mode=telegram.ParseMode.HTML)
+    query.edit_message_text(text=answer.get_message_text(), parse_mode=HTML)
     query.edit_message_reply_markup(reply_markup=get_reply_markup(answer.get_message_buttons()))
     query.answer()
 
@@ -101,18 +102,17 @@ def draft_chat_button_click_handler(bot: telegram.Bot, _: telegram.Update,
 
     msg = bot.send_message(chat_id, card.get_message_text(),
                            reply_markup=get_reply_markup(card.get_message_buttons()),
-                           parse_mode=telegram.ParseMode.HTML,
+                           parse_mode=HTML,
                            disable_web_page_preview=True)
     card.message_id = msg.message_id
     cache.set(f'{CACHE_PREFIX}:card:{chat_id}:{card.message_id}', card, time=TWO_DAYS)
     clear_random_hearts(user_id)
-
     query.message.delete()
     bot.send_message(user_id, 'Открытка отправлена!')
     query.answer()
 
 
-class RedisCard:
+class Store:
     def __init__(self, query: telegram.CallbackQuery):
         self.query = query
         self.message: telegram.Message = query.message
@@ -122,6 +122,9 @@ class RedisCard:
         self.card: Optional[Card] = None
 
     def load(self) -> bool:
+        """
+        Загружает карточку из редиса и возвращает True, если она существует
+        """
         self.card = cache.get(self._card_key())
         if self.card is None:
             self.query.answer('Закончилась Луна-красотка')
@@ -132,16 +135,20 @@ class RedisCard:
         cache.set(self._card_key(), self.card, time=TWO_DAYS)
 
     def is_already_clicked(self, button_name: str) -> bool:
-        already_clicked_key = f'{self._card_key()}:{button_name}:{self.user_id}'
-        already_clicked = cache.get(already_clicked_key, False)
-        if already_clicked:
-            return True
-        cache.set(already_clicked_key, True, time=TWO_DAYS)
-        return False
+        return cache.get(self._already_clicked_key(button_name), False)
+
+    def mark_as_already_clicked(self, button_name: str) -> None:
+        cache.set(self._already_clicked_key(button_name), True, time=TWO_DAYS)
 
     def update_buttons(self) -> None:
-        self.query.edit_message_reply_markup(
-            reply_markup=get_reply_markup(self.card.get_message_buttons()))
+        try:
+            reply_markup = get_reply_markup(self.card.get_message_buttons())
+            self.query.edit_message_reply_markup(reply_markup=reply_markup)
+        except Exception:
+            pass
+
+    def _already_clicked_key(self, button_name: str) -> str:
+        return f'{self._card_key()}:{button_name}:{self.user_id}'
 
     def _card_key(self) -> str:
         return f'{CACHE_PREFIX}:card:{self.chat_id}:{self.message_id}'
@@ -152,23 +159,18 @@ def revn_button_click_handler(_: telegram.Bot, __: telegram.Update,
     """
     Обработчик кнопки ревности
     """
-    redis_card = RedisCard(query)
-    if not redis_card.load():
+    store = Store(query)
+    if not store.load():
         return
 
-    if not redis_card.card.is_author(redis_card.user_id):
-        query.answer('Это твоя валентинка, тебе нельзя')
-        return
+    button_name = 'revn_clicked'
+    result = store.card.revn(store.user_id, store.is_already_clicked(button_name))
 
-    if redis_card.is_already_clicked('revn_clicked'):
-        man_name = get_man_name(redis_card.user_id)
-        query.answer(f'{man_name} нажимать один раз')
-        return
-
-    redis_card.card.revn()
-    redis_card.update_buttons()
-    redis_card.save()
-    query.answer()
+    if result.success:
+        store.mark_as_already_clicked(button_name)
+        store.save()
+        store.update_buttons()
+    query.answer(result.text)
 
 
 def mig_button_click_handler(bot: telegram.Bot, _: telegram.Update,
@@ -176,32 +178,22 @@ def mig_button_click_handler(bot: telegram.Bot, _: telegram.Update,
     """
     Обработчик кнопки подмигивания
     """
-    redis_card = RedisCard(query)
-    if not redis_card.load():
+    store = Store(query)
+    if not store.load():
         return
 
-    result = redis_card.card.cant_mig(redis_card.user_id)
-    if result is not None:
-        query.answer(result)
-        return
+    button_name = 'mig_clicked'
+    to_user = User.get(store.user_id)
+    result = store.card.mig(store.user_id, store.is_already_clicked(button_name), 
+                            to_user.get_username_or_link())
 
-    if redis_card.is_already_clicked('mig_clicked'):
-        fem = 'а' if redis_card.card.from_user.female else ''
-        query.answer(f'Ты уже подмигнул{fem}')
-        return
-
-    fem = 'а' if redis_card.card.from_user.female else ''
-    he = 'она' if redis_card.card.to_user.female else 'он'
-    query.answer(f'Ты подмигул{fem} 😉. Теперь {he} знает')
-
-    try:
-        to_user = User.get(redis_card.user_id)
-        fem = 'а' if to_user.female else ''
-        bot.send_message(redis_card.card.from_user.user_id,
-                         f'{to_user.get_username_or_link()} тебе подмигнул{fem}',
-                         parse_mode=telegram.ParseMode.HTML)
-    except Exception:
-        pass
+    query.answer(result.text)
+    if result.success:
+        store.mark_as_already_clicked(button_name)
+        try:
+            bot.send_message(store.card.from_user.user_id, result.notify_text, parse_mode=HTML)
+        except Exception:
+            pass
 
 
 def about_button_click_handler(bot: telegram.Bot, _: telegram.Update,

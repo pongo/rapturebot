@@ -240,7 +240,8 @@ def send_list_replay(bot: telegram.Bot, chat_id: int, message_id: int, uids: Ite
 
 @telegram_retry(logger=logger, silence=False, default=None, title='send_replay')
 def send_replay(bot: telegram.Bot, chat_id: int, message_id: int, text: str) -> telegram.Message:
-    return bot.send_message(chat_id, text, reply_to_message_id=message_id, parse_mode='HTML')
+    return bot.send_message(chat_id, text, reply_to_message_id=message_id, parse_mode='HTML',
+                            disable_notification=True)
 
 
 def send_sorry(bot: telegram.Bot, chat_id: int, message_id: int) -> None:

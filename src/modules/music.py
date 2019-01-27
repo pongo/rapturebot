@@ -8,6 +8,7 @@ from typing import List, Set, Tuple, Iterable
 
 import telegram
 
+from src.config import CONFIG
 from src.modules.models.chat_user import ChatUser
 from src.modules.models.user import User
 from src.utils.cache import cache, YEAR
@@ -206,6 +207,16 @@ def format_chat_users(chat_id: int, uids: Iterable[int]) -> List[str]:
     return users
 
 
+def forward_to_channel(bot: telegram.Bot, chat_id: int, message_id: int) -> None:
+    """
+    Форвардит сообщение в канал музкружка
+    """
+    channel_id = CONFIG.get('muzkruzhok_channel_id', None)
+    if channel_id is None:
+        return
+    bot.forward_message(channel_id, chat_id, message_id)
+
+
 def send_list_replay(bot: telegram.Bot, chat_id: int, message_id: int, uids: Iterable[int]) -> None:
     """
     Бот отправляет в чат реплай, тегая участников музкружка.
@@ -254,6 +265,7 @@ def music(bot: telegram.Bot, update: telegram.Update) -> None:
     if get_args(message.text.strip()):
         if can_use:
             send_list_replay(bot, chat_id, message.message_id, music_users)
+            forward_to_channel(bot, chat_id, message.message_id)
             return
         send_sorry(bot, chat_id, message.message_id)
         return
@@ -262,6 +274,7 @@ def music(bot: telegram.Bot, update: telegram.Update) -> None:
     if message.reply_to_message is not None:
         if can_use:
             send_list_replay(bot, chat_id, message.reply_to_message.message_id, music_users)
+            forward_to_channel(bot, chat_id, message.reply_to_message.message_id)
             return
         send_sorry(bot, chat_id, message.message_id)
         return

@@ -334,7 +334,8 @@ def command_val(text: str, mentions: Set[Union[VChatsUser, VUnknownUser]],
     if error is not None:
         return error
 
-    to_user = next(iter(mentions))
+    from_user = cast(VChatsUser, from_user)
+    to_user = cast(VChatsUser, next(iter(mentions)))
     if hearts is None:
         hearts = []
     return CardDraftSelectHeart(text, from_user, to_user, hearts)

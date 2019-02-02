@@ -105,7 +105,7 @@ def private(bot: telegram.Bot, update: telegram.Update):
     DayOfManager.private_handler(bot, update)
     if is_today_special():
         return
-    # ai(bot, update)
+    ai(bot, update)
 
 
 @run_async

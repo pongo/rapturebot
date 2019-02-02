@@ -259,7 +259,7 @@ def music(bot: telegram.Bot, update: telegram.Update) -> None:
     chat_id = update.message.chat_id
     message: telegram.Message = update.message
     music_users = get_music_users(chat_id)
-    can_use = message.from_user.id in music_users
+    can_use = is_can_use(bot, chat_id, message.from_user.id)
 
     # команда с текстом
     # бот делает реплай к этому сообщению, независимо от того, есть ли у сообщения реплай или нет.
@@ -282,6 +282,13 @@ def music(bot: telegram.Bot, update: telegram.Update) -> None:
 
     # без текста, без реплая
     send_music_help(bot, chat_id, message, music_users)
+
+
+def is_can_use(bot: telegram.Bot, chat_id: int, uid: int) -> bool:
+    if check_admin(bot, chat_id, uid):
+        return True
+    music_users = get_music_users(chat_id)
+    return uid in music_users
 
 
 def send_music_help(bot: telegram.Bot, chat_id: int, message: telegram.Message,

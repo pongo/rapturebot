@@ -1,7 +1,7 @@
 import telegram
 from telegram.ext import run_async
 
-from src.config import CONFIG
+from src.config import CONFIG, get_config_chats
 from src.modules.dayof.helper import set_today_special
 from src.plugins.valentine_day.date_checker import is_day_active, is_today_ending
 from src.plugins.valentine_day.handlers.card_handlers import revn_button_click_handler, \
@@ -13,16 +13,40 @@ from src.plugins.valentine_day.model import MODULE_NAME, \
     DraftHeartButton, DraftChatButton, \
     RevnButton, MigButton, AboutButton, CACHE_PREFIX, StatsHumanReporter
 from src.utils.cache import cache, TWO_DAYS
+from src.utils.logger_helpers import get_logger
+from src.utils.telegram_helpers import telegram_retry, dsp
 
 HTML = telegram.ParseMode.HTML
+logger = get_logger(__name__)
+
+
+@telegram_retry(logger=logger, silence=False, default=None, title='send_replay')
+def send_html(bot: telegram.Bot, chat_id: int, text: str) -> telegram.Message:
+    return bot.send_message(chat_id, text, parse_mode=HTML)
 
 
 def send_end(bot: telegram.Bot) -> None:
-    if not cache.get(f'{CACHE_PREFIX}:end:admin', False):
-        with StatsRedis() as stats:
+    """
+    Отправка во все чаты подводящих итог сообщений
+    """
+    with StatsRedis() as stats:
+        # отправка админу статы по всем чатам
+        admin_key = f'{CACHE_PREFIX}:end:admin'
+        if not cache.get(admin_key, False):
             text = StatsHumanReporter(stats).get_text(None)
-        bot.send_message(CONFIG.get('debug_uid', None), text, parse_mode=telegram.ParseMode.HTML)
-        cache.set(f'{CACHE_PREFIX}:end:admin', True, time=TWO_DAYS)
+            dsp(send_html, bot, CONFIG.get('debug_uid', None), text)
+            cache.set(admin_key, True, time=TWO_DAYS)
+
+        # отправка в чаты
+        for chat in get_config_chats():
+            chat_id = chat.chat_id
+            chat_key = f'{CACHE_PREFIX}:end:{chat_id}'
+            if cache.get(chat_key, False):
+                continue
+            stats_text = StatsHumanReporter(stats).get_text(chat_id)
+            text = f'Отгремело шампанское, отзвенели бубенцы. Замолили ли мы нашего двукратного дракона великого зеленокожесластного? Такс:\n\n{stats_text}'
+            dsp(send_html, bot, chat_id, text)
+            cache.set(chat_key, True, time=TWO_DAYS)
 
 
 class ValentineDay:
@@ -37,14 +61,13 @@ class ValentineDay:
     @classmethod
     def midnight(cls, bot: telegram.Bot) -> None:
         """
-        Показывает ночные приветственное и подводящее итоги сообщения
+        Отправка ночных приветственных и подводящих итоги сообщений
         """
         if is_day_active():
             set_today_special()
             # DayBegin.send(bot)
         if is_today_ending():
             send_end(bot)
-
 
     @classmethod
     @run_async

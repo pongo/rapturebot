@@ -66,11 +66,11 @@ class ValentineDay:
         if is_day_active():
             set_today_special()
             # DayBegin.send(bot)
+            return 
         if is_today_ending():
             send_end(bot)
 
     @classmethod
-    @run_async
     def callback_handler(cls, bot: telegram.Bot, update: telegram.Update,
                          query: telegram.CallbackQuery, data) -> None:
         if data['value'] not in cls.callbacks:
@@ -83,7 +83,6 @@ class ValentineDay:
         cls.callbacks[data['value']](bot, update, query, data)
 
     @staticmethod
-    @run_async
     def private_text_handler(bot: telegram.Bot, update: telegram.Update) -> None:
         if not is_day_active():
             return

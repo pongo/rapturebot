@@ -435,6 +435,8 @@ class StatsTest(unittest.TestCase):
 Ревнивцы: 23 👨
 
 Самые популярные сердечки: 4 1, 4 3, 3 2, 2 4
+
+<i>Осинь хойоша, чиовики. А типейь пьикязывяю любеть дьюг дьюгя. Ебитес 🐉</i>
             """.strip(), StatsHumanReporter(stats).get_text(None))
 
         self.assertEqual(f"""
@@ -451,9 +453,11 @@ class StatsTest(unittest.TestCase):
 Ревнивцы: 22 👨
 
 Самые популярные сердечки: 2 3, 1 1, 1 4, 1 2
+
+<i>Осинь хойоша, чиовики. А типейь пьикязывяю любеть дьюг дьюгя. Ебитес 🐉</i>
             """.strip(), StatsHumanReporter(stats).get_text(-1))
 
-        self.assertEqual('цилых дви штюки? 🐉', StatsHumanReporter(stats).get_text(-2))
+        self.assertEqual('<i>Цилых дви штюки? 🐉</i>', StatsHumanReporter(stats).get_text(-2))
 
         self.assertEqual(f"""
 • 6 валентинок отправлено
@@ -469,6 +473,8 @@ class StatsTest(unittest.TestCase):
 Ревнивцы: 1 👨
 
 Самые популярные сердечки: 2 1, 2 2, 1 3, 1 4
+
+<i>Осинь хойоша, чиовики. А типейь пьикязывяю любеть дьюг дьюгя. Ебитес 🐉</i>
             """.strip(), StatsHumanReporter(stats).get_text(-3))
 
-        self.assertEqual('Ниии отпьявляи!? 🐉', StatsHumanReporter(stats).get_text(-4))
+        self.assertEqual('<i>Ниии отпьявляи!? 🐉</i>', StatsHumanReporter(stats).get_text(-4))

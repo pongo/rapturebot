@@ -9,6 +9,7 @@ all_hearts = [
     '❤️', ' 🧡', ' 💛', ' 💚', ' 💙', ' 💜', ' 🖤', ' ♥️', ' 🐉', ' 🐸',
     ' 🍆', ' 🍍', ' 🍹', ' 🌈',
 ]
+CHANGE_MIND_TEXT = '\n\n<i>Передумали? Отправьте сообщение с новым текстом валентинки</i>'
 
 ErrorStr = NewType('ErrorStr', str)
 
@@ -189,7 +190,7 @@ class CardDraftSelectHeart(CardDraft):
 
     @staticmethod
     def get_message_text() -> str:
-        return 'Какие сердечки будут обрамлять текст?\n\n<i>Передумали? Начните заново: /val текст валентинки…</i>'
+        return f'Какие сердечки будут обрамлять текст?{CHANGE_MIND_TEXT}'
 
     def get_message_buttons(self) -> List[List[DraftHeartButton]]:
         return [
@@ -213,7 +214,7 @@ class CardDraftSelectChat(CardDraft):
 
     @staticmethod
     def get_message_text() -> str:
-        return 'В какой чат отправить открытку? Отправка произойдет немедленно.\n\n<i>Передумали? Начните заново: /val текст валентинки…</i>'
+        return f'В какой чат отправить открытку? Отправка произойдет немедленно.{CHANGE_MIND_TEXT}'
 
     def get_message_buttons(self) -> List[List[DraftChatButton]]:
         def create_button(chat: VChat) -> List[DraftChatButton]:

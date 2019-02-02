@@ -69,6 +69,13 @@ class CheckErrorsTest(unittest.TestCase):
         to_user = VChatsUser(2, {chat2, chat3}, False)
         self.assertEqual('Вы из разных чатов 😔', check_errors('-', {to_user}, from_user))
 
+    def test_too_long(self):
+        chat1 = VChat(-1)
+        female = VChatsUser(1, {chat1}, True)
+        male = VChatsUser(2, {chat1}, False)
+        text = '@-' + '=' * 1000
+        self.assertEqual('У тебя слишком длинный текст', check_errors(text, {male}, female))
+
 
 class CardCreationTest(unittest.TestCase):
     def setUp(self):

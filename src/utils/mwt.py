@@ -15,8 +15,8 @@ class MWT(object):
 
     Source: http://code.activestate.com/recipes/325905-memoize-decorator-with-timeout/#c1
     """
-    _caches = {}
-    _timeouts = {}
+    _caches = {}  # type: ignore
+    _timeouts = {}  # type: ignore
 
     def __init__(self,timeout=2):
         self.timeout = timeout

@@ -306,7 +306,7 @@ def check_errors(text: str, mentions: Set[Union[VChatsUser, VUnknownUser]],
 
     if len(text) > 777:
         return ErrorStr('У тебя слишком длинный текст')
-    
+
     if not mentions:
         fem = 'а' if from_user.female else ''
         return ErrorStr(f'Ты никого не упомянул{fem} в тексте')

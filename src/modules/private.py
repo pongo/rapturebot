@@ -103,6 +103,7 @@ def private(bot: telegram.Bot, update: telegram.Update):
     Текст в личку бота.
     """
     DayOfManager.private_handler(bot, update)
+    return
     if is_today_special():
         return
     ai(bot, update)

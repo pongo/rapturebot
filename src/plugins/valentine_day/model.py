@@ -1,6 +1,10 @@
+import collections
 import random
-from typing import List, Union, Set, TYPE_CHECKING, cast, NewType, NamedTuple, Dict, Optional, \
-    Sequence, Tuple
+import statistics
+from typing import List, Union, Set, cast, NewType, NamedTuple, Dict, Optional, \
+    Tuple
+
+from pytils.numeral import get_plural
 
 CACHE_PREFIX = 'valentine_day'
 MODULE_NAME = 'valentine_day'
@@ -229,19 +233,21 @@ class CardDraftSelectChat(CardDraft):
         return Card(self.text, self.from_user, self.to_user, self.heart, chat_id)
 
 
+class RevnAnswer(NamedTuple):
+    text: Optional[str] = None
+    success: bool = False
+
+
+class MigAnswer(NamedTuple):
+    text: Optional[str] = None
+    success: bool = False
+    notify_text: Optional[str] = None
+
+
 class Card(CardDraft):
     """
     Отправленная открытка
     """
-
-    class RevnAnswer(NamedTuple):
-        text: Optional[str] = None
-        success: bool = False
-
-    class MigAnswer(NamedTuple):
-        text: Optional[str] = None
-        success: bool = False
-        notify_text: Optional[str] = None
 
     def __init__(self, text: str, from_user: VChatsUser, to_user: VChatsUser,
                  heart: str, chat_id: int) -> None:
@@ -263,30 +269,30 @@ class Card(CardDraft):
             [about_button]
         ]
 
-    def revn(self, user_id: int, already_clicked: bool) -> 'Card.RevnAnswer':
+    def revn(self, user_id: int, already_clicked: bool) -> RevnAnswer:
         if self._is_author(user_id):
-            return self.RevnAnswer('Это твоя валентинка, тебе нельзя')
+            return RevnAnswer('Это твоя валентинка, тебе нельзя')
 
         if already_clicked:
             man_name = get_man_name(user_id)
-            return self.RevnAnswer(f'{man_name} нажимать один раз')
+            return RevnAnswer(f'{man_name} нажимать один раз')
 
         self.revn_emoji = next_emoji(self.revn_emoji)
-        return self.RevnAnswer(success=True)
+        return RevnAnswer(success=True)
 
-    def mig(self, user_id: int, already_clicked: bool, username: str) -> 'Card.MigAnswer':
+    def mig(self, user_id: int, already_clicked: bool, username: str) -> MigAnswer:
         if self._is_author(user_id):
-            return self.MigAnswer('Бесы попутали?')
+            return MigAnswer('Бесы попутали?')
 
         if not self._is_target(user_id):
-            return self.MigAnswer('Не твоя Валя, вот ты и бесишься')
+            return MigAnswer('Не твоя Валя, вот ты и бесишься')
 
         to_gender = 'а' if self.to_user.female else ''
         if already_clicked:
-            return self.MigAnswer(f'Ты уже подмигнул{to_gender}')
+            return MigAnswer(f'Ты уже подмигнул{to_gender}')
 
         from_gender = 'она' if self.from_user.female else 'он'
-        return self.MigAnswer(
+        return MigAnswer(
             text=f'Подмигивание прошло успешно 😉. Теперь {from_gender} знает',
             success=True,
             notify_text=f'{username} тебе подмигнул{to_gender}')
@@ -360,3 +366,231 @@ def get_man_name(user_id: int) -> str:
     name = random.choice(('Орзик', 'Девочка', 'Мальчик', 'Человек'))
     random.seed()
     return name
+
+
+class ChatStats:
+    """
+    Статистика чата
+    """
+
+    def __init__(self, chat_id: int) -> None:
+        self.chat_id = chat_id
+        self.cards_count = 0
+        self.senders: List[int] = []
+        self.addressees: List[int] = []
+        self.hearts: List[str] = []
+        self.text_lengths: List[int] = []
+        self.migs: List[int] = []
+        self.revns: List[int] = []
+        self.poop_count = 0
+        self.gays_count = 0
+        self.lesb_count = 0
+
+    def add_card(self, card: Card, from_user_female: bool, to_user_female: bool) -> None:
+        self.cards_count += 1
+        self.senders.append(card.from_user.user_id)
+        self.addressees.append(card.to_user.user_id)
+        self.hearts.append(card.heart)
+        self.text_lengths.append(len(card.text))
+        self._add_gays(from_user_female, to_user_female)
+
+    def add_mig(self, user_id: int) -> None:
+        self.migs.append(user_id)
+
+    def add_revn(self, card: Card, user_id: int, old_revn_emoji: str) -> None:
+        self.revns.append(user_id)
+        if old_revn_emoji == '💩':
+            return
+        if card.revn_emoji == '💩':
+            self.poop_count += 1
+
+    def _add_gays(self, from_user_female: bool, to_user_female: bool) -> None:
+        if from_user_female and to_user_female:
+            self.lesb_count += 1
+            return
+        if not from_user_female and not to_user_female:
+            self.gays_count += 1
+
+
+class Stats:
+    """
+    Сборщик статистики
+    """
+
+    def __init__(self) -> None:
+        self.all_chats = ChatStats(0)
+        self.chats: Dict[int, ChatStats] = dict()
+        self.males: Set[int] = set()
+        self.females: Set[int] = set()
+
+    def add_card(self, card: Card) -> None:
+        from_user_female, to_user_female = self._add_genders(card)
+
+        self.all_chats.add_card(card, from_user_female, to_user_female)
+        self._add_card_to_chat(card, from_user_female, to_user_female)
+
+    def add_revn(self, card: Card, user_id: int, old_revn_emoji: str) -> None:
+        self.all_chats.add_revn(card, user_id, old_revn_emoji)
+        self.chats[card.chat_id].add_revn(card, user_id, old_revn_emoji)
+
+    def add_mig(self, card: Card, user_id: int) -> None:
+        self.all_chats.add_mig(user_id)
+        self.chats[card.chat_id].add_mig(user_id)
+
+    def _add_card_to_chat(self, card: Card,
+                          from_user_female: bool, to_user_female: bool) -> None:
+        chat_id = card.chat_id
+        chat = self.chats.setdefault(chat_id, ChatStats(chat_id))
+        chat.add_card(card, from_user_female, to_user_female)
+        self.chats[chat_id] = chat
+
+    def _add_genders(self, card: Card) -> Tuple[bool, bool]:
+        if card.from_user.female:
+            from_user_female = True
+            self.females.add(card.from_user.user_id)
+        else:
+            from_user_female = False
+            self.males.add(card.from_user.user_id)
+        if card.to_user.female:
+            to_user_female = True
+            self.females.add(card.to_user.user_id)
+        else:
+            to_user_female = False
+            self.males.add(card.to_user.user_id)
+        return from_user_female, to_user_female
+
+
+class StatsHumanReporter:
+    """
+    Создает отчет по статистике валентинок
+    """
+
+    def __init__(self, stats: Stats) -> None:
+        self.stats = stats
+
+    def get_text(self, chat_id: Optional[int]) -> str:
+        chat = self.stats.all_chats if chat_id is None else self.stats.chats.get(chat_id)
+
+        if chat is None or chat.cards_count == 0:
+            return 'Ниии отпьявляи!? 🐉'
+
+        if chat.cards_count == 1:
+            return 'Всиго одню отпьявии, чиго тют считять 🐉'
+
+        if chat.cards_count == 2:
+            return 'цилых дви штюки? 🐉'
+
+        chats_count = ''
+        if chat_id is None:
+            chats_count = get_plural(
+                len(self.stats.chats),
+                'чат участвовал, чата участвовало, чатов участвовало'
+            )
+        base_stats = self._base_stats(chat)
+
+        senders_gender = self._senders_gender(chat)
+        addressees_gender = self._addressees_gender(chat)
+        renvs_gender = self._revns_gender(chat)
+
+        popular_hearts = self._popular_hearts(chat)
+
+        return f"""
+{chats_count}
+
+{base_stats}
+
+Отправители: {senders_gender}
+Получатели: {addressees_gender}
+Ревнивцы: {renvs_gender}
+
+Самые популярные сердечки: {popular_hearts}
+            """.strip()
+
+    def _base_stats(self, chat):
+        base_stats = []
+
+        cards_count = get_plural(
+            chat.cards_count,
+            'валентинка отправлена, валентинки отправлено, валентинок отправлено')
+        base_stats.append(cards_count)
+
+        # если только один юзер подмигнул, то делаем вид, что никто не мигал
+        uniq_migs_count = len(set(chat.migs))
+        migs_count = get_plural(
+            len(chat.migs) if uniq_migs_count > 1 else 0,
+            'подмигивание произведено, подмигивания произведено, подмигиваний произведено')
+        base_stats.append(migs_count)
+
+        revns_count = get_plural(
+            len(chat.revns),
+            'ревность источена, ревности источено, ревностей источено')
+        base_stats.append(revns_count)
+
+        poop_count = get_plural(
+            chat.poop_count,
+            'раз, раза, раз'
+        )
+        base_stats.append(f'До 💩 доревновали {poop_count}')
+
+        avg_text_len = get_plural(
+            statistics.median(chat.text_lengths),
+            'символ, символа, символов'
+        )
+        base_stats.append(f'Средняя длина валентинки: {avg_text_len} с пробелами')
+
+        base_stats.append(self._most_popular_user(chat))
+        base_stats.append(self._gay(chat))
+
+        return ''.join((f'• {stat}\n' for stat in base_stats if stat)).strip()
+
+    def _senders_gender(self, chat: ChatStats) -> str:
+        genders = ('👩' if user_id in self.stats.females else '👨'
+                   for user_id in set(chat.senders))
+        counter = collections.Counter(genders)
+        counts = (f'{count} {gender}' for gender, count in counter.most_common() if count > 0)
+        return ', '.join(counts)
+
+    def _addressees_gender(self, chat: ChatStats) -> str:
+        genders = ('👩' if user_id in self.stats.females else '👨'
+                   for user_id in set(chat.addressees))
+        counter = collections.Counter(genders)
+        counts = (f'{count} {gender}' for gender, count in counter.most_common() if count > 0)
+        return ', '.join(counts)
+
+    def _revns_gender(self, chat: ChatStats) -> str:
+        genders = ('👩' if user_id in self.stats.females else '👨'
+                   for user_id in set(chat.revns))
+        counter = collections.Counter(genders)
+        counts = (f'{count} {gender}' for gender, count in counter.most_common() if count > 0)
+        return ', '.join(counts)
+
+    @staticmethod
+    def _popular_hearts(chat: ChatStats) -> str:
+        counter = collections.Counter(chat.hearts)
+        counts = (f'{count} {heart}' for heart, count in counter.most_common() if count > 0)
+        return ', '.join(counts)
+
+    def _most_popular_user(self, chat: ChatStats) -> str:
+        counter = collections.Counter(chat.addressees)
+        common = counter.most_common(1)
+        if len(common) == 0:
+            return ''
+        user_id, count = common[0]
+        if count == 1:
+            return ''
+        pl_count = get_plural(
+            count,
+            'валентинки, валентинок, валентинок'
+        )
+        fem = 'Одна девушка получила' if user_id in self.stats.females else 'Один юноша получил'
+        return f'{fem} больше {pl_count}'
+
+    @staticmethod
+    def _gay(chat: ChatStats) -> str:
+        if chat.gays_count == 0 and chat.lesb_count == 0:
+            return 'В чяте ни одного пидойа 🐉'
+
+        counter = collections.Counter(gay=chat.gays_count, lesb=chat.lesb_count)
+        counts = (f'{count} {heart}' for heart, count in counter.most_common() if count > 0)
+        counts_txt = ', '.join(counts).replace('gay', '👨‍❤️‍👨').replace('lesb', '👩‍❤️‍👩')
+        return f'Геюжных валентинок: {counts_txt}'

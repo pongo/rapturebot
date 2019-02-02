@@ -1,9 +1,11 @@
 import sys
 import unittest
+from typing import Dict, Union, List
 from unittest.mock import MagicMock
 
 from src.plugins.valentine_day.model import check_errors, VChatsUser, VUnknownUser, VChat, \
-    CardDraftSelectHeart, CardDraftSelectChat, command_val, Card, next_emoji
+    CardDraftSelectHeart, CardDraftSelectChat, command_val, Card, next_emoji, Stats, revn_emojis, \
+    StatsHumanReporter
 
 sys.modules['telegram'] = MagicMock()
 sys.modules['telegram.ext'] = MagicMock()
@@ -214,3 +216,259 @@ class NextEmojiTest(unittest.TestCase):
         self.assertEqual('😑', next_emoji('🤔'))
         self.assertEqual('😞', next_emoji('☹️'))
         self.assertEqual('💩', next_emoji('💩'))
+
+
+class StatsTest(unittest.TestCase):
+    def test_card_created(self):
+        chat1 = VChat(-1)
+        male = VChatsUser(1, {chat1}, False)
+        female = VChatsUser(2, {chat1}, True)
+        card = Card('---', male, female, 'x', -1)
+        stats = Stats()
+
+        stats.add_card(card)
+        card.mig(2, False, '@-')
+        stats.add_mig(card, 2)
+        revns_count = len(revn_emojis) + 10
+        for user_id in range(100, 100 + revns_count):
+            user = VChatsUser(user_id, {chat1}, False)
+            old_revn_emoji = card.revn_emoji
+            card.revn(user_id, False)
+            stats.add_revn(card, user.user_id, old_revn_emoji)
+
+        self.assertEqual(1, stats.all_chats.cards_count)
+        self.assertEqual(1, len(stats.chats))
+        self.assertEqual(1, stats.chats[-1].cards_count)
+        self.assertEqual(1, len(stats.all_chats.senders))
+        self.assertEqual(1, len(stats.all_chats.addressees))
+        self.assertSequenceEqual(['x'], stats.all_chats.hearts)
+        self.assertSequenceEqual([3], stats.all_chats.text_lengths)
+        self.assertSequenceEqual([2], stats.all_chats.migs)
+        self.assertEqual(revns_count, len(stats.all_chats.revns))
+        self.assertEqual(1, stats.all_chats.poop_count)
+
+        self.assertSetEqual({1}, stats.males)
+        self.assertSetEqual({2}, stats.females)
+
+    def test_stats_text(self):
+        def _get_vusers(rows):
+            result: Dict[int, VChatsUser] = dict()
+            for row in rows:
+                user_id, female, chats_ids = row
+                chats = {all_chats[chat_id] for chat_id in chats_ids}
+                result[user_id] = VChatsUser(user_id, chats, female)
+            return result
+
+        def _create_cards() -> List[Card]:
+            def _add(card: Union[str, Card]):
+                if check_errors(card.text, {card.to_user}, card.from_user) is not None:
+                    raise TypeError("I can't create this Card")
+                result.append(card)
+                stats.add_card(card)
+            result = []
+
+            _add(Card('-' * 5, all_users[1], all_users[62], '1', -1))   # 0
+            _add(Card('-' * 99, all_users[1], all_users[62], '4', -1))  # 1
+            _add(Card('-' * 3, all_users[2], all_users[64], '2', -1))   # 2
+            _add(Card('-' * 4, all_users[66], all_users[65], '3', -1))  # 3 female
+            _add(Card('-' * 4, all_users[3], all_users[11], '3', -1))   # 4
+
+            _add(Card('-' * 4, all_users[46], all_users[47], '1', -3))  # 5
+            _add(Card('-' * 1, all_users[55], all_users[46], '2', -3))  # 6
+            _add(Card('-' * 2, all_users[54], all_users[53], '3', -3))  # 7
+            _add(Card('-' * 4, all_users[53], all_users[46], '4', -3))  # 8
+            _add(Card('-' * 5, all_users[52], all_users[46], '2', -3))  # 9
+            _add(Card('-' * 6, all_users[51], all_users[47], '1', -3))  # 10
+
+            _add(Card('-' * 6, all_users[1], all_users[63], '1', -2))   # 11
+            _add(Card('-' * 4, all_users[20], all_users[62], '3', -2))  # 12
+
+            return result
+
+        def _add_migs():
+            def _add_mig(card, uid):
+                card.mig(uid, False, f'@{uid}')
+                stats.add_mig(card, uid)
+
+            _add_mig(all_cards[0], 62)
+            _add_mig(all_cards[2], 64)
+
+            _add_mig(all_cards[5], 47)
+            _add_mig(all_cards[10], 47)
+
+            _add_mig(all_cards[12], 62)
+
+        def _add_revns():
+            def _add_revn(card, uid):
+                old_emoji = card.revn_emoji
+                card.revn(uid, False)
+                stats.add_revn(card, uid, old_emoji)
+
+            _add_revn(all_cards[0], 2)
+            _add_revn(all_cards[0], 3)
+            _add_revn(all_cards[0], 4)
+            _add_revn(all_cards[0], 5)
+            _add_revn(all_cards[0], 6)
+            _add_revn(all_cards[0], 7)
+            _add_revn(all_cards[0], 8)
+            _add_revn(all_cards[0], 9)
+            _add_revn(all_cards[0], 10)
+            _add_revn(all_cards[0], 11)
+            _add_revn(all_cards[0], 12)
+            _add_revn(all_cards[0], 13)
+            _add_revn(all_cards[0], 14)
+            _add_revn(all_cards[0], 15)
+            _add_revn(all_cards[0], 16)
+            _add_revn(all_cards[0], 18)
+            _add_revn(all_cards[0], 19)
+            _add_revn(all_cards[0], 20)
+            _add_revn(all_cards[0], 21)
+            _add_revn(all_cards[0], 22)
+            _add_revn(all_cards[0], 23)
+            _add_revn(all_cards[0], 24)
+
+            _add_revn(all_cards[5], 48)
+
+        stats = Stats()
+        all_chats = {chat_id: VChat(chat_id) for chat_id in range(-1, -5, -1)}
+
+        all_users = _get_vusers([
+            [1, False, [-1, -2, -3]],
+            [2, False, [-1]],
+            [3, False, [-1]],
+            [4, False, [-1]],
+            [5, False, [-1]],
+            [6, False, [-1]],
+            [7, False, [-1]],
+            [8, False, [-1]],
+            [9, False, [-1]],
+            [10, False, [-1]],
+            [11, False, [-1]],
+            [12, False, [-1]],
+            [13, False, [-1]],
+            [14, False, [-1]],
+            [15, False, [-1]],
+            [16, False, [-1]],
+            [17, False, [-1]],
+            [18, False, [-1]],
+            [19, False, [-1]],
+            [20, False, [-1, -2]],
+            [21, False, [-1, -2]],
+            [22, False, [-1, -2]],
+            [23, False, [-1, -2]],
+            [24, False, [-1, -2]],
+            [25, False, [-1, -2]],
+            [26, False, [-1, -2]],
+            [27, False, [-1, -2, -4]],
+            [28, False, [-1, -2, -4]],
+            [29, False, [-1, -2, -4]],
+            [30, False, [-1, -2, -4]],
+            [31, False, [-2, -4]],
+            [32, False, [-2]],
+            [33, False, [-2]],
+            [34, False, [-2]],
+            [35, False, [-2]],
+            [36, False, [-2]],
+            [37, False, [-2]],
+            [38, False, [-2]],
+            [39, False, [-2]],
+            [40, False, [-2]],
+            [41, False, [-2]],
+            [42, False, [-2]],
+            [43, False, [-2]],
+            [44, False, [-2]],
+            [45, False, [-2]],
+            [46, False, [-3]],
+            [47, False, [-3]],
+            [48, False, [-3]],
+            [49, False, [-3]],
+            [50, False, [-3]],
+            [51, False, [-3]],
+            [52, False, [-3]],
+            [53, False, [-3]],
+            [54, False, [-3]],
+            [55, False, [-3]],
+            [56, False, [-4]],
+            [57, False, [-4]],
+            [58, False, [-4]],
+            [59, False, [-4]],
+            [60, False, [-4]],
+            [61, False, [-4]],
+            [62, True, [-1, -2]],
+            [63, True, [-1]],
+            [64, True, [-1]],
+            [65, True, [-1]],
+            [66, True, [-1]],
+            [67, True, [-1]],
+            [68, True, [-1]],
+            [69, True, [-1, -2]],
+            [70, True, [-1, -2, -4]],
+            [71, True, [-1, -2, -4]],
+            [72, True, [-2, -4]],
+            [73, True, [-2, -4]],
+            [74, True, [-2, -4]],
+            [75, True, [-2]],
+            [76, True, [-2]],
+            [77, True, [-2]],
+            [78, True, [-2]],
+            [79, True, [-2]],
+            [80, True, [-2]],
+            [81, True, [-4]]
+        ])
+        all_cards = _create_cards()
+        _add_migs()
+        _add_revns()
+
+        self.assertEqual(f"""
+3 чата участвовало
+
+• 13 валентинок отправлено
+• 5 подмигиваний произведено
+• 23 ревности источено
+• До 💩 доревновали 1 раз
+• Средняя длина валентинки: 4 символа с пробелами
+• Одна девушка получила больше 3 валентинок
+• Геюжных валентинок: 7 👨‍❤️‍👨, 1 👩‍❤️‍👩
+
+Отправители: 10 👨, 1 👩
+Получатели: 4 👩, 4 👨
+Ревнивцы: 23 👨
+
+Самые популярные сердечки: 4 1, 4 3, 3 2, 2 4
+            """.strip(), StatsHumanReporter(stats).get_text(None))
+
+        self.assertEqual(f"""
+• 5 валентинок отправлено
+• 2 подмигивания произведено
+• 22 ревности источено
+• До 💩 доревновали 1 раз
+• Средняя длина валентинки: 4 символа с пробелами
+• Одна девушка получила больше 2 валентинок
+• Геюжных валентинок: 1 👨‍❤️‍👨, 1 👩‍❤️‍👩
+
+Отправители: 3 👨, 1 👩
+Получатели: 3 👩, 1 👨
+Ревнивцы: 22 👨
+
+Самые популярные сердечки: 2 3, 1 1, 1 4, 1 2
+            """.strip(), StatsHumanReporter(stats).get_text(-1))
+
+        self.assertEqual('цилых дви штюки? 🐉', StatsHumanReporter(stats).get_text(-2))
+
+        self.assertEqual(f"""
+• 6 валентинок отправлено
+• 0 подмигиваний произведено
+• 1 ревность источена
+• До 💩 доревновали 0 раз
+• Средняя длина валентинки: 4 символа с пробелами
+• Один юноша получил больше 3 валентинок
+• Геюжных валентинок: 6 👨‍❤️‍👨
+
+Отправители: 6 👨
+Получатели: 3 👨
+Ревнивцы: 1 👨
+
+Самые популярные сердечки: 2 1, 2 2, 1 3, 1 4
+            """.strip(), StatsHumanReporter(stats).get_text(-3))
+
+        self.assertEqual('Ниии отпьявляи!? 🐉', StatsHumanReporter(stats).get_text(-4))

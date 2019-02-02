@@ -2,6 +2,7 @@ from typing import Optional
 
 import telegram
 
+from src.plugins.valentine_day.handlers.stats_redis import StatsRedis
 from src.plugins.valentine_day.helpers.helpers import get_reply_markup, clear_random_hearts, \
     get_vuser, \
     get_mentions, replace_text_mentions, get_random_hearts, get_chat_title
@@ -89,6 +90,11 @@ def draft_chat_button_click_handler(bot: telegram.Bot, _: telegram.Update,
         reply_markup=get_reply_markup(card.get_message_buttons()),
         parse_mode=HTML, disable_web_page_preview=True)
     card.message_id = card_in_chat_msg.message_id
+
+    with StatsRedis.lock:
+        with StatsRedis() as stats:
+            stats.add_card(card)
+
     query.message.delete()
 
     status_message: telegram.Message = bot.send_message(

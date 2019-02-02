@@ -4,6 +4,7 @@ from typing import Optional, cast
 
 import telegram
 
+from src.plugins.valentine_day.handlers.stats_redis import StatsRedis
 from src.plugins.valentine_day.helpers.helpers import get_reply_markup, get_username_or_link
 from src.plugins.valentine_day.model import Card, CACHE_PREFIX
 from src.utils.cache import cache, TWO_DAYS
@@ -68,10 +69,14 @@ def revn_button_click_handler(_: telegram.Bot, __: telegram.Update,
     store.card = cast(Card, store.card)
 
     button_name = 'revn_clicked'
+    old_emoji = store.card.revn_emoji
     result = store.card.revn(store.user_id, store.is_already_clicked(button_name))
 
     if result.success:
         store.mark_as_already_clicked(button_name)
+        with StatsRedis.lock:
+            with StatsRedis() as stats:
+                stats.add_revn(store.card, store.user_id, old_emoji)
         store.save()
         store.update_buttons()
     query.answer(result.text)
@@ -94,6 +99,9 @@ def mig_button_click_handler(bot: telegram.Bot, _: telegram.Update,
     query.answer(result.text)
     if result.success:
         store.mark_as_already_clicked(button_name)
+        with StatsRedis.lock:
+            with StatsRedis() as stats:
+                stats.add_mig(store.card, store.user_id)
         try:
             bot.send_message(store.card.from_user.user_id, result.notify_text, parse_mode=HTML,
                              reply_to_message_id=store.card.original_draft_message_id)

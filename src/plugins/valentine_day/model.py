@@ -175,7 +175,8 @@ class CardDraft:
         self.text = text.strip()
         self.from_user = from_user
         self.to_user = to_user
-        self.message_id = None
+        self.message_id: Optional[int] = None
+        self.original_draft_message_id: Optional[int] = None
 
 
 class CardDraftSelectHeart(CardDraft):
@@ -248,6 +249,7 @@ class Card(CardDraft):
         self.heart = heart.strip()
         self.chat_id = chat_id
         self.revn_emoji = '🤔'
+        self.status_message_id: Optional[int] = None
 
     def get_message_text(self) -> str:
         return f'{self.heart}  {self.text}  {self.heart}\n\n#валентин'.strip()

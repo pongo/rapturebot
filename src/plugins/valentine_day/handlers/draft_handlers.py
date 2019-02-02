@@ -30,6 +30,7 @@ def private_text_handler(bot: telegram.Bot, update: telegram.Update) -> None:
         return
 
     if isinstance(answer, CardDraftSelectHeart):
+        answer.original_draft_message_id = message.message_id
         cache.set(f'{CACHE_PREFIX}:draft:card:{user_id}', answer, time=TWO_DAYS)
         bot.send_message(user_id, answer.get_message_text(),
                          reply_markup=get_reply_markup(answer.get_message_buttons()),
@@ -53,6 +54,7 @@ def draft_heart_button_click_handler(bot: telegram.Bot, _: telegram.Update,
     chat_names = {chat.chat_id: get_chat_title(bot, chat.chat_id)
                   for chat in draft.from_user.chats}
     answer = draft.select_heart(heart, chat_names)
+    answer.original_draft_message_id = draft.original_draft_message_id
 
     cache.set(f'{CACHE_PREFIX}:draft:card:{user_id}', answer, time=TWO_DAYS)
     query.edit_message_text(text=answer.get_message_text(), parse_mode=HTML)
@@ -82,13 +84,19 @@ def draft_chat_button_click_handler(bot: telegram.Bot, _: telegram.Update,
     chat_id: int = data['chat_id']
     card = draft.select_chat(chat_id)
 
-    msg = bot.send_message(chat_id, card.get_message_text(),
-                           reply_markup=get_reply_markup(card.get_message_buttons()),
-                           parse_mode=HTML,
-                           disable_web_page_preview=True)
-    card.message_id = msg.message_id
-    cache.set(f'{CACHE_PREFIX}:card:{chat_id}:{card.message_id}', card, time=TWO_DAYS)
-    clear_random_hearts(user_id)
+    card_in_chat_msg = bot.send_message(
+        chat_id, card.get_message_text(),
+        reply_markup=get_reply_markup(card.get_message_buttons()),
+        parse_mode=HTML, disable_web_page_preview=True)
+    card.message_id = card_in_chat_msg.message_id
     query.message.delete()
-    bot.send_message(user_id, 'Открытка отправлена!')
+
+    status_message: telegram.Message = bot.send_message(
+        user_id, 'Валентинка отправлена!', reply_to_message_id=draft.original_draft_message_id
+    )
+    card.original_draft_message_id = draft.original_draft_message_id
+    card.status_message_id = status_message.message_id
+    cache.set(f'{CACHE_PREFIX}:card:{chat_id}:{card.message_id}', card, time=TWO_DAYS)
+
+    clear_random_hearts(user_id)
     query.answer()

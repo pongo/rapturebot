@@ -1,4 +1,5 @@
 import textwrap
+from time import sleep
 from typing import Optional, cast
 
 import telegram
@@ -94,7 +95,13 @@ def mig_button_click_handler(bot: telegram.Bot, _: telegram.Update,
     if result.success:
         store.mark_as_already_clicked(button_name)
         try:
-            bot.send_message(store.card.from_user.user_id, result.notify_text, parse_mode=HTML)
+            bot.send_message(store.card.from_user.user_id, result.notify_text, parse_mode=HTML,
+                             reply_to_message_id=store.card.original_draft_message_id)
+        except Exception:
+            pass
+        sleep(0.8)
+        try:
+            bot.edit_message_text(f'✅ Тебе подмигнули!', store.card.from_user.user_id, store.card.status_message_id)
         except Exception:
             pass
 

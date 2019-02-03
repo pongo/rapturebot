@@ -16,7 +16,11 @@ def parse_pronouns(text: str) -> List[Tuple[str, int]]:
     if not words:
         return []
     c = Counter(words)
-    return c.most_common()
+    common: List[Tuple[str, int]] = c.most_common()
+    sum_count = sum(count for _, count in common)
+    if sum_count > 10:
+        common = [(word, 1) for word, count in common]
+    return common
 
 
 def is_foreign_forward(message: telegram.Message, from_uid: Optional[int] = None) -> bool:

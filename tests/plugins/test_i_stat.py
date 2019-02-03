@@ -20,5 +20,8 @@ class ParsePronounsTest(unittest.TestCase):
         self.assertListEqual([('я', 1)], parse_pronouns('Я говорю'))
         self.assertListEqual([('я', 7)], parse_pronouns('Я я, я. (я) Я! я? я: это яя'))
         self.assertListEqual(
-            sorted([('я', 1), ('меня', 2), ('мне', 2), ('мной', 1), ('мною', 1), ('мну', 1), ]),
+            sorted([('я', 1), ('меня', 2), ('мне', 2), ('мной', 1), ('мною', 1), ]),
             sorted(parse_pronouns('Я тебя говорю меня мне меня ляляля мной (мною), огого обо мне мну')))
+
+    def test_cheat(self):
+        self.assertListEqual([('я', 1), ('мне', 1)], parse_pronouns('я ' * 100 + ' мне ' * 50))

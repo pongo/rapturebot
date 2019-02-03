@@ -11,14 +11,17 @@ from src.modules.models.user_stat import UserStat as ModelUserStat
 re_personal_pronouns = re.compile(r"\b(я|меня|мне|мной|мною)\b", re.IGNORECASE)
 
 
-def parse_pronouns(text: str) -> List[Tuple[str, int]]:
+def sum_count(common: List[Tuple[str, int]]) -> int:
+    return sum(count for _, count in common)
+
+
+def parse_pronouns(text: str, anticheat: bool = False) -> List[Tuple[str, int]]:
     words = re_personal_pronouns.findall(text.lower())
     if not words:
         return []
     c = Counter(words)
     common: List[Tuple[str, int]] = c.most_common()
-    sum_count = sum(count for _, count in common)
-    if sum_count > 10:
+    if anticheat and sum_count(common) > 5:
         common = [(word, 1) for word, count in common]
     return common
 
@@ -60,20 +63,21 @@ class ChatStatistician(object):
     def __init__(self):
         self.db = ChatStat()
 
-    def add_message(self, message: telegram.Message) -> None:
+    def add_message(self, message: telegram.Message) -> int:
         if is_foreign_forward(message):
-            return
+            return 0
 
         text = message.text if message.text else message.caption
         if text is None:
-            return
+            return 0
 
         user_id = message.from_user.id
-        counts = parse_pronouns(text)
+        counts = parse_pronouns(text, anticheat=True)
         if counts:
             self.db.add_message(user_id)
         for word, count in counts:
             self.db.add_word(user_id, word, count)
+        return sum_count(counts)
 
     def reset(self, user_id: int) -> None:
         self.db.reset(user_id)

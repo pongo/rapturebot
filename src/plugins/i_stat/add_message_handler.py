@@ -2,8 +2,12 @@ from threading import Lock
 
 import telegram
 
-from src.plugins.i_stat.banhammer import is_banned
+from src.plugins.i_stat.anticheat import cheats_found
+from src.plugins.i_stat.banhammer import is_banned, ban
 from src.plugins.i_stat.db import RedisChatStatistician
+from src.utils.logger_helpers import get_logger
+
+logger = get_logger(__name__)
 
 
 class IStatAddMessage(object):
@@ -11,11 +15,19 @@ class IStatAddMessage(object):
 
     @classmethod
     def add_message(cls, message: telegram.Message) -> None:
-        # if is_banned(message.chat_id, message.from_user.id):
-        #     return
+        user_id = message.from_user.id
+        chat_id = message.chat_id
+        if is_banned(chat_id, user_id):
+            return
 
         with cls.lock:
-            rs = RedisChatStatistician(message.chat_id)
+            rs = RedisChatStatistician(chat_id)
             rs.load()
-            rs.chat_statistician.add_message(message)
+
+            sums = rs.chat_statistician.add_message(message)
+            if cheats_found(chat_id, user_id, sums):
+                ban(chat_id, user_id, False, 6 * 60 * 60)  # 6h
+                logger.info(f'[anticheat] i-banned: {chat_id}:{user_id}')
+                return
+
             rs.save()

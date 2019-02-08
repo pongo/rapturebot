@@ -55,6 +55,27 @@ def send_end(bot: telegram.Bot) -> None:
         send_to_all_chats(bot, 'end', _get_text)
 
 
+def send_help(bot: telegram.Bot, user_id: int) -> None:
+    text = f"""
+Добрая дорога, кожаный мешок! Я помогу тебе выразить так называемую любовь.
+
+<b>Отправка валентинки</b>
+
+Напиши текст валентинки прямо сюда, не забыв указать @username получателя. Потом выберешь чат для отправки. Твое имя нигде не будет указано.
+
+На валентинке будет кнопка для подмигивания. Я сообщу тебе, если адресат ее нажал (твое имя останется в тайне).
+
+<b>Анонимность</b>
+
+В этот раз без анонимного сайта. Но мой автор уверяет, что и так все останется в тайне. Поверьте этому кожаному мешку! 🙏
+
+<b>Поехали!</b>
+
+Сегодня не время тянуть! Пиши валентинку ❤️
+    """.strip()
+    send_html(bot, user_id, text)
+
+
 class ValentineDay:
     callbacks = {
         DraftHeartButton.CALLBACK_NAME: draft_heart_button_click_handler,
@@ -79,6 +100,9 @@ class ValentineDay:
     @classmethod
     def callback_handler(cls, bot: telegram.Bot, update: telegram.Update,
                          query: telegram.CallbackQuery, data) -> None:
+        """
+        Обработчик коллбеков
+        """
         if data['value'] not in cls.callbacks:
             return
         if 'module' not in data or data['module'] != MODULE_NAME:
@@ -90,6 +114,16 @@ class ValentineDay:
 
     @staticmethod
     def private_text_handler(bot: telegram.Bot, update: telegram.Update) -> None:
+        """
+        Обработчик простого текста, отправляемого в личку
+        """
         if not is_day_active():
             return
         private_text_handler(bot, update)
+
+    @staticmethod
+    def private_help_handler(bot: telegram.Bot, update: telegram.Update) -> None:
+        """
+        Обработчик команды /help в личке
+        """
+        send_help(bot, update.message.chat_id)

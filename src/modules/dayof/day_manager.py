@@ -49,5 +49,6 @@ class DayOfManager:
     @staticmethod
     def private_help_handler(bot: telegram.Bot, update: telegram.Update):
         FSBDay.private_help_handler(bot, update)
-        ValentineDay.private_help_handler(bot, update)
+        # ValentineDay.private_help_handler(bot, update)
+        ValentineDay2.private_help_handler(bot, update)
 

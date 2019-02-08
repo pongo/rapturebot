@@ -5,7 +5,6 @@ def is_day_active() -> bool:
     """
     Сегодня 14-е фев?
     """
-    return True
     return datetime.today().strftime(
         "%m-%d") == '02-14'  # месяц-день. Первое января будет: 01-01
 

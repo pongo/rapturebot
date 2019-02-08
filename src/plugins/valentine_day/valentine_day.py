@@ -2,7 +2,7 @@ import telegram
 
 from src.config import CONFIG
 from src.modules.dayof.helper import set_today_special
-from src.plugins.valentine_day.date_checker import is_day_active, is_today_ending
+from src.plugins.valentine_day.date_checker import is_day_active, is_today_ending, is_morning
 from src.plugins.valentine_day.handlers.card_handlers import revn_button_click_handler, \
     mig_button_click_handler, about_button_click_handler
 from src.plugins.valentine_day.handlers.draft_handlers import draft_heart_button_click_handler, \
@@ -115,7 +115,7 @@ class ValentineDay:
         """
         Отправка утреннего сообщения
         """
-        if is_day_active():
+        if is_day_active() and is_morning():
             send_morning(bot)
 
     @classmethod
@@ -147,4 +147,6 @@ class ValentineDay:
         """
         Обработчик команды /help в личке
         """
+        if not is_day_active():
+            return
         send_help(bot, update.message.chat_id)

@@ -278,7 +278,7 @@ class Card(CardDraft):
             return RevnAnswer(f'{man_name} нажимать один раз')
 
         self.revn_emoji = next_emoji(self.revn_emoji)
-        return RevnAnswer(success=True)
+        return RevnAnswer(self.revn_emoji, success=True)
 
     def mig(self, user_id: int, already_clicked: bool, username: str) -> MigAnswer:
         if self._is_author(user_id):

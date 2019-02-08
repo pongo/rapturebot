@@ -1,17 +1,21 @@
 import random
-from typing import List, Tuple, Union, Optional, Set
+from typing import List, Tuple, Union, Optional, Set, Callable
 
 import telegram
 
+from src.config import get_config_chats
 from src.modules.models.chat_user import ChatUser
 from src.modules.models.user import User
 from src.plugins.valentine_day.model import VUnknownUser, VChatsUser, VChat, Button, CACHE_PREFIX, \
     all_hearts
 from src.utils.cache import cache, TWO_DAYS
 from src.utils.callback_helpers import get_callback_data
+from src.utils.logger_helpers import get_logger
 from src.utils.mwt import MWT
+from src.utils.telegram_helpers import dsp, telegram_retry
 
 HTML = telegram.ParseMode.HTML
+logger = get_logger(__name__)
 
 
 def get_reply_markup(buttons: List[List[Button]]) -> Optional[telegram.InlineKeyboardMarkup]:
@@ -101,3 +105,19 @@ def get_username_or_link(user_id: int) -> str:
     if user:
         return user.get_username_or_link()
     return f'<a href="tg://user?id={user_id}">{user_id}</a>'
+
+
+def send_to_all_chats(bot: telegram.Bot, key_name: str,
+                      get_text: Callable[[int], str]) -> None:
+    for chat in get_config_chats():
+        chat_id = chat.chat_id
+        chat_key = f'{CACHE_PREFIX}:{key_name}:{chat_id}'
+        if cache.get(chat_key, False):
+            continue
+        dsp(send_html, bot, chat_id, get_text(chat_id))
+        cache.set(chat_key, True, time=TWO_DAYS)
+
+
+@telegram_retry(logger=logger, silence=False, default=None, title='send_replay')
+def send_html(bot: telegram.Bot, chat_id: int, text: str) -> telegram.Message:
+    return bot.send_message(chat_id, text, parse_mode=HTML)

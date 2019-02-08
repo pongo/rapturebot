@@ -26,7 +26,8 @@ class DayOfManager:
         # здесь перечислены все модули - просто вызывается метод midnight в каждом
         # а там уж модуль сам разберется, должен ли он реагировать
         FSBDay.midnight(bot)
-        ValentineDay.midnight(bot)
+        # ValentineDay.midnight(bot)
+        ValentineDay2.midnight(bot)
         new_year(bot)
 
     @staticmethod

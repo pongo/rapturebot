@@ -36,6 +36,19 @@ def send_announcement(bot: telegram.Bot) -> None:
     send_to_all_chats(bot, 'announcement', lambda _: text)
 
 
+def send_morning(bot: telegram.Bot) -> None:
+    text = f"""
+<b>14 февраля</b>
+
+Сегодня в чате отмечается День всех влюбленных! В этот прекрасный день великий бог рептилий 🐉 повелевает пьизнявяться в любви ♥. 
+
+Осторожно: в чате замечены менты-меломаны!
+
+Как отправить валентинку? Напиши <code>/help</code> боту в личку. Начинаем!
+""".strip()
+    send_to_all_chats(bot, 'morning', lambda _: text)
+
+
 def send_end(bot: telegram.Bot) -> None:
     """
     Отправка во все чаты подводящих итог сообщений
@@ -96,6 +109,14 @@ class ValentineDay:
             return 
         if is_today_ending():
             send_end(bot)
+
+    @classmethod
+    def morning(cls, bot: telegram.Bot) -> None:
+        """
+        Отправка утреннего сообщения
+        """
+        if is_day_active():
+            send_morning(bot)
 
     @classmethod
     def callback_handler(cls, bot: telegram.Bot, update: telegram.Update,

@@ -4,7 +4,7 @@ import telegram
 
 from src.config import get_config_chats
 from src.modules.dayof.fsb_day import FSBDay
-from src.modules.dayof.valentine_day import ValentineDay
+from src.plugins.valentine_day.valentine_day import ValentineDay as ValentineDay2
 from src.utils.telegram_helpers import dsp
 
 
@@ -25,25 +25,33 @@ class DayOfManager:
         # здесь перечислены все модули - просто вызывается метод midnight в каждом
         # а там уж модуль сам разберется, должен ли он реагировать
         FSBDay.midnight(bot)
-        ValentineDay.midnight(bot)
+        # ValentineDay.midnight(bot)
+        ValentineDay2.midnight(bot)
         new_year(bot)
 
     @staticmethod
+    def morning(bot: telegram.Bot) -> None:
+        ValentineDay2.morning(bot)
+
+    @staticmethod
     def afternoon(bot: telegram.Bot) -> None:
-        ValentineDay.afternoon(bot)
+        # ValentineDay.afternoon(bot)
+        pass
 
     @staticmethod
     def callback_handler(bot, update, query, data) -> None:
         FSBDay.callback_handler(bot, update, query, data)
-        ValentineDay.callback_handler(bot, update, query, data)
+        # ValentineDay.callback_handler(bot, update, query, data)
+        ValentineDay2.callback_handler(bot, update, query, data)
 
     @staticmethod
     def private_handler(bot: telegram.Bot, update: telegram.Update):
         FSBDay.private_handler(bot, update)
-        ValentineDay.private_handler(bot, update)
+        # ValentineDay.private_handler(bot, update)
+        ValentineDay2.private_text_handler(bot, update)
 
     @staticmethod
     def private_help_handler(bot: telegram.Bot, update: telegram.Update):
         FSBDay.private_help_handler(bot, update)
-        ValentineDay.private_help_handler(bot, update)
-
+        # ValentineDay.private_help_handler(bot, update)
+        ValentineDay2.private_help_handler(bot, update)

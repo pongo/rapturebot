@@ -21,7 +21,7 @@ from src.modules.time import time_handler
 from src.modules.weather import weather
 from src.plugins.hakeem import hakeem
 from src.plugins.i_stat.command_handlers import send_personal_stat_handler as cmd_i, \
-    send_all_stat_handler as cmd_iall, ban_handler as cmd_iban
+    send_all_stat_handler as cmd_iall
 
 cmd_filter = Filters.group
 

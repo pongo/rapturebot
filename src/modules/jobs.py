@@ -35,6 +35,7 @@ def daily_afternoon(bot: telegram.Bot, _):
 
 def every_hour(bot: telegram.Bot, _) -> None:
     # go_go_watchmen(bot)
+    DayOfManager.morning(bot)
     LeaveCollector.check_left_users(bot)
 
 

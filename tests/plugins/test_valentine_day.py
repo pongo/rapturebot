@@ -166,7 +166,7 @@ class RevnClickTest(unittest.TestCase):
         emoji = self.card.revn_emoji
         actual = self.card.revn(10, False)
 
-        self.assertIsNone(actual.text)
+        self.assertEqual('😑', actual.text)
         self.assertTrue(actual.success)
         self.assertNotEqual(emoji, self.card.revn_emoji)
 

@@ -1,8 +1,7 @@
 import collections
 import random
 import statistics
-from typing import List, Union, Set, cast, NewType, NamedTuple, Dict, Optional, \
-    Tuple
+from typing import List, Union, Set, cast, NamedTuple, Dict, Optional, Tuple
 
 from pytils.numeral import get_plural
 
@@ -15,7 +14,6 @@ all_hearts = [
 ]
 CHANGE_MIND_TEXT = '\n\n<i>Передумали? Отправьте сообщение с новым текстом валентинки</i>'
 
-ErrorStr = NewType('ErrorStr', str)
 
 class VChat:
     """
@@ -305,43 +303,43 @@ class Card(CardDraft):
 
 
 def check_errors(text: str, mentions: Set[Union[VChatsUser, VUnknownUser]],
-                 from_user: Union[VChatsUser, VUnknownUser]) -> Optional[ErrorStr]:
+                 from_user: Union[VChatsUser, VUnknownUser]) -> Optional[str]:
     if isinstance(from_user, VUnknownUser):
-        return ErrorStr('Ви ктё тякой, я вяс не зняю')
+        return 'Ви ктё тякой, я вяс не зняю'
 
     if not text.strip():
         friend = 'подруга' if from_user.female else 'друг'
-        return ErrorStr(f'Введи хоть что-нибудь, {friend}')
+        return f'Введи хоть что-нибудь, {friend}'
 
     if len(text) > 777:
-        return ErrorStr('У тебя слишком длинный текст')
+        return 'У тебя слишком длинный текст'
 
     if not mentions:
         fem = 'а' if from_user.female else ''
-        return ErrorStr(f'Ты никого не упомянул{fem} в тексте')
+        return f'Ты никого не упомянул{fem} в тексте'
 
     if len(mentions) > 1:
         fem = 'а' if from_user.female else ''
-        return ErrorStr(f'Слишком многих упомянул{fem}')
+        return f'Слишком многих упомянул{fem}'
 
     to_user = next(iter(mentions))
     if isinstance(to_user, VUnknownUser):
-        return ErrorStr('Я такого юзера не знаю…')
+        return 'Я такого юзера не знаю…'
 
     if from_user.user_id == to_user.user_id:
         fem = 'а' if from_user.female else ''
-        return ErrorStr(f'Сам{fem} себе?')
+        return f'Сам{fem} себе?'
 
     mutual_chats = from_user.chats.intersection(to_user.chats)
     if not mutual_chats:
-        return ErrorStr('Вы из разных чатов 😔')
+        return 'Вы из разных чатов 😔'
 
     return None
 
 
 def command_val(text: str, mentions: Set[Union[VChatsUser, VUnknownUser]],
                 from_user: Union[VChatsUser, VUnknownUser],
-                hearts: List[str] = None) -> Union[ErrorStr, CardDraftSelectHeart]:
+                hearts: List[str] = None) -> Union[str, CardDraftSelectHeart]:
     error = check_errors(text, mentions, from_user)
     if error is not None:
         return error

@@ -138,5 +138,6 @@
     "channel_id": -1234
   },
 
-  "--ktolivnul": 1234
+  "--ktolivnul": 1234,
+  "--muzkruzhok_channel_id": -1234
 }

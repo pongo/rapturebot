@@ -11,12 +11,19 @@ from src.modules.models.user_stat import UserStat as ModelUserStat
 re_personal_pronouns = re.compile(r"\b(я|меня|мне|мной|мною)\b", re.IGNORECASE)
 
 
-def parse_pronouns(text: str) -> List[Tuple[str, int]]:
+def sum_count(common: List[Tuple[str, int]]) -> int:
+    return sum(count for _, count in common)
+
+
+def parse_pronouns(text: str, anticheat: bool = False) -> List[Tuple[str, int]]:
     words = re_personal_pronouns.findall(text.lower())
     if not words:
         return []
     c = Counter(words)
-    return c.most_common()
+    common: List[Tuple[str, int]] = c.most_common()
+    if anticheat and sum_count(common) > 5:
+        common = [(word, 1) for word, count in common]
+    return common
 
 
 def is_foreign_forward(message: telegram.Message, from_uid: Optional[int] = None) -> bool:
@@ -56,20 +63,21 @@ class ChatStatistician(object):
     def __init__(self):
         self.db = ChatStat()
 
-    def add_message(self, message: telegram.Message) -> None:
+    def add_message(self, message: telegram.Message) -> int:
         if is_foreign_forward(message):
-            return
+            return 0
 
         text = message.text if message.text else message.caption
         if text is None:
-            return
+            return 0
 
         user_id = message.from_user.id
-        counts = parse_pronouns(text)
+        counts = parse_pronouns(text, anticheat=True)
         if counts:
             self.db.add_message(user_id)
         for word, count in counts:
             self.db.add_word(user_id, word, count)
+        return sum_count(counts)
 
     def reset(self, user_id: int) -> None:
         self.db.reset(user_id)
@@ -102,9 +110,10 @@ class ChatStatistician(object):
                 fullname = row['uid'] if not user else user.fullname
                 return f"<b>{row['i_percent']:.0f} %. {fullname}</b> — {row['i_count']} из {row['all']}"
 
-            users_i_count = {uid: stat.all_count for uid, stat in self.db.users.items()}
-            by_messages = get_users_msg_stats(chat_stats, users_i_count, 'text_messages_count')
-            by_words = get_users_msg_stats(chat_stats, users_i_count, 'words_count')
+            users_i_msg_count = {uid: stat.messages_count for uid, stat in self.db.users.items()}
+            users_i_all_count = {uid: stat.all_count for uid, stat in self.db.users.items()}
+            by_messages = get_users_msg_stats(chat_stats, users_i_msg_count, 'text_messages_count')
+            by_words = get_users_msg_stats(chat_stats, users_i_all_count, 'words_count')
 
             by_messages_str = '\n'.join(format_user_row(row) for row in by_messages)
             by_words_str = '\n'.join(format_user_row(row) for row in by_words)

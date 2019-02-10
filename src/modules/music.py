@@ -8,6 +8,7 @@ from typing import List, Set, Tuple, Iterable
 
 import telegram
 
+from src.config import CONFIG
 from src.modules.models.chat_user import ChatUser
 from src.modules.models.user import User
 from src.utils.cache import cache, YEAR
@@ -206,6 +207,16 @@ def format_chat_users(chat_id: int, uids: Iterable[int]) -> List[str]:
     return users
 
 
+def forward_to_channel(bot: telegram.Bot, chat_id: int, message_id: int) -> None:
+    """
+    Форвардит сообщение в канал музкружка
+    """
+    channel_id = CONFIG.get('muzkruzhok_channel_id', None)
+    if channel_id is None:
+        return
+    bot.forward_message(channel_id, chat_id, message_id)
+
+
 def send_list_replay(bot: telegram.Bot, chat_id: int, message_id: int, uids: Iterable[int]) -> None:
     """
     Бот отправляет в чат реплай, тегая участников музкружка.
@@ -229,7 +240,8 @@ def send_list_replay(bot: telegram.Bot, chat_id: int, message_id: int, uids: Ite
 
 @telegram_retry(logger=logger, silence=False, default=None, title='send_replay')
 def send_replay(bot: telegram.Bot, chat_id: int, message_id: int, text: str) -> telegram.Message:
-    return bot.send_message(chat_id, text, reply_to_message_id=message_id, parse_mode='HTML')
+    return bot.send_message(chat_id, text, reply_to_message_id=message_id, parse_mode='HTML',
+                            disable_notification=True)
 
 
 def send_sorry(bot: telegram.Bot, chat_id: int, message_id: int) -> None:
@@ -247,13 +259,14 @@ def music(bot: telegram.Bot, update: telegram.Update) -> None:
     chat_id = update.message.chat_id
     message: telegram.Message = update.message
     music_users = get_music_users(chat_id)
-    can_use = message.from_user.id in music_users
+    can_use = is_can_use(bot, chat_id, message.from_user.id)
 
     # команда с текстом
     # бот делает реплай к этому сообщению, независимо от того, есть ли у сообщения реплай или нет.
     if get_args(message.text.strip()):
         if can_use:
             send_list_replay(bot, chat_id, message.message_id, music_users)
+            forward_to_channel(bot, chat_id, message.message_id)
             return
         send_sorry(bot, chat_id, message.message_id)
         return
@@ -262,12 +275,20 @@ def music(bot: telegram.Bot, update: telegram.Update) -> None:
     if message.reply_to_message is not None:
         if can_use:
             send_list_replay(bot, chat_id, message.reply_to_message.message_id, music_users)
+            forward_to_channel(bot, chat_id, message.reply_to_message.message_id)
             return
         send_sorry(bot, chat_id, message.message_id)
         return
 
     # без текста, без реплая
     send_music_help(bot, chat_id, message, music_users)
+
+
+def is_can_use(bot: telegram.Bot, chat_id: int, uid: int) -> bool:
+    if check_admin(bot, chat_id, uid):
+        return True
+    music_users = get_music_users(chat_id)
+    return uid in music_users
 
 
 def send_music_help(bot: telegram.Bot, chat_id: int, message: telegram.Message,

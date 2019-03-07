@@ -15,7 +15,7 @@ from src.utils.handlers_decorators import command_guard, collect_stats, chat_gua
 
 
 def can_use(chat_id: int, from_uid: int) -> bool:
-    key = f'{8}:{chat_id}:{from_uid}'
+    key = f'8:{chat_id}:{from_uid}'
     count = cache.get(key, 0)
     if count < 2:
         cache.set(key, count + 1, time=FEW_DAYS)
@@ -56,7 +56,9 @@ def get_gifts() -> List[str]:
     with open(r'8.txt', encoding='utf-8') as file:
         lines = file.readlines()
     stripped = (line.strip() for line in lines)
-    return [line for line in stripped if line]
+    result = [line for line in stripped if line]
+    random.shuffle(result)
+    return result
 
 
 def send_announcement(bot: telegram.Bot) -> None:

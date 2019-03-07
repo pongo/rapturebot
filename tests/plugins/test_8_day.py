@@ -27,7 +27,7 @@ class ModelTest(unittest.TestCase):
         actual = random_gift_text(1, [1, 2, 3, 4, 5, 6], [7, 8, 9], gifts, random_choice_fn)
         self.assertEqual(1, actual.from_uid)
         self.assertEqual(7, actual.to_uid)
-        self.assertEqual('{from} дарит {to} Автомобиль 🎉', actual.text)
+        self.assertEqual('{from} дарит {to} Автомобиль 🌹', actual.text)
 
         actual2 = random_gift_text(2, [1, 2, 3, 4, 5, 6], [7, 8, 9], gifts, random_choice_fn)
         self.assertEqual(2, actual2.from_uid)

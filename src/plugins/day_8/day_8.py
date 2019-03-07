@@ -1,12 +1,15 @@
 import random
+from datetime import datetime
 from typing import List
 
 import telegram
 from telegram.ext import run_async
 
+from src.modules.dayof.helper import set_today_special
 from src.modules.models.chat_user import ChatUser
 from src.modules.models.user import User
 from src.plugins.day_8.model import random_gift_text
+from src.plugins.valentine_day.helpers.helpers import send_to_all_chats
 from src.utils.cache import cache, FEW_DAYS
 from src.utils.handlers_decorators import command_guard, collect_stats, chat_guard
 
@@ -54,3 +57,24 @@ def get_gifts() -> List[str]:
         lines = file.readlines()
     stripped = (line.strip() for line in lines)
     return [line for line in stripped if line]
+
+
+def send_announcement(bot: telegram.Bot) -> None:
+    text = """
+Хуёздравляйте хуюбимых хуенщин с 8 хуярта. Хуишите /8 — хуюдет хуюрприз!
+
+<i>Хуёманда хуяботает хуёлько два хуяза</i>
+        """.strip()
+    send_to_all_chats(bot, '8announcement', lambda _: text)
+
+
+def midnight8(bot: telegram.Bot) -> None:
+    if is_day_active():
+        set_today_special()
+        send_announcement(bot)
+        return
+
+
+def is_day_active() -> bool:
+    return datetime.today().strftime(
+        "%m-%d") == '03-08'  # месяц-день. Первое января будет: 01-01

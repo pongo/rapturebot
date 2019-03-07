@@ -4,6 +4,7 @@ import telegram
 
 from src.config import get_config_chats
 from src.modules.dayof.fsb_day import FSBDay
+from src.plugins.day_8.day_8 import midnight8
 from src.plugins.valentine_day.valentine_day import ValentineDay as ValentineDay2
 from src.utils.telegram_helpers import dsp
 
@@ -27,6 +28,7 @@ class DayOfManager:
         FSBDay.midnight(bot)
         # ValentineDay.midnight(bot)
         ValentineDay2.midnight(bot)
+        midnight8(bot)
         new_year(bot)
 
     @staticmethod

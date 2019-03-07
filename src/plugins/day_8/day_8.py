@@ -7,7 +7,17 @@ from telegram.ext import run_async
 from src.modules.models.chat_user import ChatUser
 from src.modules.models.user import User
 from src.plugins.day_8.model import random_gift_text
+from src.utils.cache import cache, FEW_DAYS
 from src.utils.handlers_decorators import command_guard, collect_stats, chat_guard
+
+
+def can_use(chat_id: int, from_uid: int) -> bool:
+    key = f'{8}:{chat_id}:{from_uid}'
+    count = cache.get(key, 0)
+    if count < 2:
+        cache.set(key, count + 1, time=FEW_DAYS)
+        return True
+    return False
 
 
 @run_async
@@ -18,6 +28,9 @@ def command_8(bot: telegram.Bot, update: telegram.Update) -> None:
     message: telegram.Message = update.message
     chat_id = message.chat_id
     from_uid = message.from_user.id
+
+    if not can_use(chat_id, from_uid):
+        return
 
     all_uids = [chat_user.uid for chat_user in ChatUser.get_all(chat_id)]
     all_users = [User.get(uid) for uid in all_uids]

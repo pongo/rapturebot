@@ -45,6 +45,8 @@ def send_morning(bot: telegram.Bot) -> None:
 Осторожно: в чате замечены менты-меломаны!
 
 Как отправить валентинку? Напиши <code>/help</code> боту в личку. Начинаем!
+
+<i>Админы, закрепите это сообщение</i>
 """.strip()
     send_to_all_chats(bot, 'morning', lambda _: text)
 

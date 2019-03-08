@@ -101,3 +101,4 @@ ENV/
 /tmp/
 /private.key
 /cert.pem
+/8.txt

@@ -1,6 +1,6 @@
 import random
 from datetime import datetime
-from typing import List
+from typing import List, Set
 
 import telegram
 from telegram.ext import run_async
@@ -17,10 +17,23 @@ from src.utils.handlers_decorators import command_guard, collect_stats, chat_gua
 def can_use(chat_id: int, from_uid: int) -> bool:
     key = f'8:{chat_id}:{from_uid}'
     count = cache.get(key, 0)
-    if count < 2:
+    if count < 4:
         cache.set(key, count + 1, time=FEW_DAYS)
         return True
     return False
+
+
+def my_random_choice(gifts: List[str]) -> str:
+    key = f'8:used'
+    used: Set[str] = cache.get(key, set())
+    gifts_set = set(gifts)
+    non_used = gifts_set - used
+    if len(non_used) == 0:
+        return random.choice(gifts)
+    gift = random.choice(list(non_used))
+    used.add(gift)
+    cache.set(key, used, time=FEW_DAYS)
+    return gift
 
 
 @run_async
@@ -41,7 +54,8 @@ def command_8(bot: telegram.Bot, update: telegram.Update) -> None:
     females = [user.uid for user in all_users if user.female]
 
     gifts = get_gifts()
-    result = random_gift_text(from_uid, males, females, gifts, random.choice)
+    gift = my_random_choice(gifts)
+    result = random_gift_text(from_uid, males, females, gift, random.choice)
 
     from_user = User.get(result.from_uid)
     to_user = User.get(result.to_uid)

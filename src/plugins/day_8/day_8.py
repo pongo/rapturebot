@@ -48,6 +48,9 @@ def command_8(bot: telegram.Bot, update: telegram.Update) -> None:
     if not can_use(chat_id, from_uid):
         return
 
+    if not is_day_active():
+        return
+
     all_uids = [chat_user.uid for chat_user in ChatUser.get_all(chat_id)]
     all_users = [User.get(uid) for uid in all_uids]
     males = [user.uid for user in all_users if not user.female]

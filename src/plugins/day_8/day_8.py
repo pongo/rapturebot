@@ -27,8 +27,8 @@ def can_use(chat_id: int, from_uid: int) -> bool:
     return False
 
 
-def my_random_choice(gifts: List[str]) -> str:
-    key = f'8:used'
+def random_uniq_for_chat(chat_id: int, gifts: List[str]) -> str:
+    key = f'8:used:{chat_id}'
     used: Set[str] = cache.get(key, set())
     gifts_set = set(gifts)
     non_used = gifts_set - used
@@ -70,7 +70,7 @@ def command_8(bot: telegram.Bot, update: telegram.Update) -> None:
     females = [user.uid for user in all_users if user.female]
 
     gifts = get_gifts()
-    gift = my_random_choice(gifts)
+    gift = random_uniq_for_chat(chat_id, gifts)
     result = random_gift_text(from_uid, males, females, gift, random.choice)
 
     from_user = User.get(result.from_uid)

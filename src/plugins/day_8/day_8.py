@@ -13,11 +13,15 @@ from src.plugins.valentine_day.helpers.helpers import send_to_all_chats
 from src.utils.cache import cache, FEW_DAYS
 from src.utils.handlers_decorators import command_guard, collect_stats, chat_guard
 
+LIMIT = 4
+LIMIT_TEXT = f'{LIMIT} раза'
+LIMIT_MAT = f'{LIMIT} хуяза'
+
 
 def can_use(chat_id: int, from_uid: int) -> bool:
     key = f'8:{chat_id}:{from_uid}'
     count = cache.get(key, 0)
-    if count < 4:
+    if count < LIMIT:
         cache.set(key, count + 1, time=FEW_DAYS)
         return True
     return False
@@ -36,6 +40,14 @@ def my_random_choice(gifts: List[str]) -> str:
     return gift
 
 
+def send_limit(bot: telegram.Bot, chat_id: int) -> None:
+    key = f'8:limit_accouncement:{chat_id}'
+    if cache.get(key, False):
+        return
+    cache.set(key, True, time=10 * 60)
+    bot.send_message(chat_id, f'/8 вызывается только {LIMIT_TEXT}')
+
+
 @run_async
 @chat_guard
 @collect_stats
@@ -46,6 +58,7 @@ def command_8(bot: telegram.Bot, update: telegram.Update) -> None:
     from_uid = message.from_user.id
 
     if not can_use(chat_id, from_uid):
+        send_limit(bot, chat_id)
         return
 
     if not is_day_active():
@@ -79,10 +92,10 @@ def get_gifts() -> List[str]:
 
 
 def send_announcement(bot: telegram.Bot) -> None:
-    text = """
+    text = f"""
 Хуёздравляйте хуюбимых хуенщин с 8 хуярта. Хуишите /8 — хуюдет хуюрприз!
 
-<i>Хуёманда хуяботает хуёлько два хуяза</i>
+<i>Хуёманда хуяботает хуёлько {LIMIT_MAT}</i>
         """.strip()
     send_to_all_chats(bot, '8announcement', lambda _: text)
 

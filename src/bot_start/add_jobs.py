@@ -7,20 +7,20 @@ from src.modules.jobs import daily_midnight, daily_afternoon, health_log, every_
 def add_jobs(updater):
     updater.job_queue.run_daily(
         weekly_stats,
-        time=time(0, 0, 0),  # во сколько постим
+        time=time(0, 0, 10),  # во сколько постим
         days=(0,)  # постим в понедельник
     )
 
     # каждый день в 00:00
     updater.job_queue.run_daily(
         daily_midnight,
-        time=time(0, 0, 0),
+        time=time(0, 0, 10),
     )
 
     # каждый день в 12:00
     updater.job_queue.run_daily(
         daily_afternoon,
-        time=time(12, 0, 0),
+        time=time(12, 0, 10),
     )
 
     updater.job_queue.run_repeating(

@@ -28,6 +28,7 @@ from src.utils.time_helpers import get_current_monday_str, today_str
 logger = get_logger(__name__)
 re_img = re.compile(r"\.(jpg|jpeg|png)$", re.IGNORECASE)
 re_gdeleha = re.compile(r"(где л[её]ха|л[её]ха где)[!?.]*\s*$", re.IGNORECASE | re.MULTILINE)
+re_suicide = re.compile(r"\S*с[уиаы][иые]ц+[иые][тд]\S*", re.IGNORECASE)
 
 
 @run_async
@@ -88,11 +89,12 @@ def send_pidor(bot, update):
 
 
 @run_async
-def send_kek(bot: telegram.Bot, chat_id):
-    stickerset = cache.get('kekopack_stickerset')
+def send_random_sticker_from_stickerset(bot: telegram.Bot, chat_id: int, stickerset_name: str) -> None:
+    key = f'stickerset:{stickerset_name}'
+    stickerset = cache.get(key)
     if not stickerset:
-        stickerset = bot.get_sticker_set('Kekopack')
-        cache.set('kekopack_stickerset', stickerset, time=50)
+        stickerset = bot.get_sticker_set(stickerset_name)
+        cache.set(key, stickerset, time=50)
     sticker = random.choice(stickerset.stickers)
     bot.send_sticker(chat_id, sticker)
 
@@ -132,7 +134,10 @@ def message_reactions(bot: telegram.Bot, update: telegram.Update) -> None:
         ])
         return
     if msg_lower == 'кек':
-        send_kek(bot, chat_id)
+        send_random_sticker_from_stickerset(bot, chat_id, 'Kekopack')
+        return
+    if is_command_enabled_for_chat(chat_id, 'suicide') and re_suicide.search(msg_lower):
+        bot.send_sticker(chat_id, 'CAADAgAD3wEAAsBnlArDbqe-dxMlpgI')
         return
     if is_command_enabled_for_chat(chat_id, CMDS['common']['orzik']['name']) \
             and not check_command_is_off(chat_id, CMDS['common']['orzik']['name']) \

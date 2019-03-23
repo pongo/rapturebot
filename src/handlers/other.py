@@ -1,5 +1,6 @@
 import random
-import typing
+import re
+from typing import List, Callable, Optional
 
 import telegram
 from telegram import ParseMode, ChatAction, InlineKeyboardButton, InlineKeyboardMarkup
@@ -31,7 +32,7 @@ def huificator(bot, update):
 
 
 def send_huificator(bot: telegram.Bot, message: telegram.Message, limit_chars: int = 0) -> None:
-    def get_new_msg(words: typing.List[str]) -> str:
+    def get_new_msg(words: List[str]) -> str:
         new_msg = ''
         for word in words:
             new_msg += reduplicate(word)
@@ -250,3 +251,50 @@ def gdeleha(bot, update):
 @command_guard
 def pidor(bot, update):
     send_pidor(bot, update)
+
+
+re_pipixel = re.compile(r"^(.*?[\w]+|_)[,\s]*(\W*)$", re.IGNORECASE | re.DOTALL)
+re_ellipsis_at_end = re.compile(r"\.{3,}$", re.IGNORECASE | re.DOTALL)
+re_chuvak_begin = re.compile(r"^(чувак|друг|подруг|друзья)", re.IGNORECASE | re.DOTALL)
+re_objective_end = re.compile(r"объективно\W*$", re.IGNORECASE | re.DOTALL)
+re_objective_bracket = re.compile(r"^>*\s*объективно\W*$", re.IGNORECASE | re.DOTALL)
+re_puk = re.compile(r'^\w*\s*пук\s*\W*', re.IGNORECASE | re.DOTALL)
+re_left_bracket = re.compile(r'^>', re.IGNORECASE | re.DOTALL)
+
+
+def pipixel(text: str, drug: str) -> str:
+    def _no_first_upper(s: str)-> str:
+        words = s.split(' ')
+        if not words:
+            return s
+        if words[0].isupper():
+            return s
+        return words[0].lower() + ' ' + ' '.join(words[1:])
+
+    stripped = text.strip()
+
+    if re_ellipsis_at_end.search(stripped) or \
+            (re_chuvak_begin.search(stripped) and not re_objective_end.search(stripped)):
+        return 'Объективно?'
+
+    if re_objective_bracket.search(stripped):
+        return '>пук'
+
+    if re_puk.search(stripped) or re_left_bracket.search(stripped):
+        return '>объективно'
+
+    tail = re_pipixel.sub(r"\1, объективно\2", _no_first_upper(stripped))
+    return f'{drug}, {tail}'
+
+
+def pipixel_handler(bot: telegram.Bot, update: telegram.Update) -> None:
+    drug = random.choice(('Друг', 'Чувак'))
+    too_long = '>' + random.choice(('пук', 'норка', 'объективно', 'мышь'))
+
+    result = check_base_khaleesi(bot, update.message, drug, too_long, 1000)
+    if not result:
+        return
+
+    chat_id, text, reply_to_message_id = result
+    new_msg = pipixel(text, drug)
+    bot.send_message(chat_id, new_msg, reply_to_message_id=reply_to_message_id)

@@ -67,6 +67,10 @@
     "music": {
       "name": "music",
       "description": "Музкружок"
+    },
+    "pipixel": {
+      "name": "pipixel",
+      "description": "Чувакдруг"
     }
   },
   "hidden": {

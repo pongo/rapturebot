@@ -11,7 +11,7 @@ from src.handlers.mystat import mystat, whois, private_whois, private_mystat
 from src.handlers.on_off import off_cmd, off_cmd_for_user, on_cmd, on_cmd_for_user
 from src.handlers.orzik import orzik, lord
 from src.handlers.other import rules, love, papa, pomogite, huificator, leave, expert, anketa, \
-    putin, changelog, gdeleha, kick, pidor
+    putin, changelog, gdeleha, kick, pidor, pipixel_handler
 from src.handlers.weeklystat import stats
 from src.handlers.welcome import welcome
 from src.modules import private
@@ -81,6 +81,7 @@ def add_chat_handlers(dp):
     dp.add_handler(
         CommandHandler(CMDS['common']['pipinder']['name'], pipinder.pipinder, filters=cmd_filter))
     dp.add_handler(CommandHandler(CMDS['common']['ment']['name'], ment_handler, filters=cmd_filter))
+    dp.add_handler(CommandHandler(CMDS['common']['pipixel']['name'], pipixel_handler, filters=cmd_filter))
 
     # hidden
     dp.add_handler(

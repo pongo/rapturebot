@@ -45,6 +45,7 @@ def health_log(bot: telegram.Bot, _) -> None:
         me = bot.get_me()
         answer = f' @{me.username}'
     except Exception as e:
+        # TODO: по идее, сюда нужно добавить еще пару повторов и рестарт бота
         answer = f' error: {e}'
 
     messages_metric = pure_cache.get(f"metrics:messages:{today_str()}", '0')

@@ -26,7 +26,7 @@ def mylove(bot: telegram.Bot, update: telegram.Update) -> None:
 
 def send_mylove(bot: telegram.Bot, update: telegram.Update, send_to_cid: int,
                 find_in_cid: int) -> None:
-    def format_love(type: str, b: User, female: bool) -> typing.Optional[str]:
+    def format_love(type: str, b: User, _: bool) -> typing.Optional[str]:
         if not b:
             return None
         b_pair, b_inbound, b_outbound = ReplyTop.get_user_top_strast(find_in_cid, b.uid)
@@ -34,14 +34,13 @@ def send_mylove(bot: telegram.Bot, update: telegram.Update, send_to_cid: int,
         mutual_sign = ' ❤'
         if type == 'pair' and b_pair:
             mutual = mutual_sign if b_pair.uid == user_id else ''
-            return f'Взаимный пук: {ReplyLove.get_fullname_or_username(b)}{mutual}'
+            return f'Парная: {ReplyLove.get_fullname_or_username(b)}{mutual}'
         if type == 'inbound' and b_inbound:
             mutual = mutual_sign if b_inbound and b_inbound.uid == user_id else ''
-            fem = 'ее' if female else 'его'
-            return f'В {fem} норку пукает: {ReplyLove.get_fullname_or_username(b)}{mutual}'
+            return f'Входящая: {ReplyLove.get_fullname_or_username(b)}{mutual}'
         if type == 'outbound' and b_outbound:
             mutual = mutual_sign if b_outbound and b_outbound.uid == user_id else ''
-            return f'Обратный пук: {ReplyLove.get_fullname_or_username(b)}{mutual}'
+            return f'Исходящая: {ReplyLove.get_fullname_or_username(b)}{mutual}'
         return None
 
     bot.sendChatAction(send_to_cid, ChatAction.TYPING)
@@ -67,14 +66,14 @@ def send_mylove(bot: telegram.Bot, update: telegram.Update, send_to_cid: int,
                format_love('outbound', outbound, user.female))
     love_list = [s for s in formats if s]
     if len(love_list) == 0:
-        result = '🤷‍♀️🤷‍♂️ Мышь ебаная'
+        result = '🤷‍♀️🤷‍♂️ А нет никакой страсти'
     else:
         result = '\n'.join(love_list)
 
     if user_id in CONFIG.get('replylove__dragon_lovers', []):
         result = '🐉'
 
-    bot.send_message(send_to_cid, f'Норка {user.get_username_or_link()}:\n\n{result}',
+    bot.send_message(send_to_cid, f'Страсть {user.get_username_or_link()}:\n\n{result}',
                      reply_to_message_id=update.message.message_id, parse_mode=ParseMode.HTML)
 
 

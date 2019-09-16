@@ -299,7 +299,10 @@ def random_khaleesi(bot, update):
     if text is None:
         return
     chat_id = update.message.chat_id
-    if not is_command_enabled_for_chat(chat_id, CMDS['common']['khaleesi']['name']):
+    if not is_command_enabled_for_chat(chat_id, 'random_khaleesi', True):
+        return
+    if not is_command_enabled_for_chat(chat_id, CMDS['common']['khaleesi']['name']) \
+            and not is_command_enabled_for_chat(chat_id, 'random_khaleesi', False):
         return
     if RandomKhaleesi.is_its_time_for_khaleesi(chat_id) and RandomKhaleesi.is_good_for_khaleesi(
             text):

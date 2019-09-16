@@ -10,7 +10,8 @@ from src.utils.telegram_helpers import get_chat_admins
 logger = get_logger(__name__)
 
 
-def is_command_enabled_for_chat(chat_id: Union[int, str], cmd_name: Optional[str]) -> bool:
+def is_command_enabled_for_chat(chat_id: Union[int, str], cmd_name: Optional[str],
+                                default: Optional[bool] = None) -> bool:
     """
     Проверяет, включена ли команда в чате. Включая чаты с all_cmd=True.
     """
@@ -24,6 +25,8 @@ def is_command_enabled_for_chat(chat_id: Union[int, str], cmd_name: Optional[str
         return True
     if cmd_name in chat_options.get('disabled_commands', []):
         return False
+    if default:
+        return default
     return chat_options.get('all_cmd', False)
 
 

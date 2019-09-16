@@ -143,6 +143,8 @@ def add_private_handlers(dp):
                                   filters=Filters.private & Filters.command))
     dp.add_handler(CommandHandler('user_clear_cache', private.users_clear_cache,
                                   filters=Filters.private & Filters.command))
+    dp.add_handler(CommandHandler('weekly_stats', private.run_weekly_stats,
+                                  filters=Filters.private & Filters.command))
     dp.add_handler(
         CommandHandler('khaleesi', khaleesi.private, filters=Filters.private & Filters.command,
                        allow_edited=True))

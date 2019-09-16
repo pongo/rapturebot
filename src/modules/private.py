@@ -43,6 +43,16 @@ def users_clear_cache(bot: telegram.Bot, update: telegram.Update) -> None:
     bot.send_message(uid, '<b>User</b> кеш очищен', parse_mode=telegram.ParseMode.HTML)
 
 
+def run_weekly_stats(bot: telegram.Bot, update: telegram.Update) -> None:
+    uid = update.message.chat_id
+    logger.info(f'id {uid} /weekly_stats')
+    if uid != CONFIG.get('debug_uid', None):
+        return
+
+    from src.handlers.weeklystat import weekly_stats
+    weekly_stats(bot, None)
+
+
 @run_async
 def huyamda(bot: telegram.Bot, update: telegram.Update) -> None:
     message = update.edited_message if update.edited_message else update.message

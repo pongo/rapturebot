@@ -214,6 +214,8 @@ def forward_to_channel(bot: telegram.Bot, chat_id: int, message_id: int, user_id
     channel_id = CONFIG.get('muzkruzhok_channel_id', None)
     if channel_id is None:
         return
+    if chat_id in CONFIG.get('muzkruzhok_ban_chats', []):
+        return
     bans = CONFIG.get('muzkruzhok_ban_ids', [])
     if user_id in bans:
         return

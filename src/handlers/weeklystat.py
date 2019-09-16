@@ -21,10 +21,14 @@ from src.utils.handlers_decorators import chat_guard, collect_stats, command_gua
 from src.utils.handlers_helpers import is_command_enabled_for_chat, \
     get_command_name, check_admin
 from src.utils.logger_helpers import get_logger
-from src.utils.misc import get_int
+from src.utils.misc import get_int, chunks
 from src.utils.telegram_helpers import dsp
 
 logger = get_logger(__name__)
+
+def send_long(bot: telegram.Bot, chat_id: int, msg: str):
+    for chunk in chunks(msg, 4096):
+        dsp(bot.send_message, chat_id, chunk, parse_mode=ParseMode.HTML)
 
 
 @run_async
@@ -76,7 +80,7 @@ def send_stats(bot, chat_id, chat_title, command, date, tag_salo=False, mat=Fals
                                info['top_chart'],
                                top_chart_caption,
                                percents)
-    bot.sendMessage(chat_id, msg, parse_mode=ParseMode.HTML)
+    send_long(bot, chat_id, msg)
     logger.info(f'Group {chat_id} requested stats')
     if salo:
         cache.set(f'weekgoal:{chat_id}:salo_uids', info['uids'][0:3], time=MONTH)
@@ -93,23 +97,22 @@ def send_top_kroshka(bot, chat_id, monday):
     she = 'Она' if kroshka.female else 'Он'
     msg = f'Замечательная крошка-картошка <a href="tg://user?id={kroshka.uid}">🥔</a> недели —\n\n<b>{kroshka.fullname}</b> ❤️❤️❤️\n\n{she} получает эти прекрасные эмодзи: {emoj}'
     try:
-        bot.sendMessage(chat_id, msg, parse_mode=ParseMode.HTML)
+        send_long(bot, chat_id, msg)
     except Exception:
         msg = f'Замечательная крошка-картошка 🥔 недели —\n\n<b>{kroshka.fullname}</b> ❤️❤️❤️\n\n{she} получает эти прекрасные эмодзи: {emoj}'
-        bot.sendMessage(chat_id, f'{msg}\n\n{kroshka.get_username_or_link()}',
-                        parse_mode=ParseMode.HTML)
+        send_long(bot, chat_id, f'{msg}\n\n{kroshka.get_username_or_link()}')
 
 
 def send_alllove(bot, chat_id, prev_monday):
-    alllove = ReplyLove.get_all_love(chat_id, date=prev_monday, header='Вся страсть за неделю')
-    bot.send_message(chat_id, alllove, parse_mode=telegram.ParseMode.HTML)
+    msg = ReplyLove.get_all_love(chat_id, date=prev_monday, header='Вся страсть за неделю')
+    send_long(bot, chat_id, msg)
 
 
 def send_alllove_outbound(bot, chat_id, prev_monday):
-    alllove = ReplyLove.get_all_love_outbound(chat_id, date=prev_monday,
-                                              header='Вся исходящая страсть за неделю',
-                                              no_love_show_only_count=True)
-    bot.send_message(chat_id, alllove, parse_mode=telegram.ParseMode.HTML)
+    msg = ReplyLove.get_all_love_outbound(chat_id, date=prev_monday,
+                                          header='Вся исходящая страсть за неделю',
+                                          no_love_show_only_count=True)
+    send_long(bot, chat_id, msg)
 
 
 def send_replytop(bot, chat_id, prev_monday):
@@ -150,7 +153,7 @@ def send_replytop(bot, chat_id, prev_monday):
         random.shuffle(names)
         msg += f"{count}. <b>{names[0]}</b> ⟷ <b>{names[1]}</b>\n"
 
-    bot.sendMessage(chat_id, msg, parse_mode=ParseMode.HTML)
+    send_long(bot, chat_id, msg)
 
 
 def send_pidorweekly(bot, chat_id, prev_monday):
@@ -170,11 +173,10 @@ def send_pidorweekly(bot, chat_id, prev_monday):
     random.shuffle(random_emoji)
     body += "{} Ура!".format(emoji.emojize(''.join(random_emoji)))
     try:
-        bot.sendMessage(chat_id, f'{header}{body}', parse_mode=ParseMode.HTML)
+        send_long(bot, chat_id, f'{header}{body}')
     except Exception:
         header = f"И {pidorom} недели становится... 👯‍♂ \n\n"
-        bot.sendMessage(chat_id, f'{header}{body}\n\n{user.get_username_or_link()}',
-                        parse_mode=ParseMode.HTML)
+        send_long(bot, chat_id, f'{header}{body}\n\n{user.get_username_or_link()}')
 
 
 def send_igorweekly(bot: telegram.Bot, chat_id: int, prev_monday: datetime):
@@ -190,11 +192,10 @@ def send_igorweekly(bot: telegram.Bot, chat_id: int, prev_monday: datetime):
     header = f"И {igorem} недели становится... <a href='tg://user?id={user.uid}'>👯‍♂</a> \n\n"
     body = "🎉     <b>{}</b>    🎉\n\nУра!".format(user.fullname)
     try:
-        bot.sendMessage(chat_id, f'{header}{body}', parse_mode=ParseMode.HTML)
+        send_long(bot, chat_id, f'{header}{body}')
     except Exception:
         header = f"И {igorem} недели становится... 👯‍♂ \n\n"
-        bot.sendMessage(chat_id, f'{header}{body}\n\n{user.get_username_or_link()}',
-                        parse_mode=ParseMode.HTML)
+        send_long(bot, chat_id, f'{header}{body}\n\n{user.get_username_or_link()}')
 
 
 @run_async
@@ -212,6 +213,7 @@ def weekly_stats(bot: telegram.Bot, _) -> None:
 
 def send_weekly_for_chat(bot: telegram.Bot, chat_id: int, disabled_commands: typing.List[str],
                          enabled_commands: typing.List[str], prev_monday: datetime) -> None:
+    logger.info(f'weekly_stats for chat {chat_id}')
     dsp(send_stats, bot, chat_id, 'Стата за прошлую неделю',
         CMDS['admins']['all_stat']['name'], prev_monday)
     dsp(send_stats, bot, chat_id, 'Стата за прошлую неделю',

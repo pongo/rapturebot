@@ -1,4 +1,5 @@
 import time
+import traceback
 from functools import wraps
 from typing import List, Optional
 
@@ -9,7 +10,13 @@ from src.utils.logger_helpers import get_logger
 from src.utils.mwt import MWT
 
 logger = get_logger(__name__)
-dsp = DelayQueue(burst_limit=20, time_limit_ms=1017)
+
+def dsp_catch(e: Exception):
+    logger.error('DSP raise exception:')
+    traceback.print_exception(Exception, e, e.__traceback__)
+
+
+dsp = DelayQueue(burst_limit=20, time_limit_ms=1017, exc_route=dsp_catch)
 
 
 def telegram_retry(tries=4, delay=3, backoff=2, logger=None, silence: bool = False, default=None,

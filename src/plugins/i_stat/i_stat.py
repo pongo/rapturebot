@@ -83,6 +83,14 @@ class ChatStatistician(object):
         self.db.reset(user_id)
 
     def show_personal_stat(self, user_id: int) -> str:
+        def fun_word(word: str, fem: bool) -> str:
+            if word == 'я':
+                fem_a = 'а' if user.female else ''
+                return f'я сосал{fem_a}'
+            if word == 'меня':
+                return 'меня ебали'
+            return word
+        
         user = User.get(user_id)
         if not user:
             raise Exception('User SHOULD be exist')
@@ -95,7 +103,7 @@ class ChatStatistician(object):
         header = f'{user.get_username_or_link()} говорил{fem_a} о себе {all_count} в {msg_count}.'
 
         c = Counter(stat.counts)
-        body = '\n'.join((f'<b>{count}.</b> {word}' for word, count in c.most_common() if count > 0))
+        body = '\n'.join((f'<b>{count}.</b> {fun_word(word, user.female)}' for word, count in c.most_common() if count > 0))
 
         return f'{header}\n\n{body}'.strip()
 

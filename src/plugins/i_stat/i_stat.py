@@ -89,6 +89,12 @@ class ChatStatistician(object):
                 return f'я сосал{fem_a}'
             if word == 'меня':
                 return 'меня ебали'
+            if word == 'мне':
+                return 'мне похуй'
+            if word == 'мной':
+                return 'мной восторгаются'
+            if word == 'мною':
+                return 'мною пренебрегают'
             return word
         
         user = User.get(user_id)

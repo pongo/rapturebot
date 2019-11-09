@@ -17,6 +17,9 @@ from src.utils.cache import cache, TWO_DAYS, YEAR, USER_CACHE_EXPIRE
 from src.utils.callback_helpers import get_callback_data
 from src.utils.handlers_helpers import is_command_enabled_for_chat
 from src.utils.telegram_helpers import get_photo_url
+from src.utils.logger_helpers import get_logger
+
+logger = get_logger(__name__)
 
 KEY_PREFIX = 'bayanometer'
 BAYANOMETER_SHOW_ORIG = 'bayanometer_show_orig'
@@ -141,18 +144,23 @@ class Photo:
             # background.show()
             return background
 
-    def __init__(self, message_id: int, date: datetime.datetime):
+    def __init__(self, message_id: int, date: datetime.datetime, user_id: int):
         self.message_id = message_id
         self.date = date
+        self.user_id = user_id
 
     @classmethod
     def message_handler(cls, bot: telegram.Bot, update: telegram.Update) -> None:
         chat_id = update.message.chat_id
         msg_id = update.message.message_id
+        user_id = update.message.from_user.id
         img_url = get_photo_url(bot, update.message)
-        photo = cls.__check(img_url, chat_id, msg_id)
+        photo = cls.__check(img_url, chat_id, msg_id, user_id)
 
         if not photo:
+            return
+        if user_id == photo.user_id:
+            logger.debug(f'same user bayan: {chat_id}:{msg_id}={photo.message_id}')
             return
 
         if update.message.media_group_id:
@@ -190,7 +198,7 @@ class Photo:
             bot.answerCallbackQuery(query.id, text, show_alert=True)
 
     @classmethod
-    def __check(cls, url, chat_id, message_id) -> Optional['Photo']:
+    def __check(cls, url, chat_id, message_id, user_id: int) -> Optional['Photo']:
         hashes = cls.PhotoHasher.get_hashes(url)
         photo = None
         for hash_method, hash_value in hashes:
@@ -203,7 +211,7 @@ class Photo:
                 # if cls.__double_check(hashes, chat_id, cached.message_id):
                 #     return cached
             if photo is None:
-                photo = Photo(message_id, datetime.datetime.now())
+                photo = Photo(message_id, datetime.datetime.now(), user_id)
             cache.set(key, photo, time=YEAR)
         cache.set(f'{KEY_PREFIX}:photo:{chat_id}:message_id:{message_id}', dict(hashes), time=YEAR)
 
@@ -273,14 +281,16 @@ class Photo:
 class URL:
     data_type = "url"
 
-    def __init__(self, message_id: int, date: datetime.datetime):
+    def __init__(self, message_id: int, date: datetime.datetime, user_id: int):
         self.message_id = message_id
         self.date = date
+        self.user_id = user_id
 
     @classmethod
     def message_handler(cls, bot: telegram.Bot, update: telegram.Update) -> None:
         chat_id = update.message.chat_id
         msg_id = update.message.message_id
+        user_id = update.message.from_user.id
 
         orig = None
         entities = update.message.parse_entities()
@@ -290,11 +300,14 @@ class URL:
             prepared_url = cls.__prepare_url(url)
             if not prepared_url:
                 continue
-            orig = cls.__check(prepared_url, chat_id, msg_id)
+            orig = cls.__check(prepared_url, chat_id, msg_id, user_id)
             if orig:
                 break
 
         if not orig:
+            return
+        if user_id == orig.user_id:
+            logger.debug(f'same user bayan: {chat_id}:{msg_id}={orig.message_id}')
             return
 
         data = {
@@ -314,13 +327,13 @@ class URL:
             bot.answerCallbackQuery(query.id, text, show_alert=True)
 
     @classmethod
-    def __check(cls, url, chat_id, message_id) -> Optional['URL']:
+    def __check(cls, url, chat_id, message_id, user_id: int) -> Optional['URL']:
         hash_value = cls.__hash(url)
         key = f'{KEY_PREFIX}:url:{chat_id}:{hash_value}'
         cached = cache.get(key)
         if cached:
             return cached
-        bayan = URL(message_id, datetime.datetime.now())
+        bayan = URL(message_id, datetime.datetime.now(), user_id)
         cache.set(key, bayan, time=YEAR)
 
     @staticmethod

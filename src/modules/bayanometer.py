@@ -251,13 +251,23 @@ class Photo:
 
     @staticmethod
     def __send(bot: telegram.Bot, chat_id, reply_to_message_id, date, button_data) -> None:
+        def link(chat_id, msg_id, text):
+            prefix = '-100'
+            cid_str = str(chat_id)
+            if not cid_str.startswith(prefix):
+                return text
+            cid_without_100 = cid_str[len(prefix):]
+            return f'<a href="https://t.me/c/{cid_without_100}/{msg_id}">{text}</a>'
+
         keyboard = [
             [telegram.InlineKeyboardButton("Показать оригинал",
                                            callback_data=(get_callback_data(button_data)))]
         ]
         reply_markup = telegram.InlineKeyboardMarkup(keyboard)
-        bot.send_message(chat_id, f'Баян! Уже было {relative_date(date)}',
-                         reply_to_message_id=reply_to_message_id, reply_markup=reply_markup)
+        orig_photo: Photo = button_data['orig_photo']
+        orig_msg_id = orig_photo.message_id
+        msg = f'Баян! Уже было {link(chat_id, orig_msg_id, relative_date(date))}'
+        bot.send_message(chat_id, msg, reply_to_message_id=reply_to_message_id, reply_markup=reply_markup, parse_mode='HTML')
 
 
 class URL:

@@ -1,6 +1,7 @@
 import random
 import typing
 from datetime import datetime, timedelta
+from time import sleep
 
 import pytils
 import telegram
@@ -214,17 +215,26 @@ def weekly_stats(bot: telegram.Bot, _) -> None:
 def send_weekly_for_chat(bot: telegram.Bot, chat_id: int, disabled_commands: typing.List[str],
                          enabled_commands: typing.List[str], prev_monday: datetime) -> None:
     logger.info(f'weekly_stats for chat {chat_id}')
-    dsp(send_stats, bot, chat_id, 'Стата за прошлую неделю',
-        CMDS['admins']['all_stat']['name'], prev_monday)
-    dsp(send_stats, bot, chat_id, 'Стата за прошлую неделю',
-        CMDS['admins']['silent_guys']['name'], prev_monday, tag_salo=True)
+    send_stats(bot, chat_id, 'Стата за прошлую неделю',
+               CMDS['admins']['all_stat']['name'], prev_monday)
+    sleep(1)
+    send_stats(bot, chat_id, 'Стата за прошлую неделю',
+               CMDS['admins']['silent_guys']['name'], prev_monday, tag_salo=True)
+    sleep(1)
     if 'weeklystat:top_kroshka' not in disabled_commands:
-        dsp(send_top_kroshka, bot, chat_id, prev_monday)
+        send_top_kroshka(bot, chat_id, prev_monday)
+        sleep(1)
     if 'weeklystat:pidorweekly' not in disabled_commands:
-        dsp(send_pidorweekly, bot, chat_id, prev_monday)
+        send_pidorweekly(bot, chat_id, prev_monday)
+        sleep(1)
     if 'weeklystat:igorweekly' in enabled_commands:
-        dsp(send_igorweekly, bot, chat_id, prev_monday)
-    dsp(send_replytop, bot, chat_id, prev_monday)
-    dsp(send_alllove, bot, chat_id, prev_monday)
-    dsp(send_alllove_outbound, bot, chat_id, prev_monday)
-    dsp(send_topmat, bot, chat_id, chat_id, prev_monday)
+        send_igorweekly(bot, chat_id, prev_monday)
+        sleep(1)
+    send_replytop(bot, chat_id, prev_monday)
+    sleep(1)
+    send_alllove(bot, chat_id, prev_monday)
+    sleep(1)
+    send_alllove_outbound(bot, chat_id, prev_monday)
+    sleep(1)
+    send_topmat(bot, chat_id, chat_id, prev_monday)
+    sleep(1)

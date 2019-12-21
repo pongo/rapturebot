@@ -6,7 +6,7 @@ from threading import Lock
 from urllib.parse import urlparse
 
 import pytils
-from sqlalchemy import Column, Integer, String, BigInteger, DateTime, func
+from sqlalchemy import Column, Integer, String, BigInteger, DateTime, func, or_
 
 import emoji_fixed as emoji
 from src.config import CONFIG
@@ -611,7 +611,11 @@ class UserStat:
                     .filter(UserStatDB.stats_monday == last_monday) \
                     .filter(UserStatDB.uid == UserDB.uid) \
                     .filter(UserStatDB.cid == cid) \
-                    .filter(UserStatDB.emoji_count > 0) \
+                    .filter(or_(
+                        UserStatDB.emoji_count > 0,
+                        UserStatDB.stickers_count > 0,
+                        UserStatDB.gifs_count > 0
+                    )) \
                     .order_by(UserStatDB.emoji_count.desc()) \
                     .all()
                 q = [(UserStat.copy(userstat), User.copy(user)) for userstat, user in q]

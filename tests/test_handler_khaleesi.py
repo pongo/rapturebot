@@ -6,8 +6,8 @@ from unittest.mock import MagicMock, Mock
 
 import telegram
 
-from src.handlers.khaleesi import send_khaleesi
-from src.modules.khaleesi import Khaleesi
+from src.commands.khaleesi.khaleesi_handler import send_khaleesi
+from src.commands.khaleesi.khaleesi import Khaleesi
 
 
 # sys.modules['telegram'] = telegram

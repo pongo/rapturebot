@@ -4,10 +4,10 @@ import telegram
 from telegram.ext import run_async
 
 from src.config import get_config_chats
-from src.modules.dayof.day_manager import DayOfManager
-from src.modules.models.leave_collector import LeaveCollector
-from src.modules.models.reply_top import ReplyDumper
-from src.modules.weather import send_alert_if_full_moon
+from src.dayof.day_manager import DayOfManager
+from src.models.leave_collector import LeaveCollector
+from src.models.reply_top import ReplyDumper
+from src.commands.weather import send_alert_if_full_moon
 from src.utils.cache import pure_cache, FEW_DAYS
 from src.utils.handlers_helpers import is_command_enabled_for_chat
 from src.utils.time_helpers import today_str

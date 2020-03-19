@@ -2,7 +2,7 @@ import random
 from typing import Union, Optional
 
 from src.config import CMDS, VALID_CMDS, CONFIG
-from src.modules.khaleesi import Khaleesi
+from src.commands.khaleesi.khaleesi import Khaleesi
 from src.utils.cache import cache, MONTH
 from src.utils.logger_helpers import get_logger
 from src.utils.telegram_helpers import get_chat_admins

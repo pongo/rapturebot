@@ -1,7 +1,7 @@
 import unittest
 from typing import Iterable
 
-from src.modules.ask import Ask
+from src.commands.ask.ask import Ask
 
 ball_answers = ('Бесспорно', 'Предрешено', 'Никаких сомнений', 'Определённо да', 'Можешь быть уверен в этом',
                 'Мне кажется — «да»', 'Вероятнее всего', 'Хорошие перспективы', 'Знаки говорят — «да»', 'Да',

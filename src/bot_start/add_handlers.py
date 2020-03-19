@@ -1,27 +1,29 @@
 from telegram.ext import CommandHandler, MessageHandler, Filters, CallbackQueryHandler
 
+from src.commands.ask import ask_handler as ask
+from src.commands.khaleesi import khaleesi_handler
+from src.commands.pipinder import repinder, pipinder
 from src.config import CMDS
-from src.handlers import khaleesi, ask, pipinder, repinder, topmat
-from src.handlers.callbacks import callback_handler
-from src.handlers.ment_handler import ment_handler
-from src.handlers.message import message
-from src.handlers.music_handler import musicadd_handler, musicdel_handler, music_handler
-from src.handlers.mylove import mylove, alllove, private_mylove
-from src.handlers.mystat import mystat, whois, private_whois, private_mystat
-from src.handlers.on_off import off_cmd, off_cmd_for_user, on_cmd, on_cmd_for_user
-from src.handlers.orzik import orzik, lord
-from src.handlers.other import rules, love, papa, pomogite, huificator, leave, expert, anketa, \
+from src.commands.callbacks import callback_handler
+from src.commands.ment.ment_handler import ment_handler
+from src.modules.message_reactions import message
+from src.commands.music.music_handler import musicadd_handler, musicdel_handler, music_handler
+from src.commands.mylove import mylove, alllove, private_mylove
+from src.commands.mystat import mystat, whois, private_whois, private_mystat
+from src.commands.on_off import off_cmd, off_cmd_for_user, on_cmd, on_cmd_for_user
+from src.commands.orzik import orzik, lord
+from src.commands.other import rules, love, papa, pomogite, huificator_handler, leave, expert, anketa, \
     putin, changelog, gdeleha, kick, pidor, pipixel_handler
-from src.handlers.weeklystat import stats
-from src.handlers.welcome import welcome
-from src.modules import private
-from src.modules.matshowtime import MatshowtimeHandlers
-from src.modules.spoiler import SpoilerHandlers
-from src.modules.time import time_handler
-from src.modules.weather import weather
-from src.plugins.day_8.day_8 import command_8
-from src.plugins.hakeem import hakeem
-from src.plugins.i_stat.command_handlers import send_personal_stat_handler as cmd_i, \
+from src.modules.weeklystat import stats
+from src.commands.welcome import welcome
+from src.commands import private, topmat
+from src.modules.antimat.matshowtime import MatshowtimeHandlers
+from src.commands.spoiler import SpoilerHandlers
+from src.commands.time import time_handler
+from src.commands.weather import weather
+from src.dayof.day_8.day_8 import command_8
+from src.commands.hakeem import hakeem
+from src.commands.i_stat.command_handlers import send_personal_stat_handler as cmd_i, \
     send_all_stat_handler as cmd_iall
 
 cmd_filter = Filters.group
@@ -56,19 +58,19 @@ def add_chat_handlers(dp):
     dp.add_handler(CommandHandler(CMDS['common']['pomogite']['name'], pomogite, filters=cmd_filter))
 
     dp.add_handler(
-        CommandHandler(CMDS['common']['hueplicator']['name'], huificator, filters=cmd_filter))
-    dp.add_handler(CommandHandler('huyambda', huificator, filters=cmd_filter))
-    dp.add_handler(CommandHandler('huyamba', huificator, filters=cmd_filter))
+        CommandHandler(CMDS['common']['hueplicator']['name'], huificator_handler, filters=cmd_filter))
+    dp.add_handler(CommandHandler('huyambda', huificator_handler, filters=cmd_filter))
+    dp.add_handler(CommandHandler('huyamba', huificator_handler, filters=cmd_filter))
 
     dp.add_handler(
-        CommandHandler(CMDS['common']['khaleesi']['name'], khaleesi.chat, filters=cmd_filter))
-    dp.add_handler(CommandHandler('khaliisy', khaleesi.chat, filters=cmd_filter))
-    dp.add_handler(CommandHandler('khalisy', khaleesi.chat, filters=cmd_filter))
-    dp.add_handler(CommandHandler('khalisi', khaleesi.chat, filters=cmd_filter))
-    dp.add_handler(CommandHandler('khaliisi', khaleesi.chat, filters=cmd_filter))
-    dp.add_handler(CommandHandler('khalesi', khaleesi.chat, filters=cmd_filter))
-    dp.add_handler(CommandHandler('khaleesy', khaleesi.chat, filters=cmd_filter))
-    dp.add_handler(CommandHandler('khalesy', khaleesi.chat, filters=cmd_filter))
+        CommandHandler(CMDS['common']['khaleesi']['name'], khaleesi_handler.chat, filters=cmd_filter))
+    dp.add_handler(CommandHandler('khaliisy', khaleesi_handler.chat, filters=cmd_filter))
+    dp.add_handler(CommandHandler('khalisy', khaleesi_handler.chat, filters=cmd_filter))
+    dp.add_handler(CommandHandler('khalisi', khaleesi_handler.chat, filters=cmd_filter))
+    dp.add_handler(CommandHandler('khaliisi', khaleesi_handler.chat, filters=cmd_filter))
+    dp.add_handler(CommandHandler('khalesi', khaleesi_handler.chat, filters=cmd_filter))
+    dp.add_handler(CommandHandler('khaleesy', khaleesi_handler.chat, filters=cmd_filter))
+    dp.add_handler(CommandHandler('khalesy', khaleesi_handler.chat, filters=cmd_filter))
 
     dp.add_handler(CommandHandler(CMDS['common']['weather']['name'], weather, filters=cmd_filter))
     dp.add_handler(CommandHandler('p', weather, filters=cmd_filter))
@@ -146,7 +148,7 @@ def add_private_handlers(dp):
     dp.add_handler(CommandHandler('weekly_stats', private.run_weekly_stats,
                                   filters=Filters.private & Filters.command))
     dp.add_handler(
-        CommandHandler('khaleesi', khaleesi.private, filters=Filters.private & Filters.command,
+        CommandHandler('khaleesi', khaleesi_handler.private, filters=Filters.private & Filters.command,
                        allow_edited=True))
     dp.add_handler(
         CommandHandler('huyamda', private.huyamda, filters=Filters.private & Filters.command,

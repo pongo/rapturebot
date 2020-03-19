@@ -2,11 +2,11 @@ import sys
 import unittest
 from unittest.mock import MagicMock
 
-from src.plugins.i_stat.i_stat import parse_pronouns, sum_count
+from src.commands.i_stat.i_stat import parse_pronouns, sum_count
 
 sys.modules['telegram'] = MagicMock()
 sys.modules['telegram.ext'] = MagicMock()
-sys.modules['src.handlers'] = MagicMock()
+sys.modules['src.commands'] = MagicMock()
 sys.modules['src.config'] = MagicMock()
 sys.modules['src.config.CONFIG'] = MagicMock()
 sys.modules['src.utils.handlers_helpers'] = MagicMock()

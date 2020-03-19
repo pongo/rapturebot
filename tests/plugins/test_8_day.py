@@ -3,11 +3,11 @@ import unittest
 from typing import List
 from unittest.mock import MagicMock
 
-from src.plugins.day_8.model import random_gift_text
+from src.dayof.day_8.model import random_gift_text
 
 sys.modules['telegram'] = MagicMock()
 sys.modules['telegram.ext'] = MagicMock()
-sys.modules['src.handlers'] = MagicMock()
+sys.modules['src.commands'] = MagicMock()
 sys.modules['src.config'] = MagicMock()
 sys.modules['src.config.CONFIG'] = MagicMock()
 sys.modules['src.utils.handlers_helpers'] = MagicMock()

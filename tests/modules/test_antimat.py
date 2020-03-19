@@ -3,11 +3,11 @@ import sys
 import unittest
 from unittest.mock import MagicMock
 
-from src.modules.antimat import Antimat, get_default_filter, ObsceneRegexp, extended_filter_enabled
+from src.modules.antimat.antimat import Antimat, get_default_filter, ObsceneRegexp, extended_filter_enabled
 
 sys.modules['telegram'] = MagicMock()
 sys.modules['telegram.ext'] = MagicMock()
-sys.modules['src.handlers'] = MagicMock()
+sys.modules['src.commands'] = MagicMock()
 sys.modules['src.config'] = MagicMock()
 sys.modules['src.config.CONFIG'] = MagicMock()
 sys.modules['src.modules.khaleesi'] = MagicMock()

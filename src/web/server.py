@@ -2,7 +2,7 @@ import telegram
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 
-from src.modules.dayof.valentine_day import Web
+from src.dayof.valentine_day_old import Web
 from src.utils.logger_helpers import get_logger
 
 logger = get_logger(__name__)

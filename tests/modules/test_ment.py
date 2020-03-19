@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, Mock
 
 import telegram
 
-from src.modules.ment import parse_command, Command, get_hour
+from src.commands.ment.ment import parse_command, Command, get_hour
 
 now = datetime.datetime.now()
 chat_id = -1

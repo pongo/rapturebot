@@ -3,13 +3,13 @@ import unittest
 from typing import Dict, Union, List
 from unittest.mock import MagicMock
 
-from src.plugins.valentine_day.model import check_errors, VChatsUser, VUnknownUser, VChat, \
+from src.dayof.valentine_day.model import check_errors, VChatsUser, VUnknownUser, VChat, \
     CardDraftSelectHeart, CardDraftSelectChat, command_val, Card, next_emoji, Stats, revn_emojis, \
     StatsHumanReporter
 
 sys.modules['telegram'] = MagicMock()
 sys.modules['telegram.ext'] = MagicMock()
-sys.modules['src.handlers'] = MagicMock()
+sys.modules['src.commands'] = MagicMock()
 sys.modules['src.config'] = MagicMock()
 sys.modules['src.config.CONFIG'] = MagicMock()
 sys.modules['src.utils.handlers_helpers'] = MagicMock()

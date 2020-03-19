@@ -52,6 +52,28 @@ def run_weekly_stats(bot: telegram.Bot, update: telegram.Update) -> None:
     from src.handlers.weeklystat import weekly_stats
     weekly_stats(bot, None)
 
+def year(bot: telegram.Bot, update: telegram.Update) -> None:
+    uid = update.message.chat_id
+    logger.info(f'id {uid} /year')
+    if uid != CONFIG.get('debug_uid', None):
+        return
+
+    from src.modules.models.user_stat import UserStat
+    from src.handlers.weeklystat import send_long
+    bot.send_chat_action(uid, telegram.chataction.ChatAction.TYPING)
+
+    cid = CONFIG.get('anon_chat_id')
+    # cid = -48952907
+    year = 2017
+    info = UserStat.get_chat_year(cid, year)
+
+    msg = f'<b>Rapture {year}</b>\n' \
+          f'Нас: {info["users_count"]}\n' \
+          f'Сообщений: {info["msg_count"]}\n'
+    msg += '\n'
+    msg += info['top_chart'].replace('<b>', '').replace('</b>', '')
+    send_long(bot, CONFIG.get('anon_chat_id'), msg)
+
 
 @run_async
 def huyamda(bot: telegram.Bot, update: telegram.Update) -> None:

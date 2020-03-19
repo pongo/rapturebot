@@ -169,6 +169,7 @@ def add_private_handlers(dp):
     dp.add_handler(
         CommandHandler('topmat', topmat.private_topmat, filters=Filters.private & Filters.command))
     dp.add_handler(CommandHandler('anon', private.anon, filters=Filters.private & Filters.command))
+    dp.add_handler(CommandHandler('year', private.year, filters=Filters.private & Filters.command))
 
     # должно идти в конце
     private_filters = Filters.private & (

@@ -1,7 +1,7 @@
 import locale
 import random
 import typing
-from datetime import timedelta
+from datetime import timedelta, datetime
 from threading import Lock
 from urllib.parse import urlparse
 
@@ -466,6 +466,69 @@ class UserStat:
             return [(UserStat.copy(userstat), User.copy(user)) for userstat, user in q]
         except Exception:
             return []
+
+    @classmethod
+    def get_chat_year(cls, cid: int, year: int):
+        def get_year_all_msg_count():
+            try:
+                with session_scope() as db:
+                    q = db.query(func.sum(UserStatDB.all_messages_count)) \
+                        .filter(UserStatDB.last_activity >= datetime(year, 1, 1)) \
+                        .filter(UserStatDB.last_activity < datetime(year + 1, 1, 1)) \
+                        .filter(UserStatDB.cid == cid) \
+                        .all()[0][0]
+                if q is None:
+                    return 0
+            except Exception as e:
+                logger.error(e)
+                return 0
+            count = int(q)
+            return count
+
+        top_chart = ''
+        uids = []
+        all_msg_count = get_year_all_msg_count()
+
+        q = []
+        try:
+            with session_scope() as db:
+                # noinspection PyUnresolvedReferences
+                q = db.execute(f"""
+SELECT `uid`, SUM(`all_messages_count`) AS `count`
+FROM `user_stats`
+WHERE `last_activity` >= '{year}-01-01'
+  AND `last_activity` < '{year + 1}-01-01'
+  AND `cid` = {cid}
+  AND `all_messages_count` > 0
+GROUP BY `uid`
+ORDER BY `count` DESC
+                """)
+                q = [(r[0], int(r[1])) for r in q]
+        except Exception as e:
+            logger.error(e)
+        if len(q) == 0:
+            return {'users_count': 0, 'top_chart': '', 'msg_count': 0, 'percent': 0, 'uids': []}
+
+        user_position = 0
+        asc_msg_count = 0
+        q_all_length = len(q)  # if type(q) is list else len(q.all())
+        for uid, count in q:
+            user_position += 1
+            asc_msg_count += count
+            raw_percent = count * 100 / all_msg_count
+            percent = cls.number_format(raw_percent, 2)
+            user = User.get(uid)
+            name = user.fullname if user else uid
+            top_chart += f"{user_position}. {name} — {count} ({percent}%)\n"
+            uids.append(uid)
+
+        users_count = q_all_length
+        return {
+            'users_count': users_count,
+            'top_chart': top_chart,
+            'msg_count': all_msg_count,
+            'uids': uids
+        }
 
     @classmethod
     def get_chat(cls, cid, date=None, fullstat=False, salo=False, tag_salo=False, mat=False):

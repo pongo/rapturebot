@@ -1,6 +1,7 @@
 import random
 import re
 
+import requests
 import telegram
 from telegram.ext import run_async
 
@@ -188,14 +189,7 @@ def photo_reactions(bot: telegram.Bot, update: telegram.Update, img_url=None):
     """
     Вычисляем объекты на фотке.
 
-    Используется google vision api:
-    * https://cloud.google.com/vision/
-    * https://cloud.google.com/vision/docs/reference/libraries
-    * https://googlecloudplatform.github.io/google-cloud-python/latest/vision/index.html
     """
-    if config.google_vision_client is None:
-        return
-
     if not is_command_enabled_for_chat(update.message.chat_id, 'photo_reactions'):
         return
 
@@ -203,13 +197,39 @@ def photo_reactions(bot: telegram.Bot, update: telegram.Update, img_url=None):
     if update.message.media_group_id and cache.get(key_media_group):
         return
 
-    call_cats_vision_api(bot, update, key_media_group, img_url)
+    if config.google_vision_client:
+        call_cats_vision_api(bot, update, key_media_group, img_url)
 
+    if is_command_enabled_for_chat(update.message.chat_id, 'osenya'):
+        call_osenya(bot, update, key_media_group, img_url)
+
+
+@run_async
+def call_osenya(bot: telegram.Bot, update: telegram.Update, key_media_group: str,
+                img_url=None):
+    if img_url is None:
+        biggest_photo = bot.get_file(update.message.photo[-1].file_id)
+        img_url = biggest_photo.file_path
+
+    r = requests.post(f'http://localhost:3000/api/senya', json={"url": img_url})
+    res = r.json()
+    if not res['ok']:
+        logger.error(res)
+        return
+
+    if res['is_senya']:
+        bot.sendMessage(update.message.chat_id, "О, Сеня")
 
 # noinspection PyPackageRequirements
 @run_async
 def call_cats_vision_api(bot: telegram.Bot, update: telegram.Update, key_media_group: str,
                          img_url=None):
+    """
+    Используется google vision api:
+    * https://cloud.google.com/vision/
+    * https://cloud.google.com/vision/docs/reference/libraries
+    * https://googlecloudplatform.github.io/google-cloud-python/latest/vision/index.html
+    """
     chat_id = update.message.chat_id
 
     # если урл картинки не задан, то сами берем самую большую фотку из сообщения

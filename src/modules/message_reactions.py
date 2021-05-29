@@ -149,7 +149,7 @@ def message_reactions(bot: telegram.Bot, update: telegram.Update) -> None:
         return
 
     words_lower = msg_lower.split()
-    if 'пидор' in words_lower:
+    if 'пидор' in words_lower and is_command_enabled_for_chat(chat_id, 'пидор'):
         send_pidor(bot, update)
 
 

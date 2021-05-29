@@ -1,5 +1,9 @@
 import datetime
 import hashlib
+import os
+import pathlib
+import re
+import urllib.request
 import re
 from io import BytesIO
 from typing import Optional, List, Tuple
@@ -200,6 +204,7 @@ class Photo:
     @classmethod
     def __check(cls, url, chat_id, message_id, user_id: int) -> Optional['Photo']:
         hashes = cls.PhotoHasher.get_hashes(url)
+        cls.__save(url, chat_id, message_id)
         photo = None
         for hash_method, hash_value in hashes:
             key = f'{KEY_PREFIX}:photo:{chat_id}:{hash_method}:{hash_value}'
@@ -214,6 +219,16 @@ class Photo:
                 photo = Photo(message_id, datetime.datetime.now(), user_id)
             cache.set(key, photo, time=YEAR)
         cache.set(f'{KEY_PREFIX}:photo:{chat_id}:message_id:{message_id}', dict(hashes), time=YEAR)
+
+    @classmethod
+    def __save(cls, url, chat_id, message_id):
+        current_dir = os.getcwd()
+        # tmp_dir = f'{current_dir}/tmp/bayanometer/{chat_id}'
+        # os.makedirs(os.path.dirname(f'{tmp_dir}/'), exist_ok=True)
+        # try:
+        #     urllib.request.urlretrieve(url, f'{tmp_dir}/{message_id}{pathlib.Path(url).suffix}')
+        # except Exception:
+        #     pass
 
     @classmethod
     def __double_check(cls, hashes: List, chat_id: int, message_id: int) -> bool:

@@ -34,10 +34,13 @@ class DayOfManager:
     @staticmethod
     def morning(bot: telegram.Bot) -> None:
         ValentineDay2.morning(bot)
+        #FSBDay.midnight(bot)
+        pass
 
     @staticmethod
     def afternoon(bot: telegram.Bot) -> None:
         # ValentineDay.afternoon(bot)
+        #FSBDay.midnight(bot)
         pass
 
     @staticmethod

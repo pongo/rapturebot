@@ -56,7 +56,6 @@ def whois(bot: telegram.Bot, update: telegram.Update) -> None:
 
 @run_async
 @chat_guard
-@collect_stats
 @command_guard
 def mystat(bot, update):
     chat_id = update.message.chat_id

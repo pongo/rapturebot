@@ -54,7 +54,7 @@ def off_cmd(bot, update):
         bot.sendMessage(chat_id, f'Нет такой команды: {bot_command}.', reply_to_message_id=msg_id)
         return
 
-    if check_command_is_off(chat_id, bot_command):
+    if check_command_is_off(chat_id, cmd_name):
         bot.sendMessage(chat_id, f'Команда {bot_command} уже выключена. Ты тоже уймись.',
                         reply_to_message_id=msg_id)
         return
@@ -97,15 +97,17 @@ def on_cmd(bot, update):
         cache.delete(f'all_cmd_disabled:{chat_id}')
         bot.sendMessage(chat_id, 'Все команды снова работают.')
         return
-    if not is_valid_command(bot_command):
+        
+    cmd_name = get_command_name(bot_command)
+    if not cmd_name:
         bot.sendMessage(chat_id, f'Нет такой команды: {bot_command}', reply_to_message_id=msg_id)
         return
-    if not check_command_is_off(chat_id, bot_command):
+    logger.info(f'check={check_command_is_off(chat_id, cmd_name)}; command={cmd_name}')
+    if not check_command_is_off(chat_id, cmd_name):
         bot.sendMessage(chat_id, f'Команда {bot_command} уже включена. Все хорошо.',
                         reply_to_message_id=msg_id)
         return
 
-    cmd_name = get_command_name(bot_command)
     cache.delete(f'cmd_disabled:{chat_id}:{cmd_name}')
     bot.sendMessage(chat_id, f'Команда {bot_command} снова работает. На твой страх и риск.',
                     reply_to_message_id=msg_id)
@@ -220,7 +222,7 @@ def on_cmd_for_user(bot, update):
         if not plohish_id:
             bot.sendMessage(chat_id, f'Нет такого плохиша: {text[2]}', reply_to_message_id=msg_id)
 
-    if check_command_is_off(chat_id, bot_command):
+    if check_command_is_off(chat_id, cmd_name):
         bot.sendMessage(chat_id, f'Команда {cmd_name} отключена у всех, без исключений')
         return
 
@@ -243,7 +245,7 @@ def callback_off(bot, update, query, data):
     cmd_name = is_valid_command(bot_command)
     if cmd_name:
         remove_inline_keyboard(bot, chat_id, query.message.message_id)
-        if check_command_is_off(chat_id, bot_command):
+        if check_command_is_off(chat_id, cmd_name):
             bot.sendMessage(chat_id, f'Команда {bot_command} уже выключена. Ты тоже уймись.')
             return
         _off_cmd(bot, bot_command, chat_id, cmd_name)

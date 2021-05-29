@@ -92,7 +92,7 @@ def check_command_is_off(chat_id, cmd_name):
 
     disabled = cache.get(f'cmd_disabled:{chat_id}:{cmd_name}')
     if disabled:
-        return disabled
+        return True
     return False
 
 

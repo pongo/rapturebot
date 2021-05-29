@@ -2,6 +2,7 @@ import json
 import random
 import re
 from datetime import datetime
+from typing import Callable
 
 import apiai
 import requests
@@ -9,16 +10,17 @@ import telegram
 from telegram import ParseMode
 from telegram.ext import run_async
 
-from src.config import CONFIG
 from src.commands.other import send_huificator
+from src.config import CONFIG, get_config_chats
 from src.dayof.day_manager import DayOfManager
 from src.dayof.helper import is_today_special
 from src.models.reply_top import LoveDumpTable
 from src.models.user import User
-from src.utils.cache import cache
+from src.utils.cache import cache, TWO_DAYS
 from src.utils.handlers_decorators import only_users_from_main_chat
 from src.utils.logger_helpers import get_logger
 from src.utils.misc import weighted_choice
+from src.utils.telegram_helpers import dsp, telegram_retry
 
 logger = get_logger(__name__)
 
@@ -52,6 +54,7 @@ def run_weekly_stats(bot: telegram.Bot, update: telegram.Update) -> None:
     from src.modules.weeklystat import weekly_stats
     weekly_stats(bot, None)
 
+
 def year(bot: telegram.Bot, update: telegram.Update) -> None:
     uid = update.message.chat_id
     logger.info(f'id {uid} /year')
@@ -74,6 +77,17 @@ def year(bot: telegram.Bot, update: telegram.Update) -> None:
     msg += info['top_chart'].replace('<b>', '').replace('</b>', '')
     send_long(bot, CONFIG.get('anon_chat_id'), msg)
 
+
+def send_to_all_chats_handler(bot: telegram.Bot, update: telegram.Update) -> None:
+    uid = update.message.chat_id
+    logger.info(f'id {uid} /send_to_all_chats')
+    if uid != CONFIG.get('debug_uid', None):
+        return
+
+    text = f"""
+
+""".strip()
+    # send_to_all_chats(bot, 'all', lambda _: text)
 
 @run_async
 def huyamda(bot: telegram.Bot, update: telegram.Update) -> None:
@@ -277,3 +291,20 @@ def __private(bot: telegram.Bot, update: telegram.Update):
 
     if message.document is not None:
         bot.sendDocument(CONFIG['anon_chat_id'], message.document)
+
+
+def send_to_all_chats(bot: telegram.Bot, key_name: str,
+                      get_text: Callable[[int], str]) -> None:
+    for chat in get_config_chats():
+        chat_id = chat.chat_id
+        logger.info(f'/send_to_all_chats {chat_id}')
+        chat_key = f'send_to_all_chats:{key_name}:{chat_id}'
+        if cache.get(chat_key, False):
+            continue
+        dsp(send_html, bot, chat_id, get_text(chat_id))
+        cache.set(chat_key, True, time=TWO_DAYS)
+
+
+@telegram_retry(logger=logger, silence=False, default=None, title='_send_html')
+def send_html(bot: telegram.Bot, chat_id: int, text: str) -> telegram.Message:
+    return bot.send_message(chat_id, text, parse_mode=telegram.ParseMode.HTML, disable_web_page_preview=True)

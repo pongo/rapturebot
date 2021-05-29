@@ -172,6 +172,7 @@ def add_private_handlers(dp):
         CommandHandler('topmat', topmat.private_topmat, filters=Filters.private & Filters.command))
     dp.add_handler(CommandHandler('anon', private.anon, filters=Filters.private & Filters.command))
     dp.add_handler(CommandHandler('year', private.year, filters=Filters.private & Filters.command))
+    dp.add_handler(CommandHandler('send_to_all_chats', private.send_to_all_chats_handler, filters=Filters.private & Filters.command))
 
     # должно идти в конце
     private_filters = Filters.private & (

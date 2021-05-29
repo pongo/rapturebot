@@ -564,8 +564,8 @@ ORDER BY `count` DESC
 
         magic_percent = 100
         q_all_length = len(q)  # if type(q) is list else len(q.all())
-        if not salo and q_all_length > 25:
-            magic_percent = 146
+        #if not salo and q_all_length > 25:
+            #magic_percent = 146
 
         for user_stat, user in q:
             count = user_stat.all_messages_count

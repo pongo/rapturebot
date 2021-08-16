@@ -1,9 +1,17 @@
+import html
+import json
+import os
 import random
 import re
+import shutil
+import tempfile
+from tempfile import NamedTemporaryFile
 
 import requests
 import telegram
+from telegram import MessageEntity, ChatAction
 from telegram.ext import run_async
+from jsonpath_ng import parse
 
 import src.config as config
 from src.config import CMDS, CONFIG
@@ -30,6 +38,7 @@ logger = get_logger(__name__)
 re_img = re.compile(r"\.(jpg|jpeg|png)$", re.IGNORECASE)
 re_gdeleha = re.compile(r"(где л[её]ха|л[её]ха где)[!?.]*\s*$", re.IGNORECASE | re.MULTILINE)
 re_suicide = re.compile(r"\S*с[уиаы][иые]ц+[иые][тд]\S*", re.IGNORECASE)
+re_tiktok_url = re.compile(r"^https:\/\/(www|m|vm)\.tiktok\.com\/.+$")
 
 
 @run_async
@@ -42,11 +51,36 @@ def message(bot, update):
     last_word(bot, update)
     mat_notify(bot, update)
     Bayanometer.check(bot, update)
+    tiktok_video(bot, update)
     PidorWeekly.parse_message(update.message)
     IgorWeekly.parse_message(update.message)
     update_stickers(bot, update)
     pure_cache.incr(f"metrics:messages:{today_str()}")
 
+
+class CustomNamedTemporaryFile:
+    """
+    https://stackoverflow.com/a/63173312/136559
+    """
+    def __init__(self, mode='wb', name=None, suffix=''):
+        self._suffix = suffix
+        self._name = name
+        self._mode = mode
+
+    def __enter__(self):
+        # Generate a random temporary file name
+        file_name = os.path.join(
+            tempfile.gettempdir(),
+            (self._name or os.urandom(24).hex()) + self._suffix)
+        # Ensure the file is created
+        open(file_name, "x").close()
+        # Open the file in the given mode
+        self._tempFile = open(file_name, self._mode)
+        return self._tempFile
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self._tempFile.close()
+        os.remove(self._tempFile.name)
 
 @run_async
 def send_gdeleha(bot, chat_id, msg_id, user_id):
@@ -152,6 +186,68 @@ def message_reactions(bot: telegram.Bot, update: telegram.Update) -> None:
     words_lower = msg_lower.split()
     if 'пидор' in words_lower and is_command_enabled_for_chat(chat_id, 'пидор'):
         send_pidor(bot, update)
+
+@run_async
+def tiktok_video(bot: telegram.Bot, update: telegram.Update) -> None:
+    def build_caption(fetch_key):
+        video_caption = fetch_key("text")
+        if "#" in video_caption:
+            video_caption = video_caption.split("#")[0]
+        likes = fetch_key("diggCount") or 0
+        comments = fetch_key("commentCount") or 0
+        plays = fetch_key("playCount") or 0
+        video_caption = html.escape(video_caption.strip())
+        for mention in fetch_key("mentions"):
+            video_caption = video_caption.replace(
+                mention, f"<a href='https://tiktok.com/{mention}'>{mention}</a>"
+            )
+        return f"{video_caption}\n\n❤ {int(likes):,}\n💬 {int(comments):,}\n⏯ {int(plays):,}"
+
+    chat_id = update.message.chat_id
+    if not is_command_enabled_for_chat(chat_id, 'tiktokvideo'):
+        return
+
+    message = update.effective_message
+    message_entities = [
+        n
+        for n in message.parse_entities([MessageEntity.URL]).values()
+        if re_tiktok_url.match(n)
+    ]
+    for url in message_entities:
+        try:
+            res = requests.post(f'http://localhost:3000/api/v1/tiktok-video', json={"video": url})
+            if not res.ok:
+                logger.error("Failed to request from TikBot API: %s" % res.status_code)
+                continue
+
+            item_infos = res.json()
+            fetch_key = lambda key: parse("$..%s" % key).find(item_infos)[0].value
+
+            with CustomNamedTemporaryFile(name=fetch_key('id'), suffix='.mp4') as f:
+                message.chat.send_action(action=ChatAction.UPLOAD_VIDEO)
+                # Get the video URL
+                video_url = fetch_key("videoUrl")
+                if len(video_url) == 0:
+                    logger.error("Failed to find videoUrl in video meta: %s" % json.dumps(item_infos))
+                    message.reply_html(f"Could not download video \U0001f613, TikTok gave a bad video meta response \U0001f97a")
+                    raise
+                with requests.get(video_url, stream=True, headers=item_infos.get("headers", {})) as r:
+                    if not r.ok:
+                        logger.debug(f"Failed to download video {item_infos}")
+                        message.reply_html(f"Could not download video \U0001f613, TikTok gave a bad response \U0001f97a ({r.status_code})")
+                        return
+                    shutil.copyfileobj(r.raw, f)
+
+                logger.info("Processed video %s" % url)
+                message.reply_video(
+                    video=open(f.name, "rb"),
+                    disable_notification=True,
+                    caption=build_caption(fetch_key),
+                    parse_mode=telegram.ParseMode.HTML,
+                )
+        except Exception as e:
+            logger.warning("Failed to download video %s: %s" % (url, repr(e)))
+        break
 
 
 @run_async

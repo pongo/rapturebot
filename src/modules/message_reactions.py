@@ -239,6 +239,7 @@ def tiktok_video(bot: telegram.Bot, update: telegram.Update) -> None:
                     shutil.copyfileobj(r.raw, f)
 
                 logger.info("Processed video %s" % url)
+                #logger.info(f.name)
                 message.reply_video(
                     video=open(f.name, "rb"),
                     disable_notification=True,
@@ -246,7 +247,8 @@ def tiktok_video(bot: telegram.Bot, update: telegram.Update) -> None:
                     parse_mode=telegram.ParseMode.HTML,
                 )
         except Exception as e:
-            logger.warning("Failed to download video %s: %s" % (url, repr(e)))
+            logger.error("Failed to download video %s: %s" % (url, repr(e)))
+            logger.error(e)
         break
 
 

@@ -2,7 +2,7 @@ import typing
 from threading import Lock
 
 import telegram
-from sqlalchemy import Column, Integer, Text, Boolean
+from sqlalchemy import Column, Integer, Text, Boolean, BigInteger
 
 from src.models.chat_user import ChatUser
 from src.utils.cache import cache, USER_CACHE_EXPIRE
@@ -17,7 +17,7 @@ class UserDB(Base):
     __tablename__ = 'users'
 
     id = Column('id', Integer, primary_key=True)
-    uid = Column('uid', Integer)
+    uid = Column('uid', BigInteger)
     username = Column('username', Text)  # без @
     fullname = Column('fullname', Text)
     public = Column('public', Boolean, default=False)

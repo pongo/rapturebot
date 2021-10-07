@@ -28,7 +28,7 @@ class UserStatDB(Base):
 
     id = Column('id', Integer, primary_key=True)
     stats_monday = Column('stats_monday', DateTime)
-    uid = Column('uid', Integer)  # telegram user id
+    uid = Column('uid', BigInteger)  # telegram user id
     cid = Column('cid', BigInteger)  # chat id
     last_activity = Column('last_activity', DateTime)
     all_messages_count = Column('all_messages_count', Integer, default=0)

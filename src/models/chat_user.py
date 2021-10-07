@@ -16,7 +16,7 @@ class ChatUserDB(Base):
     __tablename__ = 'chat_users'
 
     id = Column('id', Integer, primary_key=True)
-    uid = Column('uid', Integer)
+    uid = Column('uid', BigInteger)
     cid = Column('cid', BigInteger)  # chat id
     left = Column('left', Boolean, default=False)  # ливнул?
 

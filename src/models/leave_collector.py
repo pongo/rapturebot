@@ -29,11 +29,11 @@ class LeaveCollectorDB(Base):
         left = 4
 
     id = Column('id', Integer, primary_key=True)
-    uid = Column('uid', Integer)
+    uid = Column('uid', BigInteger)
     cid = Column('cid', BigInteger)  # chat id
     date = Column('date', DateTime)
     leave_type = Column('leave_type', sqlalchemy.Enum(LeaveType))
-    from_uid = Column('from_uid', Integer)  # кто кикнул/добавил
+    from_uid = Column('from_uid', BigInteger)  # кто кикнул/добавил
     reason = Column('reason', Text)
 
     @staticmethod

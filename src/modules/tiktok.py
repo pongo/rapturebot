@@ -61,13 +61,13 @@ def process_message_for_tiktok(message: telegram.Message, url=None):
                     return
                 shutil.copyfileobj(r.raw, f)
 
-            logger.info("Processed video %s" % url)
             message.reply_video(
                 video=open(f.name, "rb"),
                 disable_notification=True,
                 caption=build_caption(fetch_key),
                 parse_mode=telegram.ParseMode.HTML,
             )
+            logger.info(f"Processed tiktok {url}")
     except Exception as e:
         logger.error("Failed to download video %s: %s" % (url, repr(e)))
         logger.error(e)

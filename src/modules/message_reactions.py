@@ -19,7 +19,7 @@ from src.models.leave_collector import LeaveCollector
 from src.models.pidor_weekly import PidorWeekly
 from src.models.user import User
 from src.commands.khaleesi.random_khaleesi import RandomKhaleesi
-from src.modules.tiktok import process_message_for_tiktok
+from src.modules.tiktok import process_message_for_tiktok, get_first_tiktok_url_from_message
 from src.utils.cache import cache, TWO_DAYS, USER_CACHE_EXPIRE, pure_cache
 from src.utils.handlers_decorators import chat_guard, collect_stats, command_guard
 from src.utils.handlers_helpers import is_command_enabled_for_chat, \
@@ -183,12 +183,20 @@ def message_reactions(bot: telegram.Bot, update: telegram.Update) -> None:
     if 'пидор' in words_lower and is_command_enabled_for_chat(chat_id, 'пидор'):
         send_pidor(bot, update)
 
-@run_async
+
 def tiktok_video(bot: telegram.Bot, update: telegram.Update) -> None:
-    chat_id = update.message.chat_id
-    if not is_command_enabled_for_chat(chat_id, 'tiktokvideo'):
+    if not is_command_enabled_for_chat(update.message.chat_id, 'tiktokvideo'):
         return
-    process_message_for_tiktok(update.effective_message)
+    message = update.effective_message
+    url = get_first_tiktok_url_from_message(message)
+    if url is None:
+        return
+    tiktok_video_async(message, url)
+
+
+@run_async
+def tiktok_video_async(message: telegram.Message, url) -> None:
+    process_message_for_tiktok(message, url)
 
 
 @run_async

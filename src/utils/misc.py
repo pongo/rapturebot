@@ -1,3 +1,5 @@
+import os
+import tempfile
 import functools
 import random
 import time
@@ -81,3 +83,27 @@ def chunks(l, n: int):
     """
     for i in range(0, len(l), n):
         yield l[i:i + n]
+
+class CustomNamedTemporaryFile:
+    """
+    https://stackoverflow.com/a/63173312/136559
+    """
+    def __init__(self, mode='wb', name=None, suffix=''):
+        self._suffix = suffix
+        self._name = name
+        self._mode = mode
+
+    def __enter__(self):
+        # Generate a random temporary file name
+        file_name = os.path.join(
+            tempfile.gettempdir(),
+            (self._name or os.urandom(24).hex()) + self._suffix)
+        # Ensure the file is created
+        open(file_name, "x").close()
+        # Open the file in the given mode
+        self._tempFile = open(file_name, self._mode)
+        return self._tempFile
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self._tempFile.close()
+        os.remove(self._tempFile.name)

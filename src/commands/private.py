@@ -16,6 +16,7 @@ from src.dayof.day_manager import DayOfManager
 from src.dayof.helper import is_today_special
 from src.models.reply_top import LoveDumpTable
 from src.models.user import User
+from src.modules.tiktok import process_message_for_tiktok
 from src.utils.cache import cache, TWO_DAYS
 from src.utils.handlers_decorators import only_users_from_main_chat
 from src.utils.logger_helpers import get_logger
@@ -151,7 +152,9 @@ def private(bot: telegram.Bot, update: telegram.Update):
     DayOfManager.private_handler(bot, update)
     if is_today_special():
         return
-    ai(bot, update)
+
+    process_message_for_tiktok(update.effective_message)
+    # ai(bot, update)
 
 
 @run_async

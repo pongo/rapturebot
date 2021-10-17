@@ -18,53 +18,59 @@ re_tiktok_url = re.compile(r"^https:\/\/(www|m|vm)\.tiktok\.com\/.+$")
 SEND_VIDEO_SIZE_LIMIT = 50 * 1048576  # 50mb https://core.telegram.org/bots/api#sendvideo
 
 
-def process_message_for_tiktok(message: telegram.Message):
+def get_first_tiktok_url_from_message(message: telegram.Message):
     message_entities = [
         n
         for n in message.parse_entities([MessageEntity.URL]).values()
         if re_tiktok_url.match(n)
     ]
-    for url in message_entities:
-        try:
-            res = requests.post(f'http://localhost:3000/api/v1/tiktok-video', json={"video": url})
-            if not res.ok:
-                logger.error("Failed to request from TikBot API: %s" % res.status_code)
+    return message_entities[0] if message_entities else None
+
+def process_message_for_tiktok(message: telegram.Message, url=None):
+    if url is None:
+        url = get_first_tiktok_url_from_message(message)
+    if url is None:
+        return
+
+    try:
+        res = requests.post(f'http://localhost:3000/api/v1/tiktok-video', json={"video": url})
+        if not res.ok:
+            logger.error("Failed to request from TikBot API: %s" % res.status_code)
+            return
+
+        item_infos = res.json()
+        fetch_key = lambda key: parse("$..%s" % key).find(item_infos)[0].value
+
+        with CustomNamedTemporaryFile(suffix='.mp4') as f:
+            message.chat.send_action(action=ChatAction.UPLOAD_VIDEO)
+
+            video_url = fetch_key("videoUrl")
+            if len(video_url) == 0:
+                logger.error("Failed to find videoUrl in video meta: %s" % json.dumps(item_infos))
+                message.reply_html(f"Could not download video \U0001f613, TikTok gave a bad video meta response \U0001f97a")
                 return
 
-            item_infos = res.json()
-            fetch_key = lambda key: parse("$..%s" % key).find(item_infos)[0].value
-
-            with CustomNamedTemporaryFile(suffix='.mp4') as f:
-                message.chat.send_action(action=ChatAction.UPLOAD_VIDEO)
-
-                video_url = fetch_key("videoUrl")
-                if len(video_url) == 0:
-                    logger.error("Failed to find videoUrl in video meta: %s" % json.dumps(item_infos))
-                    message.reply_html(f"Could not download video \U0001f613, TikTok gave a bad video meta response \U0001f97a")
+            with requests.get(video_url, stream=True, headers=item_infos.get("headers", {})) as r:
+                if not r.ok:
+                    logger.debug(f"Failed to download video {item_infos}")
+                    message.reply_html(f"Could not download video \U0001f613, TikTok gave a bad response \U0001f97a ({r.status_code})")
                     return
+                file_size = int(r.headers['Content-length'])
+                if file_size >= SEND_VIDEO_SIZE_LIMIT:
+                    message.reply_html(f"Телеграм не дает отправить видео больше 50 мб. Качайте сами:\n\n{video_url}")
+                    return
+                shutil.copyfileobj(r.raw, f)
 
-                with requests.get(video_url, stream=True, headers=item_infos.get("headers", {})) as r:
-                    if not r.ok:
-                        logger.debug(f"Failed to download video {item_infos}")
-                        message.reply_html(f"Could not download video \U0001f613, TikTok gave a bad response \U0001f97a ({r.status_code})")
-                        return
-                    file_size = int(r.headers['Content-length'])
-                    if file_size >= SEND_VIDEO_SIZE_LIMIT:
-                        message.reply_html(f"Телеграм не дает отправить видео больше 50 мб. Качайте сами:\n\n{video_url}")
-                        return
-                    shutil.copyfileobj(r.raw, f)
-
-                logger.info("Processed video %s" % url)
-                message.reply_video(
-                    video=open(f.name, "rb"),
-                    disable_notification=True,
-                    caption=build_caption(fetch_key),
-                    parse_mode=telegram.ParseMode.HTML,
-                )
-        except Exception as e:
-            logger.error("Failed to download video %s: %s" % (url, repr(e)))
-            logger.error(e)
-        return
+            logger.info("Processed video %s" % url)
+            message.reply_video(
+                video=open(f.name, "rb"),
+                disable_notification=True,
+                caption=build_caption(fetch_key),
+                parse_mode=telegram.ParseMode.HTML,
+            )
+    except Exception as e:
+        logger.error("Failed to download video %s: %s" % (url, repr(e)))
+        logger.error(e)
 
 def build_caption(fetch_key) -> str:
     video_caption = fetch_key("text")

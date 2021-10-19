@@ -11,11 +11,12 @@ from telegram import ParseMode
 from telegram.ext import run_async
 
 from src.commands.other import send_huificator
-from src.config import CONFIG, get_config_chats
+from src.config import CONFIG, get_config_chats, instaloader_session_exists
 from src.dayof.day_manager import DayOfManager
 from src.dayof.helper import is_today_special
 from src.models.reply_top import LoveDumpTable
 from src.models.user import User
+from src.modules.instagram import process_message_for_instagram
 from src.modules.tiktok import process_message_for_tiktok
 from src.utils.cache import cache, TWO_DAYS
 from src.utils.handlers_decorators import only_users_from_main_chat
@@ -153,7 +154,11 @@ def private(bot: telegram.Bot, update: telegram.Update):
     if is_today_special():
         return
 
-    process_message_for_tiktok(update.effective_message)
+    message = update.effective_message
+
+    process_message_for_tiktok(message)
+    if instaloader_session_exists:
+        process_message_for_instagram(message)
     # ai(bot, update)
 
 

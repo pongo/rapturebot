@@ -6,7 +6,9 @@ import telegram
 from telegram.ext import run_async
 
 import src.config as config
-from src.config import CMDS, CONFIG
+from src.config import CMDS, CONFIG, instaloader_session_exists
+from src.modules.instagram import get_first_instagram_post_id_from_message, \
+    process_message_for_instagram
 from src.modules.last_word import last_word
 from src.modules.antimat.mat_notify import mat_notify
 from src.commands.orzik import orzik_correction
@@ -72,6 +74,7 @@ def message(bot, update):
     mat_notify(bot, update)
     Bayanometer.check(bot, update)
     tiktok_video(bot, update)
+    instagram_video(bot, update)
     PidorWeekly.parse_message(update.message)
     IgorWeekly.parse_message(update.message)
     update_stickers(bot, update)
@@ -197,6 +200,23 @@ def tiktok_video(bot: telegram.Bot, update: telegram.Update) -> None:
 @run_async
 def tiktok_video_async(message: telegram.Message, url) -> None:
     process_message_for_tiktok(message, url)
+
+
+def instagram_video(bot: telegram.Bot, update: telegram.Update) -> None:
+    if not instaloader_session_exists:
+        return
+    if not is_command_enabled_for_chat(update.message.chat_id, 'instagram'):
+        return
+    message = update.effective_message
+    post_id = get_first_instagram_post_id_from_message(message)
+    if post_id is None:
+        return
+    instagram_video_async(message, post_id)
+
+
+@run_async
+def instagram_video_async(message: telegram.Message, post_id) -> None:
+    process_message_for_instagram(message, post_id)
 
 
 @run_async

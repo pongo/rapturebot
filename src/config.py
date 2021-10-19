@@ -1,3 +1,4 @@
+import os
 import functools
 import json
 from typing import List, NamedTuple
@@ -36,6 +37,7 @@ for cmd in CMDS.get('text_cmds', []):
     VALID_CMDS.append(cmd)
 
 google_vision_client = None
+instaloader_session_exists = os.path.isfile('instaloader.session')
 
 
 class ChatInConfig(NamedTuple):

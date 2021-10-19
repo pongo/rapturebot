@@ -81,6 +81,7 @@ celerybeat-schedule
 # Environments
 .env
 .venv
+/venv37/
 env/
 venv/
 ENV/
@@ -97,8 +98,11 @@ ENV/
 
 # mypy
 .mypy_cache/
+
+# my
 /config.json
 /tmp/
 /private.key
 /cert.pem
 /8.txt
+/instaloader.session

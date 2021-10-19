@@ -12,7 +12,7 @@
 
 ## Установка
 
-Бот использует python 3.6, [python-telegram-bot](https://github.com/python-telegram-bot/python-telegram-bot/), redis и mysql. 
+Бот использует python 3.7, [python-telegram-bot](https://github.com/python-telegram-bot/python-telegram-bot/), redis и mysql. 
 
 Настройте [конфиг и бд](CONFIG.md). Установите пакеты и запускайте:
 

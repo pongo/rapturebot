@@ -9,21 +9,18 @@ from src.config import CONFIG
 from src.utils.logger_helpers import get_logger
 
 logger = get_logger(__name__)
-
 twitter_auth = CONFIG.get('twitter_auth', {})
 consumer_key = twitter_auth.get('consumer_key')
 consumer_secret = twitter_auth.get('consumer_secret')
 access_token = twitter_auth.get('access_token')
 access_token_secret = twitter_auth.get('access_token_secret')
+re_twitter_url = re.compile(r"https?:\/\/twitter.com\/[0-9-a-zA-Z_]{1,20}\/status\/([0-9]*)")
 
-if consumer_key:
+if consumer_key is not None:
     auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
     auth.set_access_token(access_token, access_token_secret)
-
     api = tweepy.API(auth)
     logger.info('Twitter logged in')
-
-re_twitter_url = re.compile(r"https?:\/\/twitter.com\/[0-9-a-zA-Z_]{1,20}\/status\/([0-9]*)")
 
 
 def get_first_twitter_id_from_message(message: telegram.Message):
@@ -36,23 +33,33 @@ def get_first_twitter_id_from_message(message: telegram.Message):
             return twitter_id
     return None
 
-def process_message_for_twitter(message: telegram.Message, twitter_id=None):
-    if twitter_id is None:
-        twitter_id = get_first_twitter_id_from_message(message)
-    if twitter_id is None:
-        return
 
+def process_message_for_twitter(message: telegram.Message) -> bool:
+    """
+    Отправляет видео из первой твиттер-ссылки, если она есть
+    :return: False, если твиттер-ссылки нет
+    """
+    if consumer_key is None:
+        return False
+    twitter_id = get_first_twitter_id_from_message(message)
+    if twitter_id is None:
+        return False
+    call(message, twitter_id)
+    return True
+
+
+def call(message: telegram.Message, twitter_id: str):
     try:
         message.chat.send_action(action=ChatAction.UPLOAD_VIDEO)
         video_urls = get_urls_of_video(twitter_id)
         if not video_urls:
             return
-
         message.reply_html(f"<a href='{video_urls[0]}'>Video</a>")
         logger.info(f"Processed twitter {twitter_id}")
     except Exception as e:
         logger.error("Failed to download twitter %s: %s" % (twitter_id, repr(e)))
         logger.error(e)
+
 
 def get_urls_of_video(twitter_id):
     """
@@ -66,6 +73,7 @@ def get_urls_of_video(twitter_id):
             if file['content_type'] == "video/mp4"
         ]
     return []
+
 
 def parse_twitter_id(text: str) -> Optional[str]:
     m = re_twitter_url.search(text)

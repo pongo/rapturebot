@@ -1,21 +1,22 @@
 import os
 import re
 from time import sleep
-from typing import Optional
 
 import telegram
 from telegram import MessageEntity, InputMediaPhoto, ChatAction
 
 from packages.instaloader_proxy import instaloader, Post
-from src.config import CONFIG
+from src.config import CONFIG, instaloader_session_exists
 from src.utils.logger_helpers import get_logger
 
 logger = get_logger(__name__)
 re_instagram_url = re.compile(r"instagram\.com\S*?\/(?:p|tv|reel)\/([\w-]+)\/?")
+instagram_user = CONFIG.get('instagram_user')
 
-L = instaloader.Instaloader(proxy=CONFIG.get('instagram_proxy', None))
-if os.path.isfile('instaloader.session'):
-    L.load_session_from_file(CONFIG.get('instagram_user'), 'instaloader.session')
+
+if os.path.isfile('instaloader.session') and instagram_user is not None:
+    L = instaloader.Instaloader(proxy=CONFIG.get('instagram_proxy', None))
+    L.load_session_from_file(instagram_user, 'instaloader.session')
 
 
 def get_first_instagram_post_id_from_message(message: telegram.Message):
@@ -29,16 +30,21 @@ def get_first_instagram_post_id_from_message(message: telegram.Message):
     return None
 
 
-def process_message_for_instagram(message: telegram.Message, post_id=None):
+def process_message_for_instagram(message: telegram.Message) -> bool:
+    if not instaloader_session_exists or instagram_user is None:
+        return False
+    post_id = get_first_instagram_post_id_from_message(message)
     if post_id is None:
-        post_id = get_first_instagram_post_id_from_message(message)
-    if post_id is None:
-        return
+        return False
+    call(message, post_id)
+    return True
 
+
+def call(message: telegram.Message, post_id: str):
     try:
         message.chat.send_action(action=ChatAction.UPLOAD_PHOTO)
         images, videos = fetch_post(post_id)
-        is_private = message.chat.id >= 0
+        # is_private = message.chat.id >= 0
 
         if len(images) == 0 and len(videos) == 0:
             message.reply_text('Unable to download the post ☹️ Try later')
@@ -79,14 +85,15 @@ def process_message_for_instagram(message: telegram.Message, post_id=None):
         logger.error(e)
 
 
-def parse_instagram_post_id(text: str) -> Optional[str]:
+def parse_instagram_post_id(text: str):
     m = re_instagram_url.search(text)
     try:
         return m.group(1) if m else None
-    except Exception as e:
+    except Exception as _:
         return None
 
-def fetch_post(post_id):
+
+def fetch_post(post_id: str):
     images = []
     videos = []
     post = Post.from_shortcode(L.context, post_id)

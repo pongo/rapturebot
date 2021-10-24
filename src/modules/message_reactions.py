@@ -11,7 +11,6 @@ from src.commands.khaleesi.random_khaleesi import RandomKhaleesi
 from src.commands.orzik import orzik_correction
 from src.commands.welcome import send_welcome
 from src.config import CMDS, CONFIG
-from src.config import instaloader_session_exists
 from src.models.chat_user import ChatUser
 from src.models.igor_weekly import IgorWeekly
 from src.models.leave_collector import LeaveCollector
@@ -19,12 +18,10 @@ from src.models.pidor_weekly import PidorWeekly
 from src.models.user import User
 from src.modules.antimat.mat_notify import mat_notify
 from src.modules.bayanometer import Bayanometer
-from src.modules.instagram import get_first_instagram_post_id_from_message, \
-    process_message_for_instagram
+from src.modules.instagram import process_message_for_instagram
 from src.modules.last_word import last_word
-from src.modules.tiktok import get_first_tiktok_url_from_message
 from src.modules.tiktok import process_message_for_tiktok
-from src.modules.twitter import process_message_for_twitter, get_first_twitter_id_from_message
+from src.modules.twitter import process_message_for_twitter
 from src.utils.cache import cache, TWO_DAYS, USER_CACHE_EXPIRE, pure_cache
 from src.utils.handlers_decorators import chat_guard, collect_stats, command_guard
 from src.utils.handlers_helpers import is_command_enabled_for_chat, \
@@ -166,48 +163,19 @@ def message_reactions(bot: telegram.Bot, update: telegram.Update) -> None:
 def tiktok_video(bot: telegram.Bot, update: telegram.Update) -> None:
     if not is_command_enabled_for_chat(update.message.chat_id, 'tiktokvideo'):
         return
-    message = update.effective_message
-    url = get_first_tiktok_url_from_message(message)
-    if url is None:
-        return
-    tiktok_video_async(message, url)
-
-
-@run_async
-def tiktok_video_async(message: telegram.Message, url) -> None:
-    process_message_for_tiktok(message, url)
+    process_message_for_tiktok(update.effective_message)
 
 
 def instagram_video(bot: telegram.Bot, update: telegram.Update) -> None:
-    if not instaloader_session_exists:
-        return
     if not is_command_enabled_for_chat(update.message.chat_id, 'instagram'):
         return
-    message = update.effective_message
-    post_id = get_first_instagram_post_id_from_message(message)
-    if post_id is None:
-        return
-    instagram_video_async(message, post_id)
-
-
-@run_async
-def instagram_video_async(message: telegram.Message, post_id) -> None:
-    process_message_for_instagram(message, post_id)
+    process_message_for_instagram(update.effective_message)
 
 
 def twitter_video(bot: telegram.Bot, update: telegram.Update) -> None:
     if not is_command_enabled_for_chat(update.message.chat_id, 'twitter_video'):
         return
-    message = update.effective_message
-    twitter_id = get_first_twitter_id_from_message(message)
-    if twitter_id is None:
-        return
-    twitter_video_async(message, twitter_id)
-
-
-@run_async
-def twitter_video_async(message: telegram.Message, twitter_id) -> None:
-    process_message_for_twitter(message, twitter_id)
+    process_message_for_twitter(update.effective_message)
 
 
 @run_async

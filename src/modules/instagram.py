@@ -4,7 +4,7 @@ from time import sleep
 from typing import Optional
 
 import telegram
-from telegram import MessageEntity, InputMediaPhoto
+from telegram import MessageEntity, InputMediaPhoto, ChatAction
 
 from packages.instaloader_proxy import instaloader, Post
 from src.config import CONFIG
@@ -36,6 +36,7 @@ def process_message_for_instagram(message: telegram.Message, post_id=None):
         return
 
     try:
+        message.chat.send_action(action=ChatAction.UPLOAD_PHOTO)
         images, videos = fetch_post(post_id)
         is_private = message.chat.id >= 0
 

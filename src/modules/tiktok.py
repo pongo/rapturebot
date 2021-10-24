@@ -33,6 +33,7 @@ def process_message_for_tiktok(message: telegram.Message, url=None):
         return
 
     try:
+        message.chat.send_action(action=ChatAction.UPLOAD_VIDEO)
         res = requests.post(f'http://localhost:3000/api/v1/tiktok-video', json={"video": url})
         if not res.ok:
             logger.error("Failed to request from TikBot API: %s" % res.status_code)
@@ -42,8 +43,6 @@ def process_message_for_tiktok(message: telegram.Message, url=None):
         fetch_key = lambda key: parse("$..%s" % key).find(item_infos)[0].value
 
         with CustomNamedTemporaryFile(suffix='.mp4') as f:
-            message.chat.send_action(action=ChatAction.UPLOAD_VIDEO)
-
             video_url = fetch_key("videoUrl")
             if len(video_url) == 0:
                 logger.error("Failed to find videoUrl in video meta: %s" % json.dumps(item_infos))
@@ -69,7 +68,7 @@ def process_message_for_tiktok(message: telegram.Message, url=None):
             )
             logger.info(f"Processed tiktok {url}")
     except Exception as e:
-        logger.error("Failed to download video %s: %s" % (url, repr(e)))
+        logger.error("Failed to download tiktok %s: %s" % (url, repr(e)))
         logger.error(e)
 
 def build_caption(fetch_key) -> str:

@@ -16,8 +16,11 @@ from src.dayof.day_manager import DayOfManager
 from src.dayof.helper import is_today_special
 from src.models.reply_top import LoveDumpTable
 from src.models.user import User
-from src.modules.instagram import process_message_for_instagram
-from src.modules.tiktok import process_message_for_tiktok
+from src.modules.instagram import process_message_for_instagram, \
+    get_first_instagram_post_id_from_message
+from src.modules.message_reactions import instagram_video_async, tiktok_video_async
+from src.modules.tiktok import process_message_for_tiktok, get_first_tiktok_url_from_message
+from src.modules.twitter import process_message_for_twitter, get_first_twitter_id_from_message
 from src.utils.cache import cache, TWO_DAYS
 from src.utils.handlers_decorators import only_users_from_main_chat
 from src.utils.logger_helpers import get_logger
@@ -150,15 +153,27 @@ def private(bot: telegram.Bot, update: telegram.Update):
     """
     Текст в личку бота.
     """
+
+    # первым делом проверяем наличие ссылок тиктока, инсты, твиттера
+    message = update.effective_message
+    twitter_id = get_first_twitter_id_from_message(message)
+    if twitter_id is not None:
+        process_message_for_twitter(message, twitter_id)
+        return
+    if instaloader_session_exists:
+        post_id = get_first_instagram_post_id_from_message(message)
+        if post_id is not None:
+            instagram_video_async(message, post_id)
+            return
+    tiktok_url = get_first_tiktok_url_from_message(message)
+    if tiktok_url is not None:
+        tiktok_video_async(message, tiktok_url)
+        return
+
+    # ну а если их, то идем по обычному пути
     DayOfManager.private_handler(bot, update)
     if is_today_special():
         return
-
-    message = update.effective_message
-
-    process_message_for_tiktok(message)
-    if instaloader_session_exists:
-        process_message_for_instagram(message)
     # ai(bot, update)
 
 

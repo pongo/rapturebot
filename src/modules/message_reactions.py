@@ -6,41 +6,12 @@ import telegram
 from telegram.ext import run_async
 
 import src.config as config
-from src.config import CMDS, CONFIG, instaloader_session_exists
-from src.modules.instagram import get_first_instagram_post_id_from_message, \
-    process_message_for_instagram
-from src.modules.last_word import last_word
-from src.modules.antimat.mat_notify import mat_notify
-from src.commands.orzik import orzik_correction
-from src.commands.welcome import send_welcome
-from src.modules.bayanometer import Bayanometer
-from src.commands.khaleesi.khaleesi import Khaleesi
-from src.models.chat_user import ChatUser
-from src.models.igor_weekly import IgorWeekly
-from src.models.leave_collector import LeaveCollector
-from src.models.pidor_weekly import PidorWeekly
-from src.models.user import User
-from src.commands.khaleesi.random_khaleesi import RandomKhaleesi
-from src.modules.tiktok import process_message_for_tiktok, get_first_tiktok_url_from_message
-from src.utils.cache import cache, TWO_DAYS, USER_CACHE_EXPIRE, pure_cache
-from src.utils.handlers_decorators import chat_guard, collect_stats, command_guard
-from src.utils.handlers_helpers import is_command_enabled_for_chat, \
-    check_command_is_off
-from src.utils.logger_helpers import get_logger
-from src.utils.time_helpers import get_current_monday_str, today_str
-import random
-import re
-
-import requests
-import telegram
-from telegram.ext import run_async
-
-import src.config as config
 from src.commands.khaleesi.khaleesi import Khaleesi
 from src.commands.khaleesi.random_khaleesi import RandomKhaleesi
 from src.commands.orzik import orzik_correction
 from src.commands.welcome import send_welcome
 from src.config import CMDS, CONFIG
+from src.config import instaloader_session_exists
 from src.models.chat_user import ChatUser
 from src.models.igor_weekly import IgorWeekly
 from src.models.leave_collector import LeaveCollector
@@ -48,8 +19,12 @@ from src.models.pidor_weekly import PidorWeekly
 from src.models.user import User
 from src.modules.antimat.mat_notify import mat_notify
 from src.modules.bayanometer import Bayanometer
+from src.modules.instagram import get_first_instagram_post_id_from_message, \
+    process_message_for_instagram
 from src.modules.last_word import last_word
+from src.modules.tiktok import get_first_tiktok_url_from_message
 from src.modules.tiktok import process_message_for_tiktok
+from src.modules.twitter import process_message_for_twitter, get_first_twitter_id_from_message
 from src.utils.cache import cache, TWO_DAYS, USER_CACHE_EXPIRE, pure_cache
 from src.utils.handlers_decorators import chat_guard, collect_stats, command_guard
 from src.utils.handlers_helpers import is_command_enabled_for_chat, \
@@ -75,6 +50,7 @@ def message(bot, update):
     Bayanometer.check(bot, update)
     tiktok_video(bot, update)
     instagram_video(bot, update)
+    twitter_video(bot, update)
     PidorWeekly.parse_message(update.message)
     IgorWeekly.parse_message(update.message)
     update_stickers(bot, update)
@@ -217,6 +193,21 @@ def instagram_video(bot: telegram.Bot, update: telegram.Update) -> None:
 @run_async
 def instagram_video_async(message: telegram.Message, post_id) -> None:
     process_message_for_instagram(message, post_id)
+
+
+def twitter_video(bot: telegram.Bot, update: telegram.Update) -> None:
+    if not is_command_enabled_for_chat(update.message.chat_id, 'twitter_video'):
+        return
+    message = update.effective_message
+    twitter_id = get_first_twitter_id_from_message(message)
+    if twitter_id is None:
+        return
+    twitter_video_async(message, twitter_id)
+
+
+@run_async
+def twitter_video_async(message: telegram.Message, twitter_id) -> None:
+    process_message_for_twitter(message, twitter_id)
 
 
 @run_async

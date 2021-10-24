@@ -151,9 +151,12 @@ def private(bot: telegram.Bot, update: telegram.Update):
     """
     Текст в личку бота.
     """
+    message = update.effective_message
+    if not User.get(message.from_user.id):
+        message.reply_text('Только для участников чатов с ботом')
+        return
 
     # первым делом проверяем наличие ссылок тиктока, инсты, твиттера
-    message = update.effective_message
     if process_message_for_twitter(message):
         return
     if process_message_for_instagram(message):

@@ -133,12 +133,7 @@ def message_reactions(bot: telegram.Bot, update: telegram.Update) -> None:
         ])
         return
     if msg_lower == 'без':
-        send_random_sticker(bot, chat_id, [
-            'BQADAgADXgADRd4ECHiiriOI0A51Ag',
-            'BQADAgADWgADRd4ECHfSw52J6tn5Ag',
-            'BQADAgADXAADRd4ECC4HwcwErfUcAg',
-            'BQADAgADzQADRd4ECNFByeY4RuioAg',
-        ])
+        send_random_sticker_from_stickerset(bot, chat_id, 'Bezborodov')
         return
     if msg_lower == 'кек':
         send_random_sticker_from_stickerset(bot, chat_id, 'Kekopack')

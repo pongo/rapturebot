@@ -159,6 +159,7 @@ def send_replytop(bot, chat_id, prev_monday):
 
 def send_pidorweekly(bot, chat_id, prev_monday):
     uid = PidorWeekly.get_top_pidor(chat_id, prev_monday)
+    logger.info(f"pidor {chat_id}:{uid}")
     if not uid:
         return
     user = User.get(uid)
@@ -215,26 +216,30 @@ def weekly_stats(bot: telegram.Bot, _) -> None:
 def send_weekly_for_chat(bot: telegram.Bot, chat_id: int, disabled_commands: typing.List[str],
                          enabled_commands: typing.List[str], prev_monday: datetime) -> None:
     logger.info(f'weekly_stats for chat {chat_id}')
-    send_stats(bot, chat_id, 'Стата за прошлую неделю',
-               CMDS['admins']['all_stat']['name'], prev_monday)
-    sleep(1)
-    send_stats(bot, chat_id, 'Стата за прошлую неделю',
-               CMDS['admins']['silent_guys']['name'], prev_monday, tag_salo=True)
-    sleep(1)
-    if 'weeklystat:top_kroshka' not in disabled_commands:
-        send_top_kroshka(bot, chat_id, prev_monday)
+    try:
+        send_stats(bot, chat_id, 'Стата за прошлую неделю',
+                   CMDS['admins']['all_stat']['name'], prev_monday)
         sleep(1)
-    if 'weeklystat:pidorweekly' not in disabled_commands:
-        send_pidorweekly(bot, chat_id, prev_monday)
+        send_stats(bot, chat_id, 'Стата за прошлую неделю',
+                   CMDS['admins']['silent_guys']['name'], prev_monday, tag_salo=True)
         sleep(1)
-    if 'weeklystat:igorweekly' in enabled_commands:
-        send_igorweekly(bot, chat_id, prev_monday)
+        if 'weeklystat:top_kroshka' not in disabled_commands:
+            send_top_kroshka(bot, chat_id, prev_monday)
+            sleep(1)
+        if 'weeklystat:pidorweekly' not in disabled_commands:
+            send_pidorweekly(bot, chat_id, prev_monday)
+            sleep(1)
+        if 'weeklystat:igorweekly' in enabled_commands:
+            send_igorweekly(bot, chat_id, prev_monday)
+            sleep(1)
+        send_replytop(bot, chat_id, prev_monday)
         sleep(1)
-    send_replytop(bot, chat_id, prev_monday)
-    sleep(1)
-    send_alllove(bot, chat_id, prev_monday)
-    sleep(1)
-    send_alllove_outbound(bot, chat_id, prev_monday)
-    sleep(1)
-    send_topmat(bot, chat_id, chat_id, prev_monday)
-    sleep(1)
+        send_alllove(bot, chat_id, prev_monday)
+        sleep(1)
+        send_alllove_outbound(bot, chat_id, prev_monday)
+        sleep(1)
+        send_topmat(bot, chat_id, chat_id, prev_monday)
+        sleep(1)
+    except Exception as e:
+        logger.error("Failed to send weekly stats to %s: %s" % (chat_id, repr(e)))
+        logger.error(e)

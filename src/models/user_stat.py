@@ -702,6 +702,7 @@ ORDER BY `count` DESC
         else:
             _, user = random.choice(q)
             uid = user.uid
+        logger.info(f"kroshka {cid}:{uid}")
         user = User.get(uid)
         return user
 

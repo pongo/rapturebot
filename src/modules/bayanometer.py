@@ -121,16 +121,19 @@ class Photo:
 
     class PhotoHasher:
         @classmethod
-        def get_hashes(cls, url: str) -> List[Tuple[str, str]]:
+        def get_hashes_and_sizes(cls, url: str) -> Tuple[List[Tuple[str, str]], Tuple[int, int]]:
             response = requests.get(url)
-            img = cls.__prepare_img(Image.open(BytesIO(response.content)))
-            return [
+            im = Image.open(BytesIO(response.content))
+            img = cls.__prepare_img(im)
+            hashes = [
                 ('phash', str(imagehash.phash(img))),
                 # ('dhash', str(imagehash.dhash(img))),
                 # ('average_hash', str(imagehash.average_hash(img))),
                 # ('phash_simple', str(imagehash.phash_simple(img))),
                 # ('whash', str(imagehash.whash(img))),
             ]
+            width, height = im.size
+            return hashes, (width, height)
 
         @staticmethod
         def __prepare_img(image) -> Image:
@@ -203,7 +206,12 @@ class Photo:
 
     @classmethod
     def __check(cls, url, chat_id, message_id, user_id: int) -> Optional['Photo']:
-        hashes = cls.PhotoHasher.get_hashes(url)
+        hashes, sizes = cls.PhotoHasher.get_hashes_and_sizes(url)
+
+        width, height = sizes
+        if width < 200 or height < 200:
+            return None
+
         cls.__save(url, chat_id, message_id)
         photo = None
         for hash_method, hash_value in hashes:
@@ -256,7 +264,7 @@ class Photo:
 
     @classmethod
     def __compare_hashes(cls, url, chat_id, orig_msg_id) -> str:
-        hashes = cls.PhotoHasher.get_hashes(url)
+        hashes, sizes = cls.PhotoHasher.get_hashes_and_sizes(url)
         result = []
         show_footnote = False
         for hash_method, hash_value in hashes:

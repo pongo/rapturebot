@@ -1,7 +1,7 @@
 SQLAlchemy==1.1.1
 python-telegram-bot==10.1.0
 requests==2.26.0
-arrow==0.12.1
+arrow==0.15.1
 pycryptodome==3.6.6
 emoji==0.4.5
 pytils==0.3

@@ -155,8 +155,7 @@ class ChannelMessage:
     def send(self, bot: telegram.Bot) -> None:
         self.text = self.__prepare_text()
         buttons = self.__get_buttons()
-        self.telegram_message_id = TelegramWrapper.send_message(bot, self.text,
-                                                                matshowtime.channel_id, buttons)
+        self.telegram_message_id = TelegramWrapper.send_message(bot, self.text, matshowtime.channel_id)
         if not self.telegram_message_id:
             logger.error(f"[{CACHE_PREFIX}] Can't send message {self.id}")
             return

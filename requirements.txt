@@ -17,5 +17,5 @@ Pillow==8.4.0
 ImageHash==4.2.1
 PySocks==1.6.8
 jsonpath-ng==1.5.3
-instaloader==4.8.1
+instaloader==4.9.5
 tweepy==4.1.0

@@ -23,7 +23,7 @@ from src.utils.cache import cache, TWO_DAYS
 from src.utils.handlers_decorators import only_users_from_main_chat
 from src.utils.logger_helpers import get_logger
 from src.utils.misc import weighted_choice
-from src.utils.telegram_helpers import dsp, telegram_retry
+from src.utils.telegram_helpers import dsp, telegram_retry, send_long
 
 logger = get_logger(__name__)
 
@@ -65,9 +65,8 @@ def year(bot: telegram.Bot, update: telegram.Update) -> None:
         return
 
     from src.models.user_stat import UserStat
-    from src.modules.weeklystat import send_long
-    bot.send_chat_action(uid, telegram.chataction.ChatAction.TYPING)
 
+    bot.send_chat_action(uid, telegram.chataction.ChatAction.TYPING)
     cid = CONFIG.get('anon_chat_id')
     # cid = -48952907
     year = 2017
@@ -146,6 +145,10 @@ def anon(bot: telegram.Bot, update: telegram.Update) -> None:
     bot.send_message(cid, text, disable_web_page_preview=True)
 
 
+@only_users_from_main_chat
+def twitter(_bot: telegram.Bot, update: telegram.Update) -> None:
+    process_message_for_twitter(update.effective_message, True)
+
 @run_async
 def private(bot: telegram.Bot, update: telegram.Update):
     """
@@ -174,6 +177,8 @@ def private(bot: telegram.Bot, update: telegram.Update):
 @run_async
 def help(bot: telegram.Bot, update: telegram.Update):
     DayOfManager.private_help_handler(bot, update)
+    # remove keyboard
+    bot.send_message(update.message.chat_id, 'ok', reply_markup=(telegram.ReplyKeyboardRemove()))
 
 
 @run_async

@@ -1,6 +1,7 @@
 import html
 import json
 import re
+import os
 import shutil
 from typing import Union
 
@@ -13,7 +14,7 @@ from src.utils.logger_helpers import get_logger
 from src.utils.misc import CustomNamedTemporaryFile
 
 logger = get_logger(__name__)
-re_tiktok_url = re.compile(r"^https:\/\/(www|m|vm)\.tiktok\.com\/.+$")
+re_tiktok_url = re.compile(r"^https:\/\/(www|m|vm|vt)\.tiktok\.com\/.+$")
 
 SEND_VIDEO_SIZE_LIMIT = 50 * 1048576  # 50mb https://core.telegram.org/bots/api#sendvideo
 
@@ -31,10 +32,12 @@ def process_message_for_tiktok(message: telegram.Message) -> bool:
     url = get_first_tiktok_url_from_message(message)
     if url is None:
         return False
+    url = url.replace('vt.tiktok', 'vm.tiktok')
     call(message, url)
     return True
 
 
+# yt-dlp тоже умеет тиктоки скачивать. через --max-filesize можно задать ограничение в 50 мб
 def call(message: telegram.Message, url: str):
     try:
         message.chat.send_action(action=ChatAction.UPLOAD_VIDEO)
@@ -47,6 +50,7 @@ def call(message: telegram.Message, url: str):
         fetch_key = lambda key: parse("$..%s" % key).find(item_infos)[0].value
 
         video_url = fetch_key("videoUrl")
+        #logger.info(video_url)
         if len(video_url) == 0:
             logger.error("Failed to find videoUrl in video meta: %s" % json.dumps(item_infos))
             message.reply_html(
@@ -54,16 +58,30 @@ def call(message: telegram.Message, url: str):
             return
 
         with CustomNamedTemporaryFile(suffix='.mp4') as f:
-            with requests.get(video_url, stream=True, headers=item_infos.get("headers", {})) as r:
+            tmp_url = video_url #.replace('https://v1.musicaldown.com/dl?url=', 'https://muscdn.xyz/dl?url=')
+            with requests.get(tmp_url, stream=True, headers=item_infos.get("headers", { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:101.0) Gecko/20100101 Firefox/101.0' })) as r:
                 if not r.ok:
-                    logger.debug(f"Failed to download video {item_infos}")
-                    message.reply_html(f"Could not download video \U0001f613, TikTok gave a bad response \U0001f97a ({r.status_code})")
+                    logger.info(f"Failed to download video {item_infos}")
+                    message.reply_html(f"""Could not download video \U0001f613, TikTok gave a bad response \U0001f97a ({r.status_code}). <a href="{video_url}">Video</a>""")
                     return
-                file_size = int(r.headers['Content-length'])
+                #logger.info(r.headers)
+                file_size = int(r.headers.get('Content-length', 0))
+                #if file_size == 0:
+                    #message.reply_html(f"<a href='{video_url}'>Video</a>")
+                    #return
                 if file_size >= SEND_VIDEO_SIZE_LIMIT:
                     message.reply_html(f"Телеграм не дает отправить видео больше 50 мб. Качайте сами:\n\n{video_url}")
                     return
+                r.raw.decode_content = True
                 shutil.copyfileobj(r.raw, f)
+                
+            with open(f.name, "rb") as infile:
+                infile.seek(0, os.SEEK_END)
+                filesize = infile.tell()
+                #logger.info(filesize)
+                if filesize >= SEND_VIDEO_SIZE_LIMIT:
+                    message.reply_html(f"Телеграм не дает отправить видео больше 50 мб. Качайте сами:\n\n{video_url}")
+                    return
 
             message.reply_video(
                 video=open(f.name, "rb"),
@@ -78,19 +96,22 @@ def call(message: telegram.Message, url: str):
 
 
 def build_caption(fetch_key):
-    video_caption = fetch_key("text")
-    if "#" in video_caption:
-        video_caption = video_caption.split("#")[0]
+    try:
+        video_caption = fetch_key("text")
+        if "#" in video_caption:
+            video_caption = video_caption.split("#")[0]
 
-    likes = space_thousand(int(fetch_key("diggCount") or 0))
-    comments = space_thousand(int(fetch_key("commentCount") or 0))
-    plays = space_thousand(int(fetch_key("playCount") or 0))
+        likes = space_thousand(int(fetch_key("diggCount") or 0))
+        comments = space_thousand(int(fetch_key("commentCount") or 0))
+        plays = space_thousand(int(fetch_key("playCount") or 0))
 
-    video_caption = html.escape(video_caption.strip())
-    for mention in fetch_key("mentions"):
-        video_caption = video_caption.replace(mention, f"<a href='https://tiktok.com/{mention}'>{mention}</a>")
+        video_caption = html.escape(video_caption.strip())
+        for mention in fetch_key("mentions"):
+            video_caption = video_caption.replace(mention, f"<a href='https://tiktok.com/{mention}'>{mention}</a>")
 
-    return f"{video_caption}\n\n❤ {likes}\n💬 {comments}\n⏯ {plays}"
+        return f"{video_caption}\n\n❤ {likes}\n💬 {comments}\n⏯ {plays}"
+    except:
+        return ''
 
 
 def space_thousand(num: Union[int, float]):

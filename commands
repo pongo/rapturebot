@@ -68,6 +68,10 @@
       "name": "music",
       "description": "Музкружок"
     },
+    "flip": {
+      "name": "flip",
+      "description": "Флипкружок"
+    },
     "pipixel": {
       "name": "pipixel",
       "description": "Чувакдруг"
@@ -160,6 +164,7 @@
     "huyamda": ["huyambda", "huyamba"],
     "weather": ["p", "w", "pogoda"],
     "music": ["m"],
+    "flip": ["f", "n", "nft"],
     "iall": ["iall", "alli"],
     "hakeem": ["hakeem", "hakem", "hakim", "hakiim", "hackim", "hackeem", "huakem", "huakim", "hoakim", "hoakem", "hoakeem"]
   }

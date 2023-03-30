@@ -1,9 +1,11 @@
 import re
+from time import sleep
 from typing import Optional
 
+import requests
 import telegram
 import tweepy
-from telegram import MessageEntity, ChatAction
+from telegram import MessageEntity, ChatAction, InputMediaPhoto
 
 from src.config import CONFIG
 from src.utils.logger_helpers import get_logger
@@ -15,6 +17,7 @@ consumer_secret = twitter_auth.get('consumer_secret')
 access_token = twitter_auth.get('access_token')
 access_token_secret = twitter_auth.get('access_token_secret')
 re_twitter_url = re.compile(r"https?:\/\/twitter.com\/[0-9-a-zA-Z_]{1,20}\/status\/([0-9]*)")
+twitter_third_api_key = CONFIG.get('twitter_third_api_key', None)
 
 if consumer_key is not None:
     auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
@@ -34,7 +37,11 @@ def get_first_twitter_id_from_message(message: telegram.Message):
     return None
 
 
-def process_message_for_twitter(message: telegram.Message) -> bool:
+def twitter_cmd(_bot: telegram.Bot, update: telegram.Update) -> None:
+    process_message_for_twitter(update.effective_message, True)
+
+
+def process_message_for_twitter(message: telegram.Message, use_third_api=False) -> bool:
     """
     Отправляет видео из первой твиттер-ссылки, если она есть
     :return: False, если твиттер-ссылки нет
@@ -44,35 +51,144 @@ def process_message_for_twitter(message: telegram.Message) -> bool:
     twitter_id = get_first_twitter_id_from_message(message)
     if twitter_id is None:
         return False
-    call(message, twitter_id)
+    call(message, twitter_id, use_third_api)
     return True
 
 
-def call(message: telegram.Message, twitter_id: str):
+# https://rapidapi.com/Glavier/api/twitter135/
+def get_status_via_third_api(twitter_id: str):
+    if twitter_third_api_key is None:
+        return
+
+    api_url = "https://twitter135.p.rapidapi.com/TweetDetail/"
+    # api_url = "https://88b2b16c-e4a8-4e68-8dbf-b888b267fc68.mock.pstmn.io/TweetDetail/"
+    response = requests.request("GET", api_url, headers={
+        "X-RapidAPI-Key": twitter_third_api_key,
+        "X-RapidAPI-Host": "twitter135.p.rapidapi.com"
+    }, params={"id": twitter_id})
+
+    if response.status_code != 200:
+        return None
+    try:
+        json = response.json()
+        entries = json['data']['threaded_conversation_with_injections']['instructions'][0]['entries']
+        for entry in entries:
+            if entry['entryId'] != f"tweet-{twitter_id}":
+                continue
+            result = entry['content']['itemContent']['tweet_results']['result']
+            if 'legacy' in result:
+                data = result['legacy']
+            elif 'tweet' in result and 'legacy' in result['tweet']:
+                data = result['tweet']['legacy']
+            else:
+                return None
+            return AttrDict(data)
+        return None
+    except:
+        return None
+
+
+class StatusDict(dict):
+    """
+    dot.notation access to dictionary attributes
+    https://stackoverflow.com/a/72761907/136559
+    """
+    __getattr__ = dict.get
+    __setattr__ = dict.__setitem__
+    __delattr__ = dict.__delitem__
+
+
+class AttrDict(dict):
+    """
+    https://stackoverflow.com/a/14620633/136559
+    """
+    def __init__(self, *args, **kwargs):
+        super(AttrDict, self).__init__(*args, **kwargs)
+        self.__dict__ = self
+
+
+def call(message: telegram.Message, twitter_id: str, use_third_api=False):
     try:
         message.chat.send_action(action=ChatAction.UPLOAD_VIDEO)
-        video_urls = get_urls_of_video(twitter_id)
-        if not video_urls:
+        is_private = message.chat.id >= 0
+        # if use_third_api:
+        #     status = get_status_via_third_api(twitter_id)
+        # else:
+        #     status = api.get_status(twitter_id, tweet_mode='extended')
+        if use_third_api:
+            status = api.get_status(twitter_id, tweet_mode='extended')
+        else:
+            status = get_status_via_third_api(twitter_id)
+            if status is None:
+                logger.error(f"Third twitter api returns None for {twitter_id}")
+                status = api.get_status(twitter_id, tweet_mode='extended')
+        text = status.full_text if hasattr(status, 'full_text') else ''
+        if not hasattr(status, 'extended_entities'):
+            message.reply_text(text)
             return
-        message.reply_html(f"<a href='{video_urls[0]}'>Video</a>")
+        photos_urls = get_urls_of_photos(status)
+        video_urls = get_urls_of_video(status, is_private)
+        if video_urls:
+            if len(video_urls) == 1:
+                message.reply_html(f"<a href='{video_urls[0]}'>Video</a>\n\n{text}")
+            if len(video_urls) > 1:
+                for num, video in enumerate(video_urls, start=1):
+                    end = f"\n\n{text}" if num == 1 else ''
+                    message.reply_html(f"<a href='{video}'>Video {num}</a>{end}")
+                    sleep(1)
+        if photos_urls:
+            if len(photos_urls) == 1:
+                message.reply_photo(photos_urls[0], filename=f"{twitter_id}.jpg", caption=text)
+            else:
+                message.reply_media_group([
+                    InputMediaPhoto(url)  # , filename=f"{post_id}-{i + 1}.jpg")
+                    for i, url in enumerate(photos_urls)
+                ])
+                sleep(1)
+                message.reply_text(text, disable_web_page_preview=True)
         logger.info(f"Processed twitter {twitter_id}")
     except Exception as e:
         logger.error("Failed to download twitter %s: %s" % (twitter_id, repr(e)))
         logger.error(e)
 
 
-def get_urls_of_video(twitter_id):
+def get_urls_of_photos(status):
+    if not hasattr(status, 'extended_entities'):
+        return []
+    return [
+        media['media_url_https']
+        for media in status.extended_entities['media']
+        if media['type'] == 'photo'
+    ]
+
+
+def get_urls_of_video(status, best_quality=False):
     """
     Возвращает массив урлов разного качества на видео из твита.
     """
-    status = api.get_status(twitter_id, tweet_mode='extended')
-    if status.extended_entities and status.extended_entities['media'][0]['type'] == "video":
-        return [
-            file['url']
-            for file in status.extended_entities['media'][0]['video_info']['variants']
+    if not hasattr(status, 'extended_entities'):
+        return []
+    video_urls = []
+    for media in status.extended_entities['media']:
+        if media['type'] == "photo":
+            continue
+        urls_bitrate = [
+            (file['url'], file['bitrate'])
+            for file in media['video_info']['variants']
             if file['content_type'] == "video/mp4"
         ]
-    return []
+        if not urls_bitrate:
+            continue
+        if best_quality:
+            urls_bitrate.sort(key=lambda x: x[1], reverse=True)  # сначала самые большие видео
+            video_urls.append(urls_bitrate[0][0])
+        else:
+            urls_bitrate.sort(key=lambda x: x[1], reverse=False)
+            if len(urls_bitrate) > 1:
+                video_urls.append(urls_bitrate[1][0])  # среднее качество
+            else:
+                video_urls.append(urls_bitrate[0][0])
+    return video_urls
 
 
 def parse_twitter_id(text: str) -> Optional[str]:

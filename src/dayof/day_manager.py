@@ -29,7 +29,7 @@ class DayOfManager:
         # ValentineDay.midnight(bot)
         ValentineDay2.midnight(bot)
         midnight8(bot)
-        new_year(bot)
+        # new_year(bot)
 
     @staticmethod
     def morning(bot: telegram.Bot) -> None:

@@ -5,6 +5,7 @@ from telegram.ext import run_async
 
 from src.config import get_config_chats
 from src.dayof.day_manager import DayOfManager
+from src.models.cringe_monthly import send_monthly_cringe_for_chat
 from src.models.leave_collector import LeaveCollector
 from src.models.reply_top import ReplyDumper
 from src.commands.weather import send_alert_if_full_moon
@@ -23,9 +24,14 @@ def daily_midnight(bot: telegram.Bot, _):
         if 'daily_full_moon_check' in chat.enabled_commands:
             send_alert_if_full_moon(bot, chat.chat_id)
 
+    today = datetime.today()
     for chat in get_config_chats():
-        if is_command_enabled_for_chat(chat.chat_id, 'weeklystat'):
-            ReplyDumper.dump(chat.chat_id)
+        chat_id = chat.chat_id
+        if is_command_enabled_for_chat(chat_id, 'weeklystat'):
+            ReplyDumper.dump(chat_id)
+        if is_command_enabled_for_chat(chat_id, 'monthly:cringe'):
+            if today.day == 1:
+                send_monthly_cringe_for_chat(bot, chat_id)
 
 
 @run_async

@@ -438,7 +438,8 @@ class FSBDayModel:
             • Заявляю/сообщаю, что я/мною/мне/меня/мной/мы
             • Хочу чистосердечно заявить/раскаяться
             """).strip()
-        buttons = [["/help"]]
+        # buttons = [["/help"]]
+        buttons = []
         return text, buttons
 
     @staticmethod

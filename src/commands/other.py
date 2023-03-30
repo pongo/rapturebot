@@ -1,5 +1,6 @@
 import random
 import re
+from datetime import datetime
 from typing import List
 
 import telegram
@@ -13,7 +14,7 @@ from src.modules.message_reactions import send_gdeleha, send_pidor
 from src.models.leave_collector import LeaveCollector
 from src.models.user import User
 from src.commands.huificator import huificator
-from src.utils.cache import cache
+from src.utils.cache import cache, bot_id
 from src.utils.callback_helpers import get_callback_data
 from src.utils.handlers_decorators import chat_guard, collect_stats, command_guard
 from src.utils.handlers_helpers import is_command_enabled_for_chat, \
@@ -298,3 +299,15 @@ def pipixel_handler(bot: telegram.Bot, update: telegram.Update) -> None:
     chat_id, text, reply_to_message_id = result
     new_msg = pipixel(text, drug)
     bot.send_message(chat_id, new_msg, reply_to_message_id=reply_to_message_id)
+
+
+@run_async
+@chat_guard
+@collect_stats
+@command_guard
+def lastsenya(bot: telegram.Bot, update: telegram.Update):
+    message = update.message
+    chat_id = message.chat_id
+    if not is_command_enabled_for_chat(chat_id, 'osenya'):
+        return
+    bot.send_photo(chat_id, open('../rapture-vision-api-nodejs/output.jpg', 'rb'), reply_to_message_id=message.message_id)

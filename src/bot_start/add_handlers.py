@@ -1,19 +1,23 @@
 from telegram.ext import CommandHandler, MessageHandler, Filters, CallbackQueryHandler
 
 from src.commands.ask import ask_handler as ask
+from src.commands.flip import flip_handler, flipadd_handler, flipdel_handler
 from src.commands.khaleesi import khaleesi_handler
 from src.commands.pipinder import repinder, pipinder
 from src.config import CMDS
 from src.commands.callbacks import callback_handler
 from src.commands.ment.ment_handler import ment_handler
+from src.models.cringe_monthly import topcringe
 from src.modules.message_reactions import message
 from src.commands.music.music_handler import musicadd_handler, musicdel_handler, music_handler
 from src.commands.mylove import mylove, alllove, private_mylove
 from src.commands.mystat import mystat, whois, private_whois, private_mystat
 from src.commands.on_off import off_cmd, off_cmd_for_user, on_cmd, on_cmd_for_user
 from src.commands.orzik import orzik, lord
-from src.commands.other import rules, love, papa, pomogite, huificator_handler, leave, expert, anketa, \
-    putin, changelog, gdeleha, kick, pidor, pipixel_handler
+from src.commands.other import rules, love, papa, pomogite, huificator_handler, leave, expert, \
+    anketa, \
+    putin, changelog, gdeleha, kick, pidor, pipixel_handler, lastsenya
+from src.modules.twitter import twitter_cmd
 from src.modules.weeklystat import stats
 from src.commands.welcome import welcome
 from src.commands import private, topmat
@@ -123,12 +127,22 @@ def add_chat_handlers(dp):
     dp.add_handler(
         CommandHandler(CMDS['hidden']['musicdel']['name'], musicdel_handler, filters=cmd_filter))
 
+    dp.add_handler(CommandHandler(CMDS['common']['flip']['name'], flip_handler, filters=cmd_filter))
+    dp.add_handler(CommandHandler('f', flip_handler, filters=cmd_filter))
+    dp.add_handler(CommandHandler('nft', flip_handler, filters=cmd_filter))
+    dp.add_handler(CommandHandler('n', flip_handler, filters=cmd_filter))
+    dp.add_handler(CommandHandler('flipadd', flipadd_handler, filters=cmd_filter))
+    dp.add_handler(CommandHandler('flipdel', flipdel_handler, filters=cmd_filter))
+
     dp.add_handler(CommandHandler(CMDS['hidden']['i']['name'], cmd_i, filters=cmd_filter))
     dp.add_handler(CommandHandler(CMDS['hidden']['iall']['name'], cmd_iall, filters=cmd_filter))
     dp.add_handler(CommandHandler('alli', cmd_iall, filters=cmd_filter))
     # dp.add_handler(CommandHandler('iban', cmd_iban, filters=cmd_filter))
 
     dp.add_handler(CommandHandler(CMDS['hidden']['8']['name'], command_8, filters=cmd_filter))
+    dp.add_handler(CommandHandler('lastsenya', lastsenya, filters=cmd_filter))
+    dp.add_handler(CommandHandler('twitter', twitter_cmd, filters=cmd_filter))
+    dp.add_handler(CommandHandler('topcringe', topcringe, filters=cmd_filter))
 
     # должно идти в конце
     dp.add_handler(MessageHandler(Filters.group & Filters.all, message))
@@ -173,6 +187,7 @@ def add_private_handlers(dp):
     dp.add_handler(CommandHandler('anon', private.anon, filters=Filters.private & Filters.command))
     dp.add_handler(CommandHandler('year', private.year, filters=Filters.private & Filters.command))
     dp.add_handler(CommandHandler('send_to_all_chats', private.send_to_all_chats_handler, filters=Filters.private & Filters.command))
+    dp.add_handler(CommandHandler('twitter', private.twitter, filters=Filters.private & Filters.command))
 
     # должно идти в конце
     private_filters = Filters.private & (

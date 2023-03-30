@@ -12,6 +12,7 @@ import emoji_fixed as emoji
 import src.config as config
 from src.config import CMDS
 from src.commands.topmat import send_topmat
+from src.models.cringe_monthly import CringeMonthly
 from src.models.igor_weekly import IgorWeekly
 from src.models.pidor_weekly import PidorWeekly
 from src.models.reply_top import ReplyTop, ReplyLove
@@ -23,13 +24,9 @@ from src.utils.handlers_helpers import is_command_enabled_for_chat, \
     get_command_name, check_admin
 from src.utils.logger_helpers import get_logger
 from src.utils.misc import get_int, chunks
-from src.utils.telegram_helpers import dsp
+from src.utils.telegram_helpers import dsp, send_long
 
 logger = get_logger(__name__)
-
-def send_long(bot: telegram.Bot, chat_id: int, msg: str):
-    for chunk in chunks(msg, 4096):
-        dsp(bot.send_message, chat_id, chunk, parse_mode=ParseMode.HTML)
 
 
 @run_async

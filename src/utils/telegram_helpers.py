@@ -4,9 +4,11 @@ from functools import wraps
 from typing import List, Optional
 
 import telegram
+from telegram import ParseMode
 from telegram.ext import DelayQueue
 
 from src.utils.logger_helpers import get_logger
+from src.utils.misc import chunks
 from src.utils.mwt import MWT
 
 logger = get_logger(__name__)
@@ -76,3 +78,8 @@ def get_chat_admins(bot: telegram.Bot, chat_id: int) -> List[telegram.ChatMember
 @telegram_retry(logger=logger, title='get_photo_url')
 def get_photo_url(bot: telegram.Bot, message: telegram.Message) -> str:
     return bot.get_file(message.photo[-1].file_id).file_path
+
+
+def send_long(bot: telegram.Bot, chat_id: int, msg: str):
+    for chunk in chunks(msg, 4096):
+        dsp(bot.send_message, chat_id, chunk, parse_mode=ParseMode.HTML)

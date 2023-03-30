@@ -62,7 +62,7 @@ def check_admin(bot, chat_id, user_id):
     if user_id in CONFIG['admins_ids']:
         return True
 
-    admins = get_chat_admins(bot, chat_id)
+    admins = get_chat_admins(bot, chat_id) or []
     return any(user_id == admin.user.id for admin in admins)
 
 

@@ -1,18 +1,14 @@
-"""
-Команды для музкружка
-"""
-
 import textwrap
 from functools import wraps
 from typing import List, Set, Iterable
 
 import telegram
 
-from src.commands.music.utils import get_args, find_users
-from src.config import CONFIG
+from src.commands.music.utils import find_users, get_args
 from src.models.chat_user import ChatUser
 from src.models.user import User
-from src.utils.cache import cache, YEAR
+from src.utils.cache import cache, TWO_YEARS
+from src.utils.handlers_decorators import chat_guard, collect_stats, command_guard
 from src.utils.handlers_helpers import check_admin
 from src.utils.logger_helpers import get_logger
 from src.utils.misc import chunks
@@ -20,61 +16,82 @@ from src.utils.telegram_helpers import dsp
 from src.utils.telegram_helpers import telegram_retry
 
 logger = get_logger(__name__)
-CACHE_KEY = 'music'
+CACHE_KEY = 'flip'
 
 
-def only_who_can_manage_music_users(func):
+@chat_guard
+@collect_stats
+@command_guard
+def flip_handler(bot: telegram.Bot, update: telegram.Update) -> None:
+    flip(bot, update)
+
+
+@chat_guard
+@collect_stats
+@command_guard
+def flipadd_handler(bot: telegram.Bot, update: telegram.Update) -> None:
+    flipadd(bot, update)
+
+
+@chat_guard
+@collect_stats
+@command_guard
+def flipdel_handler(bot: telegram.Bot, update: telegram.Update) -> None:
+    flipdel(bot, update)
+
+
+def only_who_can_manage_flip_users(func):
     """
-    Декоратор. Командой могут пользоватьсся только участники музкружка.
+    Декоратор. Командой могут пользоватьсся только участники флипкружка.
     """
 
     @wraps(func)
     def decorator(bot: telegram.Bot, update: telegram.Update):
         message = update.message
-        if not can_manage_music_users(bot, message.chat_id, message.from_user.id):
+        if not can_manage_flip_users(bot, message.chat_id, message.from_user.id):
             return bot.send_message(message.chat_id,
-                                    'Только админы чата и членессы музкружка могут делать это',
+                                    'Только админы чата и членессы флипкружка могут делать это',
                                     reply_to_message_id=message.message_id)
         return func(bot, update)
 
     return decorator
 
 
-def can_manage_music_users(bot: telegram.Bot, chat_id: int, uid: int) -> bool:
+def can_manage_flip_users(bot: telegram.Bot, chat_id: int, uid: int) -> bool:
     """
-    Может ли пользователь uid добавлять/удалять участников музкружка?
+    Может ли пользователь uid добавлять/удалять участников флипкружка?
     """
     if check_admin(bot, chat_id, uid):
         return True
-    if is_music_user(chat_id, uid):
+    if is_flip_user(chat_id, uid):
         return True
     return False
 
 
-def get_music_users(chat_id: int) -> Set[int]:
+def get_flip_users(chat_id: int) -> Set[int]:
     """
-    Возвращает список uid участников музкружка в этом чате.
+    Возвращает список uid участников флипкружка в этом чате.
     """
     return set(cache.get(f'{CACHE_KEY}:{chat_id}:uids', []))
 
 
-def set_music_users(chat_id: int, uids: Iterable[int]) -> None:
+def set_flip_users(chat_id: int, uids: Iterable[int]) -> None:
     """
-    Назначает список участников музкружка в чате.
+    Назначает список участников флипкружка в чате.
     """
-    cache.set(f'{CACHE_KEY}:{chat_id}:uids', set(uids), time=YEAR)
+    cache.set(f'{CACHE_KEY}:{chat_id}:uids', set(uids), time=TWO_YEARS)
 
 
-def is_music_user(chat_id: int, uid: int) -> bool:
+def is_flip_user(chat_id: int, uid: int) -> bool:
     """
-    Это участник музкружка?
+    Это участник флипкружка?
     """
-    return uid in get_music_users(chat_id)
+    return uid in get_flip_users(chat_id)
 
 
 def get_manage_users_text(action: str, not_found_usernames, found_usernames) -> str:
     """
-    Возвращает шаблонную строку для команд /musicadd /musicdel.
+    Возвращает шаблонную строку для команд /flipadd /flipdel.
     Список добавленны/удаленных юзернеймов, список ненайденных.
     """
     text = ''
@@ -89,29 +106,29 @@ def get_manage_users_text(action: str, not_found_usernames, found_usernames) -> 
 
 def add_users(bot: telegram.Bot, message: telegram.Message, usernames: List[str]) -> None:
     """
-    Добавляет указанные юзернеймы в участники музкружка чата этого сообщения.
+    Добавляет указанные юзернеймы в участники флипкружка чата этого сообщения.
     """
     not_found_usernames, found_uids, found_usernames = find_users(message, usernames)
     chat_id = message.chat_id
     if found_uids:
-        music_uids = get_music_users(chat_id)
-        music_uids.update(found_uids)
-        set_music_users(chat_id, music_uids)
-    text = get_manage_users_text('Добавлены в музкружок', not_found_usernames, found_usernames)
+        flip_uids = get_flip_users(chat_id)
+        flip_uids.update(found_uids)
+        set_flip_users(chat_id, flip_uids)
+    text = get_manage_users_text('Добавлены в флипкружок', not_found_usernames, found_usernames)
     bot.send_message(chat_id, text, reply_to_message_id=message.message_id)
 
 
 def del_users(bot: telegram.Bot, message: telegram.Message, usernames: List[str]) -> None:
     """
-    Удаляет указанные юзернеймы из участников музкружка чата этого сообщения.
+    Удаляет указанные юзернеймы из участников флипкружка чата этого сообщения.
     """
     not_found_usernames, found_uids, found_usernames = find_users(message, usernames)
     chat_id = message.chat_id
     if found_uids:
-        music_uids = get_music_users(chat_id)
-        music_uids = music_uids - found_uids
-        set_music_users(chat_id, music_uids)
-    text = get_manage_users_text('Удалены из музкружка', not_found_usernames, found_usernames)
+        flip_uids = get_flip_users(chat_id)
+        flip_uids = flip_uids - found_uids
+        set_flip_users(chat_id, flip_uids)
+    text = get_manage_users_text('Удалены из флипкружка', not_found_usernames, found_usernames)
     bot.send_message(chat_id, text, reply_to_message_id=message.message_id)
 
 
@@ -156,24 +173,9 @@ def format_chat_users(chat_id: int, uids: Iterable[int]) -> List[str]:
     return users
 
 
-def forward_to_channel(bot: telegram.Bot, chat_id: int, message_id: int, user_id: int) -> None:
-    """
-    Форвардит сообщение в канал музкружка
-    """
-    channel_id = CONFIG.get('muzkruzhok_channel_id', None)
-    if channel_id is None:
-        return
-    if chat_id in CONFIG.get('muzkruzhok_ban_chats', []):
-        return
-    bans = CONFIG.get('muzkruzhok_ban_ids', [])
-    if user_id in bans:
-        return
-    bot.forward_message(channel_id, chat_id, message_id)
-
-
 def send_list_replay(bot: telegram.Bot, chat_id: int, message_id: int, uids: Iterable[int]) -> None:
     """
-    Бот отправляет в чат реплай, тегая участников музкружка.
+    Бот отправляет в чат реплай, тегая участников флипкружка.
     """
     formatted_chat_users = format_chat_users(chat_id, uids)
     first = True
@@ -182,10 +184,10 @@ def send_list_replay(bot: telegram.Bot, chat_id: int, message_id: int, uids: Ite
     # разбиваем на части
     for chunk in chunks(formatted_chat_users, 5):
         joined = ' '.join(chunk)
-        # в первом сообщении указывается хештег и реплай идет к сообщению с музыкой
+        # в первом сообщении указывается хештег и реплай идет к сообщению с флипыкой
         if first:
             first = False
-            first_msg = send_replay(bot, chat_id, message_id, f'#музкружок {joined}')
+            first_msg = send_replay(bot, chat_id, message_id, f'#флипкружок {joined}')
             first_message_id = first_msg.message_id
             continue
         # в последющих сообщениях тегаем первое
@@ -200,19 +202,19 @@ def send_replay(bot: telegram.Bot, chat_id: int, message_id: int, text: str) -> 
 
 def send_sorry(bot: telegram.Bot, chat_id: int, message_id: int) -> None:
     """
-    Бот отправляет сообщение, что нужно быть участником музкружка.
+    Бот отправляет сообщение, что нужно быть участником флипкружка.
     """
-    bot.send_message(chat_id, 'Для этого тебе нужно быть в музкружке',
+    bot.send_message(chat_id, 'Для этого тебе нужно быть в флипкружке',
                      reply_to_message_id=message_id)
 
 
-def music(bot: telegram.Bot, update: telegram.Update) -> None:
+def flip(bot: telegram.Bot, update: telegram.Update) -> None:
     """
-    Команда /music. Смотрие справку команды.
+    Команда /flip. Смотрие справку команды.
     """
     chat_id = update.message.chat_id
     message: telegram.Message = update.message
-    music_users = get_music_users(chat_id)
+    flip_users = get_flip_users(chat_id)
     user_id = message.from_user.id
     can_use = is_can_use(bot, chat_id, user_id)
 
@@ -220,8 +222,8 @@ def music(bot: telegram.Bot, update: telegram.Update) -> None:
     # бот делает реплай к этому сообщению, независимо от того, есть ли у сообщения реплай или нет.
     if get_args(message.text.strip()):
         if can_use:
-            send_list_replay(bot, chat_id, message.message_id, music_users)
-            forward_to_channel(bot, chat_id, message.message_id, user_id)
+            send_list_replay(bot, chat_id, message.message_id, flip_users)
+            # forward_to_channel(bot, chat_id, message.message_id, user_id)
             return
         send_sorry(bot, chat_id, message.message_id)
         return
@@ -229,48 +231,47 @@ def music(bot: telegram.Bot, update: telegram.Update) -> None:
     # команда без текста, но с реплаем
     if message.reply_to_message is not None:
         if can_use:
-            send_list_replay(bot, chat_id, message.reply_to_message.message_id, music_users)
-            if message.reply_to_message.sticker is None:
-                forward_to_channel(bot, chat_id, message.reply_to_message.message_id, user_id)
+            send_list_replay(bot, chat_id, message.reply_to_message.message_id, flip_users)
+            # if message.reply_to_message.sticker is None:
+            #     forward_to_channel(bot, chat_id, message.reply_to_message.message_id, user_id)
             return
         send_sorry(bot, chat_id, message.message_id)
         return
 
     # без текста, без реплая
-    send_music_help(bot, chat_id, message, music_users)
+    send_flip_help(bot, chat_id, message, flip_users)
 
 
 def is_can_use(bot: telegram.Bot, chat_id: int, uid: int) -> bool:
     if check_admin(bot, chat_id, uid):
         return True
-    music_users = get_music_users(chat_id)
-    return uid in music_users
+    flip_users = get_flip_users(chat_id)
+    return uid in flip_users
 
 
-def send_music_help(bot: telegram.Bot, chat_id: int, message: telegram.Message,
-                    music_users: Iterable[int]) -> None:
+def send_flip_help(bot: telegram.Bot, chat_id: int, message: telegram.Message, flip_users: Iterable[int]) -> None:
     """
-    Отправляет справку по команде и список музкружка.
+    Отправляет справку по команде и список флипкружка.
     """
-    formatted_users = format_users(chat_id, music_users)
+    formatted_users = format_users(chat_id, flip_users)
     text = textwrap.dedent(
         f"""
-        Команда для музкружка. Отправьте реплай с командой /music и бот сделает реплай к реплаю с тегами музкружка. Можно использовать короткую команду /m.
-        
-        "/musicadd @username" — добавить участника в музкружок. Только админы чата и люди \
-музкружка могут добавлять. Удалять аналогично командой /musicdel.
+        Команда для флипкружка. Отправьте реплай с командой /flip и бот сделает реплай к реплаю с тегами флипкружка. Можно использовать короткую команду /f.
 
-        Люди музкружка ({len(formatted_users)}): {", ".join(formatted_users)}
+        "/flipadd @username" — добавить участника в флипкружок. Только админы чата и люди \
+флипкружка могут добавлять. Удалять аналогично командой /flipdel.
+
+        Люди флипкружка ({len(formatted_users)}): {", ".join(formatted_users)}
         """).strip()
     bot.send_message(chat_id, text, reply_to_message_id=message.message_id, parse_mode='HTML')
 
 
-@only_who_can_manage_music_users
-def musicadd(bot: telegram.Bot, update: telegram.Update) -> None:
+@only_who_can_manage_flip_users
+def flipadd(bot: telegram.Bot, update: telegram.Update) -> None:
     """
-    Добавляет участника в музкружок. Работает только у админов чата и участников музкружка.
+    Добавляет участника в флипкружок. Работает только у админов чата и участников флипкружка.
     Пример:
-        /musicadd @username1 username2
+        /flipadd @username1 username2
     """
     message = update.message
     args = get_args(message.text)
@@ -278,14 +279,14 @@ def musicadd(bot: telegram.Bot, update: telegram.Update) -> None:
         add_users(bot, message, args)
         return
     bot.send_message(message.chat_id,
-                     f'Для добавления в музкружок укажи юзернейм. Например:\n\n/musicadd @username',
+                     f'Для добавления в флипкружок укажи юзернейм. Например:\n\n/flipadd @username',
                      reply_to_message_id=message.message_id)
 
 
-@only_who_can_manage_music_users
-def musicdel(bot: telegram.Bot, update: telegram.Update) -> None:
+@only_who_can_manage_flip_users
+def flipdel(bot: telegram.Bot, update: telegram.Update) -> None:
     """
-    Удаляет участника из музкружка.
+    Удаляет участника из флипкружка.
     """
     message = update.message
     args = get_args(message.text)
@@ -293,5 +294,5 @@ def musicdel(bot: telegram.Bot, update: telegram.Update) -> None:
         del_users(bot, message, args)
         return
     bot.send_message(message.chat_id,
-                     f'Для удаления из музкружка укажи юзернейм. Например:\n\n/musicdel @username',
+                     f'Для удаления из флипкружка укажи юзернейм. Например:\n\n/flipdel @username',
                      reply_to_message_id=message.message_id)

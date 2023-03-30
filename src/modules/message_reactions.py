@@ -12,6 +12,7 @@ from src.commands.orzik import orzik_correction
 from src.commands.welcome import send_welcome
 from src.config import CMDS, CONFIG
 from src.models.chat_user import ChatUser
+from src.models.cringe_monthly import CringeMonthly
 from src.models.igor_weekly import IgorWeekly
 from src.models.leave_collector import LeaveCollector
 from src.models.pidor_weekly import PidorWeekly
@@ -49,7 +50,9 @@ def message(bot, update):
     instagram_video(bot, update)
     twitter_video(bot, update)
     PidorWeekly.parse_message(update.message)
-    IgorWeekly.parse_message(update.message)
+    if is_command_enabled_for_chat(update.message.chat_id, 'monthly:cringe'):
+        CringeMonthly.parse_message(update.message)
+    # IgorWeekly.parse_message(update.message)
     update_stickers(bot, update)
     pure_cache.incr(f"metrics:messages:{today_str()}")
 

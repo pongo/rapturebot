@@ -21,6 +21,7 @@ from src.modules.antimat.mat_notify import mat_notify
 from src.modules.bayanometer import Bayanometer
 from src.modules.instagram import process_message_for_instagram
 from src.modules.last_word import last_word
+from src.modules.threads import process_message_for_threads
 from src.modules.tiktok import process_message_for_tiktok
 from src.modules.twitter import process_message_for_twitter
 from src.utils.cache import cache, TWO_DAYS, USER_CACHE_EXPIRE, pure_cache
@@ -49,6 +50,7 @@ def message(bot, update):
     tiktok_video(bot, update)
     instagram_video(bot, update)
     twitter_video(bot, update)
+    threads_video(bot, update)
     PidorWeekly.parse_message(update.message)
     if is_command_enabled_for_chat(update.message.chat_id, 'monthly:cringe'):
         CringeMonthly.parse_message(update.message)
@@ -174,6 +176,11 @@ def twitter_video(bot: telegram.Bot, update: telegram.Update) -> None:
     if not is_command_enabled_for_chat(update.message.chat_id, 'twitter_video'):
         return
     process_message_for_twitter(update.effective_message)
+
+def threads_video(bot: telegram.Bot, update: telegram.Update) -> None:
+    if not is_command_enabled_for_chat(update.message.chat_id, 'threads_video'):
+        return
+    process_message_for_threads(update.effective_message)
 
 
 @run_async

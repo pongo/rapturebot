@@ -9,6 +9,7 @@ from src.dayof.day_manager import DayOfManager
 from src.modules.antimat.matshowtime import MatshowtimeHandlers
 from src.commands.spoiler import SpoilerHandlers
 from src.commands.i_stat.command_handlers import callback_handler as istat_callback_handler
+from src.modules.threads import threads_callback_handler
 from src.utils.cache import cache
 from src.utils.logger_helpers import get_logger
 
@@ -46,4 +47,7 @@ def callback_handler(bot: telegram.Bot, update: telegram.Update) -> None:
         return
     if data['name'] == 'instagram':
         instagram_callback_handler(bot, update, query, data)
+        return
+    if data['name'] == 'threads':
+        threads_callback_handler(bot, update, query, data)
         return

@@ -17,6 +17,7 @@ from src.dayof.helper import is_today_special
 from src.models.reply_top import LoveDumpTable
 from src.models.user import User
 from src.modules.instagram import process_message_for_instagram
+from src.modules.threads import process_message_for_threads
 from src.modules.tiktok import process_message_for_tiktok
 from src.modules.twitter import process_message_for_twitter
 from src.utils.cache import cache, TWO_DAYS
@@ -165,6 +166,8 @@ def private(bot: telegram.Bot, update: telegram.Update):
     if process_message_for_instagram(message):
         return
     if process_message_for_tiktok(message):
+        return
+    if process_message_for_threads(message):
         return
 
     # ну а если их, то идем по обычному пути

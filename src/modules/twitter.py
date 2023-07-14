@@ -1,57 +1,67 @@
 import re
 from time import sleep
-from typing import Optional
+from typing import Optional, Tuple
 
 import requests
 import telegram
-import tweepy
+# import tweepy
 from telegram import MessageEntity, ChatAction, InputMediaPhoto
 
 from src.config import CONFIG
 from src.utils.logger_helpers import get_logger
 
 logger = get_logger(__name__)
-twitter_auth = CONFIG.get('twitter_auth', {})
-consumer_key = twitter_auth.get('consumer_key')
-consumer_secret = twitter_auth.get('consumer_secret')
-access_token = twitter_auth.get('access_token')
-access_token_secret = twitter_auth.get('access_token_secret')
-re_twitter_url = re.compile(r"https?:\/\/twitter.com\/[0-9-a-zA-Z_]{1,20}\/status\/([0-9]*)")
+# twitter_auth = CONFIG.get('twitter_auth', {})
+# consumer_key = twitter_auth.get('consumer_key')
+# consumer_secret = twitter_auth.get('consumer_secret')
+# access_token = twitter_auth.get('access_token')
+# access_token_secret = twitter_auth.get('access_token_secret')
+re_twitter_url = re.compile(r"https?:\/\/twitter.com\/([0-9-a-zA-Z_]{1,20})\/status\/([0-9]*)")
 twitter_third_api_key = CONFIG.get('twitter_third_api_key', None)
 
-if consumer_key is not None:
-    auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
-    auth.set_access_token(access_token, access_token_secret)
-    api = tweepy.API(auth)
-    logger.info('Twitter logged in')
+# if consumer_key is not None:
+#     auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
+#     auth.set_access_token(access_token, access_token_secret)
+#     api = tweepy.API(auth)
+#     logger.info('Twitter logged in')
 
 
-def get_first_twitter_id_from_message(message: telegram.Message):
-    twitters = [
+def get_first_twitter_id_from_message(message: telegram.Message) -> Tuple[Optional[str], Optional[str]]:
+    twits = [
         parse_twitter_id(n)
         for n in message.parse_entities([MessageEntity.URL]).values()
     ]
-    for twitter_id in twitters:
+    for twitter_username, twitter_id in twits:
         if twitter_id is not None:
-            return twitter_id
-    return None
+            return twitter_username, twitter_id
+    return None, None
+
+
+def parse_twitter_id(text: str) -> Tuple[Optional[str], Optional[str]]:
+    m = re_twitter_url.search(text)
+    try:
+        if m:
+            return m.group(1), m.group(2)
+        return None, None
+    except Exception as _:
+        return None, None
 
 
 def twitter_cmd(_bot: telegram.Bot, update: telegram.Update) -> None:
-    process_message_for_twitter(update.effective_message, True)
+    process_message_for_twitter(update.effective_message)
 
 
-def process_message_for_twitter(message: telegram.Message, use_third_api=False) -> bool:
+def process_message_for_twitter(message: telegram.Message) -> bool:
     """
     Отправляет видео из первой твиттер-ссылки, если она есть
     :return: False, если твиттер-ссылки нет
     """
-    if consumer_key is None:
-        return False
-    twitter_id = get_first_twitter_id_from_message(message)
+    # if consumer_key is None:
+    #     return False
+    twitter_username, twitter_id = get_first_twitter_id_from_message(message)
     if twitter_id is None:
         return False
-    call(message, twitter_id, use_third_api)
+    call(message, twitter_username, twitter_id)
     return True
 
 
@@ -60,18 +70,28 @@ def get_status_via_third_api(twitter_id: str):
     if twitter_third_api_key is None:
         return
 
-    api_url = "https://twitter135.p.rapidapi.com/TweetDetail/"
-    # api_url = "https://88b2b16c-e4a8-4e68-8dbf-b888b267fc68.mock.pstmn.io/TweetDetail/"
+    # api_url = "https://twitter135.p.rapidapi.com/TweetDetail/"
+    # # api_url = "https://88b2b16c-e4a8-4e68-8dbf-b888b267fc68.mock.pstmn.io/TweetDetail/"
+    # response = requests.request("GET", api_url, headers={
+    #     "X-RapidAPI-Key": twitter_third_api_key,
+    #     "X-RapidAPI-Host": "twitter135.p.rapidapi.com"
+    # }, params={"id": twitter_id})
+
+    api_url = "https://twitter-api47.p.rapidapi.com/v1/tweet-details"
     response = requests.request("GET", api_url, headers={
         "X-RapidAPI-Key": twitter_third_api_key,
-        "X-RapidAPI-Host": "twitter135.p.rapidapi.com"
-    }, params={"id": twitter_id})
+        "X-RapidAPI-Host": "twitter-api47.p.rapidapi.com"
+    }, params={"tweetId": twitter_id})
 
     if response.status_code != 200:
         return None
     try:
         json = response.json()
-        entries = json['data']['threaded_conversation_with_injections']['instructions'][0]['entries']
+        if 'threaded_conversation_with_injections_v2' in json:
+            entries = json['threaded_conversation_with_injections_v2']['instructions'][0][
+                'entries']
+        else:
+            entries = json['data']['threaded_conversation_with_injections']['instructions'][0]['entries']
         for entry in entries:
             if entry['entryId'] != f"tweet-{twitter_id}":
                 continue
@@ -107,21 +127,20 @@ class AttrDict(dict):
         self.__dict__ = self
 
 
-def call(message: telegram.Message, twitter_id: str, use_third_api=False):
+def call(message: telegram.Message, twitter_username: str, twitter_id: str):
     try:
         message.chat.send_action(action=ChatAction.UPLOAD_VIDEO)
         is_private = message.chat.id >= 0
+
         # if use_third_api:
         #     status = get_status_via_third_api(twitter_id)
         # else:
         #     status = api.get_status(twitter_id, tweet_mode='extended')
-        if use_third_api:
-            status = api.get_status(twitter_id, tweet_mode='extended')
-        else:
-            status = get_status_via_third_api(twitter_id)
-            if status is None:
-                logger.error(f"Third twitter api returns None for {twitter_id}")
-                status = api.get_status(twitter_id, tweet_mode='extended')
+        status = get_status_via_third_api(twitter_id)
+        if status is None:
+            logger.error(f"Third twitter api returns None for {twitter_id}")
+            message.reply_text(f"https://vxtwitter.com/{twitter_username}/status/{twitter_id}")
+            return
         text = status.full_text if hasattr(status, 'full_text') else ''
         if not hasattr(status, 'extended_entities'):
             message.reply_text(text)
@@ -189,11 +208,3 @@ def get_urls_of_video(status, best_quality=False):
             else:
                 video_urls.append(urls_bitrate[0][0])
     return video_urls
-
-
-def parse_twitter_id(text: str) -> Optional[str]:
-    m = re_twitter_url.search(text)
-    try:
-        return m.group(1) if m else None
-    except Exception as _:
-        return None

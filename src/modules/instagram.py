@@ -1,30 +1,60 @@
 import os
 import re
 import shutil
+import uuid
 from time import sleep
-from typing import List
+from typing import List, Optional, Tuple
 
+import ffmpeg
 import requests
 import telegram
-from telegram import MessageEntity, InputMediaPhoto, ChatAction
+from telegram import MessageEntity, InputMediaPhoto, ChatAction, ParseMode
 
-from packages.instaloader_proxy import instaloader, Post
+from packages.instaloader_proxy import Post
 from src.config import CONFIG, instaloader_session_exists
+from src.utils.cache import cache
+from src.utils.callback_helpers import get_callback_data, remove_inline_keyboard
 from src.utils.logger_helpers import get_logger
 from src.utils.misc import CustomNamedTemporaryFile
 
 logger = get_logger(__name__)
+CACHE_PREFIX = 'instagram'
+MODULE_NAME = CACHE_PREFIX
+callback_upload_video = 'instagram_upload_video'
 re_instagram_url = re.compile(r"instagram\.com\S*?\/(?:p|tv|reel)\/([\w-]+)\/?")
 instagram_user = CONFIG.get('instagram_user')
 SEND_VIDEO_SIZE_LIMIT = 50 * 1048576  # 50mb https://core.telegram.org/bots/api#sendvideo
 
-#if os.path.isfile('instaloader.session') and instagram_user is not None:
+# if os.path.isfile('instaloader.session') and instagram_user is not None:
 if False:
     L = instaloader.Instaloader(
         proxy=CONFIG.get('instagram_proxy', None)
-        #user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/110.0"
+        # user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/110.0"
     )
     L.load_session_from_file(instagram_user, 'instaloader.session')
+
+
+def extend_initial_data(data: dict) -> dict:
+    initial = {"name": CACHE_PREFIX, "module": MODULE_NAME}
+    result = {**initial, **data}
+    return result
+
+
+def get_reply_markup(buttons) -> Optional[telegram.InlineKeyboardMarkup]:
+    """
+    Инлайн-кнопки под сообщением
+    """
+    if not buttons:
+        return None
+    keyboard = []
+    for line in buttons:
+        keyboard.append([
+            telegram.InlineKeyboardButton(
+                button_title,
+                callback_data=(get_callback_data(button_data)))
+            for button_title, button_data in line
+        ])
+    return telegram.InlineKeyboardMarkup(keyboard)
 
 
 def get_first_instagram_post_id_from_message(message: telegram.Message):
@@ -88,8 +118,6 @@ def send_videos(message: telegram.Message, videos: List[str]) -> None:
     if len(videos) == 0:
         return
 
-    message.chat.send_action(action=ChatAction.UPLOAD_VIDEO)
-
     if len(videos) == 1:
         send_video(message, videos[0])
 
@@ -99,21 +127,89 @@ def send_videos(message: telegram.Message, videos: List[str]) -> None:
             sleep(1)
 
 
+class InstagramActive:
+    @staticmethod
+    def create_and_return_active_id(video_url: str) -> str:
+        key = str(uuid.uuid4())
+        hour = 60 * 60
+        cache.set(f"instagram:active:{key}", video_url, time=hour)
+        return key
+
+    @staticmethod
+    def get_active_video_url(key: str) -> Optional[str]:
+        return cache.get(f"instagram:active:{key}", None)
+
+
 def send_video(message: telegram.Message, video_url: str) -> None:
+    message_id = message.message_id
+    reply_markup = get_reply_markup([
+        [('Отправить как видео', (extend_initial_data({
+            'value': callback_upload_video, 'message_id': message_id,
+            'active_id': InstagramActive.create_and_return_active_id(video_url)
+        })))],
+    ])
+    message.reply_html(f"""<a href="{video_url}">Video</a>""", reply_markup=reply_markup)
+
+
+def instagram_callback_handler(bot: telegram.Bot, _: telegram.Update,
+                               query: telegram.CallbackQuery, data) -> None:
+    if 'module' not in data or data['module'] != MODULE_NAME:
+        return
+    if data['value'] == callback_upload_video:
+        chat_id = query.message.chat_id
+        remove_inline_keyboard(bot, chat_id, query.message.message_id)
+        video_url = InstagramActive.get_active_video_url(data['active_id'])
+
+        if video_url is None:
+            bot.answer_callback_query(query.id, 'Загрузить видео можно только в течение часа',
+                                      show_alert=True)
+            return
+
+        message_id = data['message_id']
+        try:
+            send_video_upload(bot, chat_id, message_id, video_url)
+        except Exception as e:
+            logger.error(f"Failed to upload to query instagram. message_id {message_id}: {repr(e)}")
+            logger.error(e)
+        bot.answer_callback_query(query.id)
+        return
+
+
+def get_video_wh(video_path: str) -> Tuple[Optional[int], Optional[int]]:
+    try:
+        probe = ffmpeg.probe(video_path)
+    except ffmpeg.Error as e:
+        logger.error(e)
+        return None, None
+
+    video_stream = next((stream for stream in probe['streams'] if stream['codec_type'] == 'video'), None)
+    if video_stream is None:
+        logger.error('No video stream found')
+        return None, None
+
+    return (int(video_stream['width'])), (int(video_stream['height']))
+
+
+def send_video_upload(bot: telegram.Bot, chat_id, message_id, video_url: str) -> None:
+    bot.send_chat_action(chat_id, action=ChatAction.UPLOAD_VIDEO)
     with CustomNamedTemporaryFile(suffix='.mp4') as f:
         with requests.get(video_url, stream=True, headers={
             'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/109.0"
         }) as r:
             if not r.ok:
                 logger.info(f"Failed to download video ({r.status_code}) {video_url}")
-                message.reply_html(f"""<a href="{video_url}">Video</a>""")
+                bot.send_message(chat_id,
+                                 f"""Не смог скачать видео. Качайте сами:\n\n<a href="{video_url}">Video</a>""",
+                                 parse_mode=ParseMode.HTML, reply_to_message_id=message_id)
                 return
             file_size = int(r.headers.get('Content-length', 0))
             # if file_size == 0:
             # message.reply_html(f"<a href='{video_url}'>Video</a>")
             # return
             if file_size >= SEND_VIDEO_SIZE_LIMIT:
-                message.reply_html(f"""Телеграм не дает отправить видео больше 50 мб. Качайте сами:\n\n<a href="{video_url}">Video</a>""")
+                bot.send_message(
+                    f"""Телеграм не дает отправить видео больше 50 мб. Качайте сами:\n\n<a href="{video_url}">Video</a>""",
+                    parse_mode=ParseMode.HTML, reply_to_message_id=message_id)
                 return
             r.raw.decode_content = True
             shutil.copyfileobj(r.raw, f)
@@ -123,10 +219,13 @@ def send_video(message: telegram.Message, video_url: str) -> None:
             filesize = infile.tell()
             # logger.info(filesize)
             if filesize >= SEND_VIDEO_SIZE_LIMIT:
-                message.reply_html(f"""Телеграм не дает отправить видео больше 50 мб. Качайте сами:\n\n<a href="{video_url}">Video</a>""")
+                bot.send_message(
+                    f"""Телеграм не дает отправить видео больше 50 мб. Качайте сами:\n\n<a href="{video_url}">Video</a>""",
+                    parse_mode=ParseMode.HTML, reply_to_message_id=message_id)
                 return
 
-        message.reply_video(video=open(f.name, "rb"), disable_notification=True)
+        width, height = get_video_wh(f.name)
+        bot.send_video(chat_id, video=open(f.name, "rb"), reply_to_message_id=message_id, width=width, height=height)
 
 
 def parse_instagram_post_id(text: str):
@@ -163,7 +262,8 @@ def fetch_via_instaloader(post_id: str):
 
 
 def fetch_via_our_vision_api(post_id: str, url: str):
-    r = requests.post(f'http://localhost:3000/api/v1/instagram', json={"post_id": post_id, "url": url})
+    r = requests.post(f'http://localhost:3000/api/v1/instagram',
+                      json={"post_id": post_id, "url": url})
     res = r.json()
     if not res['ok']:
         logger.error(res)
@@ -175,17 +275,17 @@ def fetch_via_our_vision_api(post_id: str, url: str):
         lower_link = link.lower()
         if ".mp4" in lower_link:
             videos.append(link)
-        #if ".jpg" in lower_link or ".jpeg" in lower_link:
+        # if ".jpg" in lower_link or ".jpeg" in lower_link:
         else:
             images.append(link)
     return images, videos
 
 
 def fetch_post(post_id: str, url: str):
-    # return [], ["https://scontent-fml2-1.cdninstagram.com/v/t66.30100-16/10000000_1227502374528111_4339098781378517958_n.mp4?efg=eyJ2ZW5jb2RlX3RhZyI6InZ0c192b2RfdXJsZ2VuLjEwODAuY2xpcHMuaGlnaCIsInFlX2dyb3VwcyI6IltcImlnX3dlYl9kZWxpdmVyeV92dHNfb3RmXCJdIn0&_nc_ht=scontent-fml2-1.cdninstagram.com&_nc_cat=103&_nc_ohc=C9aUgshl6EsAX9EEEDg&edm=ALQROFkBAAAA&vs=885627935950029_3328842131&_nc_vs=HBksFQAYJEdJQ1dtQUJ2cFA0cWFGd0VBTWFiWlNWYWt6YzhicFIxQUFBRhUAAsgBABUAGCRHSGhNVEJOWUQzYmI4d1VFQUIzVnh2Q1hqSVU0YnBSMUFBQUYVAgLIAQAoABgAGwAVAAAmmMu%2B0vbc%2BD8VAigCQzMsF0BROZmZmZmaGBJkYXNoX2hpZ2hfMTA4MHBfdjERAHX%2BBwA%3D&_nc_rid=be6d5b32eb&ccb=7-5&oh=00_AfCLxf_Ht52OfHPhg6zMZvZByzGwVs5WPX116Zk6K9MT1w&oe=6426F952&_nc_sid=30a2ef"]
+    # return [], ["https://download.samplelib.com/mp4/sample-5s.mp4"]
 
-    #result = fetch_via_instaloader(post_id)
-    #if result is not None:
+    # result = fetch_via_instaloader(post_id)
+    # if result is not None:
     #    return result
 
     result = fetch_via_our_vision_api(post_id, url)

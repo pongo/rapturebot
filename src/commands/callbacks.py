@@ -1,6 +1,7 @@
 import telegram
 from telegram.ext import run_async
 
+from src.modules.instagram import instagram_callback_handler
 from src.modules.last_word import callback_last_word
 from src.commands.on_off import callback_off
 from src.modules.bayanometer import Bayanometer
@@ -42,4 +43,7 @@ def callback_handler(bot: telegram.Bot, update: telegram.Update) -> None:
         return
     if data['name'] == 'i_stat':
         istat_callback_handler(bot, update, query, data)
+        return
+    if data['name'] == 'instagram':
+        instagram_callback_handler(bot, update, query, data)
         return

@@ -87,7 +87,9 @@ def get_status_via_third_api(twitter_id: str):
         return None
     try:
         json = response.json()
-        if 'threaded_conversation_with_injections_v2' in json:
+        if 'entries' in json:
+            entries = json['entries']
+        elif 'threaded_conversation_with_injections_v2' in json:
             entries = json['threaded_conversation_with_injections_v2']['instructions'][0][
                 'entries']
         else:

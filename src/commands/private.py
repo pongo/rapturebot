@@ -146,10 +146,6 @@ def anon(bot: telegram.Bot, update: telegram.Update) -> None:
     bot.send_message(cid, text, disable_web_page_preview=True)
 
 
-@only_users_from_main_chat
-def twitter(_bot: telegram.Bot, update: telegram.Update) -> None:
-    process_message_for_twitter(update.effective_message, True)
-
 @run_async
 def private(bot: telegram.Bot, update: telegram.Update):
     """

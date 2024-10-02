@@ -20,22 +20,32 @@ CRINGE_EXPIRE = MONTH + (DAY * 4)  # 34 days
 class CringeMonthly:
     lock = Lock()
     re_words = re.compile(
-        r"\b(обана|тарелочн\S+|набутылил\S*|тян\S*|баз.|базирован\S*|нн|моноколес\S*|топ\S*|10/10|10|сис.|сис.чк\S+|boobs|кун\S*|правач?к\S*|левач?к\S*|двач\S*|гигачад\S*|пяточк\S+|ножк\S+|русн\S+|википеди\S+|араб\S*|тренд\S*|[ао]ниме\S*|титечк\S+|жирух\S*|бабк\S+|лампов\S+|няш\S+|фемини\S+|радфем\S*|фемк\S+|трамп\S*|твит\S*|тиндер\S*|неадекватн\S+|пиксел\S*|айфон\S*|андроид\S*|кац\S*|газел\S*|светов\S*|либерах\S*|либертариан\S+|анкап\S*|донат\S*)\b",
+        r"\b(обана|тарелочн\S+|набутылил\S*|тян\S*|баз.|базирован\S*|нн|моноколес\S*|топ\S*|10/10|10|сис.|сис.чк\S+|boobs|кун\S*|правач?к\S*|левач?к\S*|двач\S*|гигачад\S*|пяточк\S+|ножк\S+|русн\S+|википеди\S+|араб\S*|тренд\S*|[ао]ниме\S*|титечк\S+|жирух\S*|бабк\S+|лампов\S+|няш\S+|фемини\S+|радфем\S*|фемк\S+|трамп\S*|твит\S*|тиндер\S*|неадекватн\S+|пиксел\S*|айфон\S*|андроид\S*|кац\S*|газел\S*|светов\S*|либерах\S*|либертариан\S+|анкап\S*|донат\S*|годж\S+|шаман\S*|милов\S*|волков\S*|гуриев\S*|наки)\b",
         re.IGNORECASE)
     re_multi_words = re.compile(
-        r"(хороши. русски.|генерал.? свр)",
+        r"(хороши. русски.|генерал.? свр|я+\s*[рускийая]{6,})",
         re.IGNORECASE)
 
     @classmethod
-    def topcringe(cls, cid, date, sort_by_percent=False) -> List[Tuple[int, Tuple[int, int]]]:
+    def topcringe(cls, cid, date, sort_by_percent=False) -> List[
+        Tuple[int, Tuple[int, int, int, int, int, int]]
+    ]:
         db = cls.__get_db(date, cid)
         cringe = {}
         for uid, user_stat in db.items():
-            if user_stat['value'] == 0 or user_stat['all_messages_count'] == 0:
+            value = user_stat['value_self'] + user_stat['value_replays']
+            if value == 0 or user_stat['count_self_messages'] == 0:
                 continue
-            if sort_by_percent and user_stat['all_messages_count'] < 30:
+            if sort_by_percent and user_stat['count_self_messages'] < 30:
                 continue
-            cringe[uid] = (user_stat['value'], user_stat['value'] / user_stat['all_messages_count'])
+            cringe[uid] = (
+                value,
+                value / user_stat['count_self_messages'],
+                user_stat['value_self'],
+                user_stat['value_self'] / user_stat['count_self_messages'],
+                user_stat['value_replays'],
+                user_stat['value_replays'] / user_stat['count_self_messages']
+            )
         sort_index = 1 if sort_by_percent else 0
         return sorted(cringe.items(), key=lambda x: x[1][sort_index], reverse=True)
 
@@ -46,9 +56,10 @@ class CringeMonthly:
         cringe_by_count = {}
         for uid, user_stat in db.items():
             # учитываем только тек, кто написал от 30 сообщений
-            if user_stat['all_messages_count'] < 30:
+            if user_stat['count_self_messages'] < 30:
                 continue
-            cringe_by_count[uid] = user_stat['value'] / user_stat['all_messages_count']
+            value = user_stat['value_self'] + user_stat['value_replays']
+            cringe_by_count[uid] = value / user_stat['count_self_messages']
 
         if len(cringe_by_count) > 0:
             uid, _ = cls.__sort_dict(cringe_by_count)[0]
@@ -102,29 +113,27 @@ class CringeMonthly:
 
     @classmethod
     def __add(cls, uid, cid, date, cringe=True, replay=False):
-        logger.debug(f'[cringe] lock {cid}:{uid}')
+        # logger.debug(f'[cringe] lock {cid}:{uid}')
         with cls.lock:
             db = cls.__get_db(date, cid)
 
-            value = 0
-            if cringe:
-                value = 1
-                if replay:
-                    value = 0.4
-
-            all_messages_count = 1
-            if replay:
-                all_messages_count = 0
-
-            if uid in db:
-                db[uid]['all_messages_count'] += all_messages_count
-                db[uid]['value'] += value
-            else:
+            if uid not in db:
                 db[uid] = {
-                    'all_messages_count': all_messages_count,
-                    'value': value
+                    'count_self_messages': 0,
+                    'value_self': 0,
+                    'value_replays': 0,
                 }
 
+            if not replay:
+                db[uid]['count_self_messages'] += 1
+
+            if cringe:
+                if replay:
+                    db[uid]['value_replays'] += 0.4
+                else:
+                    db[uid]['value_self'] += 1
+
+            # print(db[uid])
             cls.__set_db(db, date, cid)
 
     @staticmethod
@@ -133,7 +142,7 @@ class CringeMonthly:
 
     @staticmethod
     def __get_cache_key(date, cid):
-        return f'cringemonthly:{date.strftime("%Y%m")}:{cid}'
+        return f'cringemonthly2:{date.strftime("%Y%m")}:{cid}'
 
     @classmethod
     def __get_db(cls, date, cid):
@@ -169,13 +178,18 @@ def __get_top_cringe_lines(chat_id, date=None, show_percent=False) -> str:
     date = datetime.today() if date is None else date
     msg = ""
     stats = CringeMonthly.topcringe(chat_id, date, sort_by_percent=show_percent)
-    for i, (uid, (cringe_value, pr)) in enumerate(stats, start=1):
-        cringe_formatted = f'{cringe_value:.1f}'
+    for i, (uid, (
+            cringe_value, pr,
+            self_cringe, self_cringe_pr,
+            reply_cringe, reply_cringe_pr)
+            ) in enumerate(stats, start=1):
+        cringe_formatted = f'{cringe_value:.1f}'.replace('.0', '')
+        reply_cringe_f = f'{reply_cringe:.1f}'.replace('.0', '')
         fullname = __get_user_fullname(uid)
         if show_percent:
-            msg += f"{i}. <b>{fullname}</b> ({cringe_formatted}, {round(pr * 100)}%)\n"
+            msg += f"{i}. <b>{fullname}</b> <code>({cringe_formatted} ({round(pr * 100)}%) = {self_cringe} + {reply_cringe_f})</code>\n"
         else:
-            msg += f"{i}. <b>{fullname}</b> ({cringe_formatted})\n"
+            msg += f"{i}. <b>{fullname}</b> <code>({cringe_formatted} = {self_cringe} + {reply_cringe_f})</code>\n"
     return msg
 
 

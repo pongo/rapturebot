@@ -10,7 +10,7 @@ from src.utils.logger_helpers import get_logger
 from src.utils.send_video_helpers import send_images, send_videos
 
 logger = get_logger(__name__)
-re_twitter_url = re.compile(r"https?:\/\/twitter.com\/([0-9-a-zA-Z_]{1,20})\/status\/([0-9]*)")
+re_twitter_url = re.compile(r"https?://(?:x|twitter).com/([0-9-a-zA-Z_]{1,20})/status/([0-9]*)")
 twitter_third_api_key = CONFIG.get('twitter_third_api_key', None)
 
 

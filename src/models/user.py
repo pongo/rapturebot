@@ -184,7 +184,7 @@ class User:
         if cached:
             return cached
 
-        logger.debug(f'get_lock {uid}')
+        # logger.debug(f'get_lock {uid}')
         # лок, чтобы в редис попало то, что в бд
         with cls.get_lock:
             try:
@@ -216,7 +216,7 @@ class User:
 
     @classmethod
     def __add(cls, new_user: 'User', update: dict = None) -> None:
-        logger.debug(f'add_lock @{new_user.username}:{new_user.uid}')
+        # logger.debug(f'add_lock @{new_user.username}:{new_user.uid}')
         with cls.add_lock:
             try:
                 if update:

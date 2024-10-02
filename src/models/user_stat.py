@@ -271,7 +271,7 @@ class UserStat:
         uid = added_stat.uid
         cid = added_stat.cid
         key = cls.__get_cache_key(monday, uid, cid)
-        logger.debug(f'add_lock {cid}:{uid}')
+        # logger.debug(f'add_lock {cid}:{uid}')
         # стата обновляется постоянно, поэтому лок сразу
         with cls.add_lock:
             old_stat = cls.get(monday, uid, cid)
@@ -290,7 +290,7 @@ class UserStat:
         cached = cache.get(cls.__get_cache_key(monday, uid, cid))
         if cached:
             return cached
-        logger.debug(f'get_lock {cid}:{uid}')
+        # logger.debug(f'get_lock {cid}:{uid}')
         # лок, чтобы в редис попали точно такие же данные, как в бд
         with cls.get_lock:
             try:

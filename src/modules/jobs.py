@@ -31,8 +31,8 @@ def daily_midnight(bot: telegram.Bot, _):
     today = datetime.today()
     for chat in get_config_chats():
         chat_id = chat.chat_id
-        if is_command_enabled_for_chat(chat_id, 'weeklystat'):
-            ReplyDumper.dump(chat_id)
+        # if is_command_enabled_for_chat(chat_id, 'weeklystat'):
+        #     ReplyDumper.dump(chat_id)
         if is_command_enabled_for_chat(chat_id, 'monthly:cringe'):
             if today.day == 1:
                 send_monthly_cringe_for_chat(bot, chat_id)

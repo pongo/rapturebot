@@ -51,7 +51,7 @@ class ReplyTopDBHelper:
         """
         Добавляет статистику по страсти
         """
-        logger.debug(f'[{self.name}] lock {cid}:{from_uid}-->{to_uid}')
+        # logger.debug(f'[{self.name}] lock {cid}:{from_uid}-->{to_uid}')
         with self.lock:
             db = self.get_db(date, cid)
             self.__count_replays(db, from_uid, to_uid)

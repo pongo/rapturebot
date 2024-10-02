@@ -117,6 +117,20 @@ def call(message: telegram.Message, post_id: str, url: str, story=False):
 def fetch_post(post_id: str, url: str, story=False):
     # return [], ["https://download.samplelib.com/mp4/sample-5s.mp4"]
     # return ["https://download.samplelib.com/jpeg/sample-clouds-400x300.jpg"], []
+    # return [
+    #            "https://download.samplelib.com/jpeg/sample-clouds-400x300.jpg",
+    #            "https://download.samplelib.com/jpeg/sample-city-park-400x300.jpg",
+    #            "https://download.samplelib.com/jpeg/sample-birch-400x300.jpg",
+    #            "https://download.samplelib.com/jpeg/sample-red-400x300.jpg",
+    #            "https://download.samplelib.com/jpeg/sample-green-400x300.jpg",
+    #            "https://download.samplelib.com/jpeg/sample-blue-400x300.jpg",
+    #            "https://download.samplelib.com/jpeg/sample-red-200x200.jpg",
+    #            "https://download.samplelib.com/jpeg/sample-green-200x200.jpg",
+    #            "https://download.samplelib.com/jpeg/sample-blue-200x200.jpg",
+    #            "https://download.samplelib.com/jpeg/sample-red-100x75.jpg",
+    #            "https://download.samplelib.com/jpeg/sample-green-100x75.jpg",
+    #            # "https://download.samplelib.com/jpeg/sample-blue-100x75.jpg"
+    #        ], []
     # return None
 
     if story:
@@ -144,4 +158,3 @@ def fetch_post(post_id: str, url: str, story=False):
         logger.error("Failed to download instagram %s: empty result" % post_id)
         return None
     return images, videos
-

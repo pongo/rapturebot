@@ -12,7 +12,7 @@ from telegram import ChatAction, ParseMode, InputMediaPhoto
 from src.utils.cache import cache
 from src.utils.callback_helpers import get_callback_data, remove_inline_keyboard
 from src.utils.logger_helpers import get_logger
-from src.utils.misc import CustomNamedTemporaryFile
+from src.utils.misc import CustomNamedTemporaryFile, chunks
 
 logger = get_logger(__name__)
 CACHE_PREFIX = 'send_video'
@@ -166,12 +166,21 @@ def send_images(message: telegram.Message, images: List[str], text: str = '') ->
         if text:
             message.reply_text(text, disable_web_page_preview=True)
             sleep(1)
-        message.reply_media_group([
-            InputMediaPhoto(url)  # , filename=f"{post_id}-{i + 1}.jpg")
-            for i, url in enumerate(images)
-        ])
+        # телеграм позволяет отправить только 10 изображений в группе
+        send_images_by_chunks(message, images, 10)
         return True
 
+def send_images_by_chunks(message: telegram.Message, images: List[str], chunk_size=10) -> None:
+    first = True
+    for chunk in chunks(images, chunk_size):
+        if first:
+            first = False
+        else:
+            sleep(1)
+        message.reply_media_group([
+            InputMediaPhoto(url)  # , filename=f"{post_id}-{i + 1}.jpg")
+            for i, url in enumerate(chunk)
+        ])
 
 def send_videos(message: telegram.Message, videos: List[str], text: str = '',
                 text_sent: bool = False, best_quality=False) -> None:

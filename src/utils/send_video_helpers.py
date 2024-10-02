@@ -154,7 +154,7 @@ def send_too_big(bot, chat_id, message_id, video_url):
         parse_mode=ParseMode.HTML, reply_to_message_id=message_id)
 
 
-def send_images(message: telegram.Message, images: List[str], text: str) -> bool:
+def send_images(message: telegram.Message, images: List[str], text: str = '') -> bool:
     if len(images) == 0:
         return False
 
@@ -163,17 +163,18 @@ def send_images(message: telegram.Message, images: List[str], text: str) -> bool
         return True
 
     if len(images) > 1:
-        message.reply_text(text, disable_web_page_preview=True)
-        sleep(1)
+        if text:
+            message.reply_text(text, disable_web_page_preview=True)
+            sleep(1)
         message.reply_media_group([
             InputMediaPhoto(url)  # , filename=f"{post_id}-{i + 1}.jpg")
             for i, url in enumerate(images)
         ])
-        return False
+        return True
 
 
-def send_videos(message: telegram.Message, videos: List[str], text: str,
-                text_sent: bool, best_quality=False) -> None:
+def send_videos(message: telegram.Message, videos: List[str], text: str = '',
+                text_sent: bool = False, best_quality=False) -> None:
     if len(videos) == 0:
         return
 

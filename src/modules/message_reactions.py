@@ -17,6 +17,7 @@ from src.models.igor_weekly import IgorWeekly
 from src.models.leave_collector import LeaveCollector
 from src.models.pidor_weekly import PidorWeekly
 from src.models.user import User
+from src.models.wordle_day import WordleDay
 from src.modules.antimat.mat_notify import mat_notify
 from src.modules.bayanometer import Bayanometer
 from src.modules.instagram import process_message_for_instagram
@@ -55,6 +56,8 @@ def message(bot, update):
     if is_command_enabled_for_chat(update.message.chat_id, 'monthly:cringe'):
         CringeMonthly.parse_message(update.message)
     # IgorWeekly.parse_message(update.message)
+    if is_command_enabled_for_chat(update.message.chat_id, 'wordle_day'):
+        WordleDay.check_message(update.effective_message)
     update_stickers(bot, update)
     pure_cache.incr(f"metrics:messages:{today_str()}")
 

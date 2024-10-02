@@ -10,7 +10,6 @@ import requests
 import telegram
 from telegram import MessageEntity, InputMediaPhoto, ChatAction, ParseMode
 
-from packages.instaloader_proxy import Post
 from src.config import CONFIG, instaloader_session_exists
 from src.utils.cache import cache
 from src.utils.callback_helpers import get_callback_data, remove_inline_keyboard
@@ -23,16 +22,7 @@ MODULE_NAME = CACHE_PREFIX
 callback_upload_video = 'instagram_upload_video'
 re_instagram_url = re.compile(r"instagram\.com\S*?\/(?:p|tv|reel)\/([\w-]+)\/?")
 re_instagram_story = re.compile(r"instagram.com/stories/(?:\S+)/(\d+)/?")
-instagram_user = CONFIG.get('instagram_user')
 SEND_VIDEO_SIZE_LIMIT = 50 * 1048576  # 50mb https://core.telegram.org/bots/api#sendvideo
-
-# if os.path.isfile('instaloader.session') and instagram_user is not None:
-if False:
-    L = instaloader.Instaloader(
-        proxy=CONFIG.get('instagram_proxy', None)
-        # user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/110.0"
-    )
-    L.load_session_from_file(instagram_user, 'instaloader.session')
 
 
 def extend_initial_data(data: dict) -> dict:
@@ -97,9 +87,6 @@ def parse_instagram_story_id(text: str):
 
 
 def process_message_for_instagram(message: telegram.Message) -> bool:
-    if not instaloader_session_exists or instagram_user is None:
-        return False
-
     post = get_first_instagram_post_id_from_message(message)
     if post is not None:
         post_id, url = post
@@ -267,31 +254,6 @@ def send_video_upload(bot: telegram.Bot, chat_id, message_id, video_url: str) ->
         width, height = get_video_wh(f.name)
         bot.send_video(chat_id, video=open(f.name, "rb"), reply_to_message_id=message_id,
                        width=width, height=height)
-
-
-def fetch_via_instaloader(post_id: str):
-    try:
-        images = []
-        videos = []
-        post = Post.from_shortcode(L.context, post_id)
-
-        for node in post.get_sidecar_nodes():
-            if node.is_video:
-                videos.append(node.video_url)
-            else:
-                images.append(node.display_url)
-
-        if len(images) == 0 and len(videos) == 0:
-            if post.is_video:
-                videos.append(post.video_url)
-            else:
-                images.append(post.url)
-
-        return images, videos
-    except Exception as e:
-        logger.error("Failed to download instagram %s: %s" % (post_id, repr(e)))
-        logger.error(e)
-        return None
 
 
 def fetch_via_our_vision_api(post_id: str, url: str, story=False):

@@ -183,7 +183,7 @@ class ChatUser:
         """
         Добавляет или изменяет чатюзера в бд
         """
-        logger.debug(f'add_lock {new_user.cid}:{new_user.uid}')
+        # logger.debug(f'add_lock {new_user.cid}:{new_user.uid}')
         with cls.add_lock:
             try:
                 if update:
@@ -199,7 +199,7 @@ class ChatUser:
         if cached:
             return cached
 
-        logger.debug(f'get_lock {cid}:{uid}')
+        # logger.debug(f'get_lock {cid}:{uid}')
         # лок, чтобы в редис попало то, что в бд
         with cls.get_lock:
             try:

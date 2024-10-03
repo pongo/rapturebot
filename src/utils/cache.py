@@ -78,9 +78,10 @@ class PureCache:
         _pure_redis.set(f'__pure__:{key}', val, ex=time)
 
     @staticmethod
-    def incr(key: str, amount: int = 1) -> None:
-        _pure_redis.incr(f'__pure__:{key}', amount)
+    def incr(key: str, amount: int = 1) -> int:
+        value = _pure_redis.incr(f'__pure__:{key}', amount)
         _pure_redis.expire(f'__pure__:{key}', USER_CACHE_EXPIRE)
+        return value
 
     @classmethod
     def get_int(cls, key: str, default: Optional[int] = None) -> Optional[int]:
@@ -121,6 +122,10 @@ class PureCache:
     @classmethod
     def get_list(cls, key: str) -> List[str]:
         return _pure_redis.lrange(f'{cls.prefix}:{key}', 0, -1)
+
+    @classmethod
+    def delete(cls, key: str) -> None:
+        _pure_redis.delete(f'__pure__:{key}')
 
 
 cache = Cache()

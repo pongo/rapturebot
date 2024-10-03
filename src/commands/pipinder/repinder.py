@@ -73,7 +73,7 @@ def repinder_guard(f):
 @repinder_guard
 def repinder(bot: telegram.Bot, update: telegram.Update) -> None:
     key = f'pipinder:stickersets:{today_str()}'
-    logger.debug(f'repinder_lock. chat: {update.message.chat_id}')
+    # logger.debug(f'repinder_lock. chat: {update.message.chat_id}')
     # лок, чтобы операция прошла за раз
     with repinder_lock:
         today_stickersets_names: list = cache.get(key, [])

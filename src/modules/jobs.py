@@ -9,6 +9,7 @@ from src.models.cringe_monthly import send_monthly_cringe_for_chat
 from src.models.leave_collector import LeaveCollector
 from src.models.reply_top import ReplyDumper
 from src.commands.weather import send_alert_if_full_moon
+from src.modules.rogovdays import send_rogovdays_daily
 from src.utils.cache import pure_cache, FEW_DAYS
 from src.utils.handlers_helpers import is_command_enabled_for_chat
 from src.utils.time_helpers import today_str
@@ -21,14 +22,17 @@ def daily_midnight(bot: telegram.Bot, _):
 
     # для каждого чата
     for chat in get_config_chats():
+        cid = chat.chat_id
         if 'daily_full_moon_check' in chat.enabled_commands:
-            send_alert_if_full_moon(bot, chat.chat_id)
+            send_alert_if_full_moon(bot, cid)
+        if is_command_enabled_for_chat(cid, 'rogovdays'):
+            send_rogovdays_daily(bot, cid)
 
     today = datetime.today()
     for chat in get_config_chats():
         chat_id = chat.chat_id
-        if is_command_enabled_for_chat(chat_id, 'weeklystat'):
-            ReplyDumper.dump(chat_id)
+        # if is_command_enabled_for_chat(chat_id, 'weeklystat'):
+        #     ReplyDumper.dump(chat_id)
         if is_command_enabled_for_chat(chat_id, 'monthly:cringe'):
             if today.day == 1:
                 send_monthly_cringe_for_chat(bot, chat_id)

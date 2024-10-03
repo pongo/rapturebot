@@ -8,6 +8,7 @@ from src.config import CMDS
 from src.commands.callbacks import callback_handler
 from src.commands.ment.ment_handler import ment_handler
 from src.models.cringe_monthly import topcringe
+from src.models.wordle_day import wordle_stats, wordle_full
 from src.modules.message_reactions import message
 from src.commands.music.music_handler import musicadd_handler, musicdel_handler, music_handler
 from src.commands.mylove import mylove, alllove, private_mylove
@@ -17,7 +18,6 @@ from src.commands.orzik import orzik, lord
 from src.commands.other import rules, love, papa, pomogite, huificator_handler, leave, expert, \
     anketa, \
     putin, changelog, gdeleha, kick, pidor, pipixel_handler, lastsenya
-from src.modules.twitter import twitter_cmd
 from src.modules.weeklystat import stats
 from src.commands.welcome import welcome
 from src.commands import private, topmat
@@ -141,8 +141,12 @@ def add_chat_handlers(dp):
 
     dp.add_handler(CommandHandler(CMDS['hidden']['8']['name'], command_8, filters=cmd_filter))
     dp.add_handler(CommandHandler('lastsenya', lastsenya, filters=cmd_filter))
-    dp.add_handler(CommandHandler('twitter', twitter_cmd, filters=cmd_filter))
     dp.add_handler(CommandHandler('topcringe', topcringe, filters=cmd_filter))
+
+    dp.add_handler(CommandHandler('wordle', wordle_stats, filters=cmd_filter))
+    dp.add_handler(CommandHandler('wordly', wordle_stats, filters=cmd_filter))
+    dp.add_handler(CommandHandler('wordlefull', wordle_full, filters=cmd_filter))
+    dp.add_handler(CommandHandler('wordle_full', wordle_full, filters=cmd_filter))
 
     # должно идти в конце
     dp.add_handler(MessageHandler(Filters.group & Filters.all, message))
@@ -187,7 +191,6 @@ def add_private_handlers(dp):
     dp.add_handler(CommandHandler('anon', private.anon, filters=Filters.private & Filters.command))
     dp.add_handler(CommandHandler('year', private.year, filters=Filters.private & Filters.command))
     dp.add_handler(CommandHandler('send_to_all_chats', private.send_to_all_chats_handler, filters=Filters.private & Filters.command))
-    dp.add_handler(CommandHandler('twitter', private.twitter, filters=Filters.private & Filters.command))
 
     # должно идти в конце
     private_filters = Filters.private & (

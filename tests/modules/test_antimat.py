@@ -406,3 +406,7 @@ class AntimatTest(StopAfterFailTestCase):
         ]
         for word in words:
             self.assertEqual(0, Antimat.bad_words_count(word), word)
+
+    # def test_word1(self):
+    #     # self.assertEqual(0, Antimat.bad_words_count('DEUTCHESHEISEGNEZDOLIEREN'))
+    #     self.assertEqual(0, Antimat.bad_words_count('NEZDO'))

@@ -90,7 +90,7 @@ class PidorWeekly:
     @classmethod
     def __add(cls, uid, cid, date=None, replay=False):
         monday = cls.__get_current_monday() if date is None else cls.__get_date_monday(date)
-        logger.debug(f'lock {cid}:{uid}')
+        # logger.debug(f'lock {cid}:{uid}')
         with cls.lock:
             db = cls.__get_db(monday, cid)
             value = 1

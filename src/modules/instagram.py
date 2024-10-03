@@ -137,23 +137,15 @@ def fetch_post(post_id: str, url: str, story=False):
         r = requests.post(f'http://localhost:3000/api/v1/instagram_story',
                           json={"id": post_id, "url": url})
     else:
-        r = requests.post(f'http://localhost:3000/api/v1/instagram',
-                          json={"post_id": post_id, "url": url})
+        r = requests.post(f'http://localhost:3000/api/v2/instagram',
+                          json={"post_id": post_id})
     res = r.json()
     if not res['ok']:
         logger.error(res)
         return None
 
-    images = []
-    videos = []
-    for link in res["links"]:
-        lower_link = link.lower()
-        if ".mp4" in lower_link:
-            videos.append(link)
-        # if ".jpg" in lower_link or ".jpeg" in lower_link:
-        else:
-            images.append(link)
-
+    videos = res["value"]["videos"]
+    images = res["value"]["images"]
     if len(images) == 0 and len(videos) == 0:
         logger.error("Failed to download instagram %s: empty result" % post_id)
         return None

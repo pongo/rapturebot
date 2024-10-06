@@ -13,6 +13,7 @@ from src.utils.cache import cache
 from src.utils.callback_helpers import get_callback_data, remove_inline_keyboard
 from src.utils.logger_helpers import get_logger
 from src.utils.misc import CustomNamedTemporaryFile, chunks
+from src.utils.text_helpers import truncate
 
 logger = get_logger(__name__)
 CACHE_PREFIX = 'send_video'
@@ -43,7 +44,7 @@ def extend_initial_data(data: dict) -> dict:
 
 def send_video(message: telegram.Message, video_url: str, text: str) -> None:
     message_id = message.message_id
-    html = f"""<a href="{video_url}">Video</a>\n\n{text}""".strip()
+    html = truncate(f"""<a href="{video_url}">Video</a>\n\n{text}""".strip(), 4000)
     if '.mp4' in video_url:
         reply_markup = get_reply_markup([
             [('Отправить как видео', (extend_initial_data({
@@ -54,6 +55,9 @@ def send_video(message: telegram.Message, video_url: str, text: str) -> None:
         message.reply_html(html, reply_markup=reply_markup)
     else:
         try:
+            if text:
+                message.reply_text(truncate(text, 4000), disable_web_page_preview=True)
+                sleep(1)
             send_video_upload(message.bot, message.chat_id, message_id, video_url)
         except Exception as e:
             logger.error(f"[send_video] Failed to upload. message_id {message_id}: {repr(e)}")
@@ -167,12 +171,16 @@ def send_images(message: telegram.Message, images: List[str], text: str = '') ->
         return False
 
     if len(images) == 1:
-        message.reply_photo(images[0], filename=f"photo.jpg", caption=text)
+        if len(text) > 1000:
+            message.reply_text(truncate(text, 4000), disable_web_page_preview=True)
+            sleep(1)
+            text = ''
+        message.reply_photo(images[0], filename=f"photo.jpg", caption=truncate(text, 1000))
         return True
 
     if len(images) > 1:
         if text:
-            message.reply_text(text, disable_web_page_preview=True)
+            message.reply_text(truncate(text, 4000), disable_web_page_preview=True)
             sleep(1)
         # телеграм позволяет отправить только 10 изображений в группе
         send_images_by_chunks(message, images, 10)

@@ -8,6 +8,7 @@ from telegram import MessageEntity, ChatAction
 from src.config import CONFIG
 from src.utils.logger_helpers import get_logger
 from src.utils.send_video_helpers import send_images, send_videos
+from src.utils.text_helpers import truncate
 
 logger = get_logger(__name__)
 re_twitter_url = re.compile(r"https?://(?:x|twitter).com/([0-9-a-zA-Z_]{1,20})/status/([0-9]*)")
@@ -62,7 +63,7 @@ def call(message: telegram.Message, twitter_username: str, twitter_id: str):
         text, images, videos = r
 
         if len(images) == 0 and len(videos) == 0:
-            message.reply_text(text)
+            message.reply_text(truncate(text, 4000))
         else:
             text_sent = send_images(message, images, text)
             send_videos(message, videos, text, text_sent, is_private)

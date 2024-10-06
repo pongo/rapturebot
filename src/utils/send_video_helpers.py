@@ -43,14 +43,22 @@ def extend_initial_data(data: dict) -> dict:
 
 def send_video(message: telegram.Message, video_url: str, text: str) -> None:
     message_id = message.message_id
-    reply_markup = get_reply_markup([
-        [('Отправить как видео', (extend_initial_data({
-            'value': CALLBACK_UPLOAD_VIDEO, 'message_id': message_id,
-            'active_id': SendVideoButton.create_and_return_button_id(video_url)
-        })))],
-    ])
-    message.reply_html(f"""<a href="{video_url}">Video</a>\n\n{text}""".strip(),
-                       reply_markup=reply_markup)
+    html = f"""<a href="{video_url}">Video</a>\n\n{text}""".strip()
+    if '.mp4' in video_url:
+        reply_markup = get_reply_markup([
+            [('Отправить как видео', (extend_initial_data({
+                'value': CALLBACK_UPLOAD_VIDEO, 'message_id': message_id,
+                'active_id': SendVideoButton.create_and_return_button_id(video_url)
+            })))],
+        ])
+        message.reply_html(html, reply_markup=reply_markup)
+    else:
+        try:
+            send_video_upload(message.bot, message.chat_id, message_id, video_url)
+        except Exception as e:
+            logger.error(f"[send_video] Failed to upload. message_id {message_id}: {repr(e)}")
+            logger.error(e)
+            message.reply_html(html)
 
 
 def get_reply_markup(buttons) -> Optional[telegram.InlineKeyboardMarkup]:

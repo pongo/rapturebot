@@ -16,6 +16,7 @@ from src.dayof.day_manager import DayOfManager
 from src.dayof.helper import is_today_special
 from src.models.reply_top import LoveDumpTable
 from src.models.user import User
+from src.models.chat_user import ChatUser
 from src.modules.instagram import process_message_for_instagram
 from src.modules.threads import process_message_for_threads
 from src.modules.tiktok import process_message_for_tiktok
@@ -151,9 +152,19 @@ def private(bot: telegram.Bot, update: telegram.Update):
     """
     Текст в личку бота.
     """
+    def _check_user(message: telegram.Message):
+        uid = message.from_user.id
+        if uid == CONFIG.get('debug_uid', None):
+            return True
+        if uid in CONFIG.get('admins_ids', []) or uid in CONFIG.get('private_ids', []):
+            return True
+        chat_user = ChatUser.get(uid, CONFIG.get('anon_chat_id', 0))
+        if not chat_user or chat_user.left:
+            return False
+        return True
     message = update.effective_message
-    if not User.get(message.from_user.id):
-        message.reply_text('Только для участников чатов с ботом')
+    if not _check_user(message):
+        message.reply_text('Только для участников чата Rapture')
         return
 
     # первым делом проверяем наличие ссылок тиктока, инсты, твиттера

@@ -4,7 +4,6 @@ import re
 from datetime import datetime
 from typing import Callable
 
-import apiai
 import requests
 import telegram
 from telegram import ParseMode
@@ -181,7 +180,6 @@ def private(bot: telegram.Bot, update: telegram.Update):
     DayOfManager.private_handler(bot, update)
     if is_today_special():
         return
-    # ai(bot, update)
 
 
 @run_async
@@ -189,32 +187,6 @@ def help(bot: telegram.Bot, update: telegram.Update):
     DayOfManager.private_help_handler(bot, update)
     # remove keyboard
     bot.send_message(update.message.chat_id, 'ok', reply_markup=(telegram.ReplyKeyboardRemove()))
-
-
-@run_async
-def ai(bot: telegram.Bot, update: telegram.Update):
-    if 'dialogflow_api_token' not in CONFIG:
-        return
-    text = update.message.text
-    if text is None:
-        return
-    chat_id = update.message.chat_id
-    msg_id = update.message.message_id
-    session_id = cache.get(f'ai:session_id:{chat_id}')
-    if not session_id:
-        session_id = msg_id
-    cache.set(f'ai:session_id:{chat_id}', session_id, time=15 * 60)
-
-    request = apiai.ApiAI(CONFIG['dialogflow_api_token']).text_request()
-    request.lang = 'ru'  # На каком языке будет послан запрос
-    request.session_id = str(session_id)  # ID Сессии диалога (нужно, чтобы потом учить бота)
-    request.query = text
-
-    response_json = json.loads(request.getresponse().read().decode('utf-8'))
-    response = response_json['result']['fulfillment'][
-        'speech']  # Разбираем JSON и вытаскиваем ответ
-    response_text = response if response else 'Я вас не поняль'
-    bot.send_message(chat_id, f'{response_text} 🤖')
 
 
 def __private(bot: telegram.Bot, update: telegram.Update):

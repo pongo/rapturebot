@@ -36,8 +36,6 @@ for key, cmd in CMDS.get('hidden', {}).items():
 for cmd in CMDS.get('text_cmds', []):
     VALID_CMDS.append(cmd)
 
-instaloader_session_exists = os.path.isfile('instaloader.session')
-
 
 class ChatInConfig(NamedTuple):
     chat_id: int

@@ -36,7 +36,6 @@ for key, cmd in CMDS.get('hidden', {}).items():
 for cmd in CMDS.get('text_cmds', []):
     VALID_CMDS.append(cmd)
 
-google_vision_client = None
 instaloader_session_exists = os.path.isfile('instaloader.session')
 
 

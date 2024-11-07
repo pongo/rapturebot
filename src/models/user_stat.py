@@ -446,7 +446,7 @@ class UserStat:
         if count_percent:
             msg += 'От общего количества: {}%\n'.format(count_percent)
         msg += '\n'
-        if top_chart is not '':
+        if top_chart != '':
             msg += '{0}:\n{1}\n'.format(top_chart_caption, top_chart)
         return msg
 

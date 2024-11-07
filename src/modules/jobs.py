@@ -47,17 +47,3 @@ def every_hour(bot: telegram.Bot, _) -> None:
     # go_go_watchmen(bot)
     DayOfManager.morning(bot)
     LeaveCollector.check_left_users(bot)
-
-
-def health_log(bot: telegram.Bot, _) -> None:
-    now = datetime.now()
-    try:
-        me = bot.get_me()
-        answer = f' @{me.username}'
-    except Exception as e:
-        # TODO: по идее, сюда нужно добавить еще пару повторов и рестарт бота
-        answer = f' error: {e}'
-
-    messages_metric = pure_cache.get(f"metrics:messages:{today_str()}", '0')
-    value = f"{now.strftime('%H:%M')} - {messages_metric} - {answer}"
-    pure_cache.append_list(f"health_log:{now.strftime('%Y%m%d')}", value, time=FEW_DAYS)

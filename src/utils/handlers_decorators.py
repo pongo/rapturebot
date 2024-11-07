@@ -35,9 +35,13 @@ def chat_guard(func):
 
     @wraps(func)
     def decorator(bot: telegram.Bot, update):
-        chat_id_str = str(update.message.chat_id)
-        if chat_id_str not in CONFIG["chats"]:
-            send_chat_access_denied(bot, update)
+        try:
+            chat_id_str = str(update.message.chat_id)
+            if chat_id_str not in CONFIG["chats"]:
+                send_chat_access_denied(bot, update)
+                return
+        except Exception as e:
+            print(repr(e))
             return
         return func(bot, update)
 

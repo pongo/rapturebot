@@ -10,7 +10,6 @@ import src.config as config
 import src.utils.cache as cache_file
 from src.bot_start.add_handlers import add_chat_handlers, add_private_handlers, add_other_handlers
 from src.bot_start.add_jobs import add_jobs
-from src.bot_start.google_cloud import auth_google_vision
 from src.config import CONFIG
 from src.utils.cache import cache, YEAR
 from src.utils.repair import repair_bot
@@ -56,8 +55,6 @@ def prepare():
     Подготовительный этап
     """
     set_default_logging_format()
-    if 'google_vision_client_json_file' in CONFIG:
-        config.google_vision_client = auth_google_vision(CONFIG['google_vision_client_json_file'])
     cache.set('pipinder:fav_stickersets_names',
               set(CONFIG.get("sasha_rebinder_stickersets_names", [])), time=YEAR)
 
@@ -66,7 +63,7 @@ def start_bot():
     """
     Инициализация бота
     """
-    updater = Updater(token=CONFIG['bot_token'], workers=32, request_kwargs=get_request_data())
+    updater = Updater(token=CONFIG['bot_token'], workers=32, request_kwargs=get_request_data(), use_context=False)
     bot = updater.bot
     dp = updater.dispatcher
     dp.logger.addHandler(CriticalHandler())  # в логгер библиотеки добавляем свой обработчик

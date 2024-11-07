@@ -1,7 +1,7 @@
 from datetime import time
 
 from src.modules.weeklystat import weekly_stats
-from src.modules.jobs import daily_midnight, daily_afternoon, health_log, every_hour
+from src.modules.jobs import daily_midnight, daily_afternoon, every_hour
 
 
 def add_jobs(updater):
@@ -26,9 +26,4 @@ def add_jobs(updater):
     updater.job_queue.run_repeating(
         every_hour, first=65,
         interval=60 * 60  # раз в час
-    )
-
-    updater.job_queue.run_repeating(
-        health_log, first=1,
-        interval=5 * 60
     )

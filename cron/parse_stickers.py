@@ -66,7 +66,7 @@ class Cache:
 def request(url):
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:55.0) Gecko/20100101 Firefox/55.0'}
     try:
-        response = requests.get(url, headers=headers)
+        response = requests.get(url, headers=headers, timeout=10)
         return response.text
     except Exception:
         return ''
@@ -94,7 +94,7 @@ def get_monday_stickers(cache):
     return result
 
 def get_random_list(stickers, limit=100):
-    stickers = filter(None.__ne__, stickers)  # исключаем None из списка
+    stickers = filter(lambda x: x is not None, stickers)  # исключаем None из списка
     stickers = sorted(stickers)
     random.shuffle(stickers)
     return stickers[:limit]

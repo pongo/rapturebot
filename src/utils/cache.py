@@ -14,7 +14,7 @@ if 'cache' in CONFIG:
                                     db=CONFIG['cache']['redis']['db'], charset='utf-8',
                                     decode_responses=True)
 else:
-    # print("Can't connect to Redis")
+    print("Can't connect to Redis")
     _redis = None
     _pure_redis = None
 

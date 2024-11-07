@@ -5,7 +5,6 @@ import requests
 import telegram
 from telegram.ext import run_async
 
-import src.config as config
 from src.commands.khaleesi.khaleesi import Khaleesi
 from src.commands.khaleesi.random_khaleesi import RandomKhaleesi
 from src.commands.orzik import orzik_correction
@@ -232,9 +231,6 @@ def photo_reactions(bot: telegram.Bot, update: telegram.Update, img_url=None):
     if update.message.media_group_id and cache.get(key_media_group):
         return
 
-    if config.google_vision_client:
-        call_cats_vision_api(bot, update, key_media_group, img_url)
-
     if is_command_enabled_for_chat(update.message.chat_id, 'osenya'):
         call_osenya(bot, update, key_media_group, img_url)
 
@@ -254,61 +250,6 @@ def call_osenya(bot: telegram.Bot, update: telegram.Update, key_media_group: str
 
     if res['is_senya']:
         bot.sendMessage(update.message.chat_id, "О, Сеня")
-
-# noinspection PyPackageRequirements
-@run_async
-def call_cats_vision_api(bot: telegram.Bot, update: telegram.Update, key_media_group: str,
-                         img_url=None):
-    """
-    Используется google vision api:
-    * https://cloud.google.com/vision/
-    * https://cloud.google.com/vision/docs/reference/libraries
-    * https://googlecloudplatform.github.io/google-cloud-python/latest/vision/index.html
-    """
-    chat_id = update.message.chat_id
-
-    # если урл картинки не задан, то сами берем самую большую фотку из сообщения
-    # гугл апи, почему-то, перестал принимать ссылки телеги, нам приходится самим загружать ему фото
-    if img_url is None:
-        from google.cloud.vision import types as google_types
-        file = bot.get_file(update.message.photo[-1].file_id)
-        content = bytes(file.download_as_bytearray())
-        # noinspection PyUnresolvedReferences
-        image = google_types.Image(content=content)
-    # но если передана ссылка, то и гуглу отдаем только ссылку
-    # чтобы не заниматься самим вопросом загрузки каких-то непонятных ссылок
-    # а если гугл не сможет ее открыть -- ну не судьба
-    else:
-        image = {'source': {'image_uri': img_url}}
-
-    # noinspection PyPackageRequirements
-    from google.cloud import vision
-    # обращаемся к апи детектирования объектов на фото
-    try:
-        logger.debug(f"[google vision] parse img {img_url}")
-        client = config.google_vision_client
-        response = client.annotate_image({
-            'image': image,
-            'features': [{'type': vision.enums.Feature.Type.LABEL_DETECTION, 'max_results': 30}],
-        })
-    except Exception as ex:
-        logger.error(ex)
-        return
-
-    # если на фото кот
-    cat = any(re.search(r"\bcats?\b", label.description, re.IGNORECASE) for label in
-              response.label_annotations)
-    if cat:
-        logger.debug(f"[google vision] cat found")
-        if update.message.media_group_id:
-            if cache.get(key_media_group):
-                return
-            cache.set(key_media_group, True, time=TWO_DAYS)
-        msg_id = update.message.message_id
-        bot.sendMessage(chat_id, CONFIG.get("cat_tag", "Это же кошак 🐈"),
-                        reply_to_message_id=msg_id)
-        return
-    logger.debug(f"[google vision] cat not found")
 
 
 def leave_check(bot: telegram.Bot, update: telegram.Update):

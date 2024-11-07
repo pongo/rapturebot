@@ -13,6 +13,7 @@ import imagehash
 import requests
 import telegram
 from PIL import Image
+from PIL.Image import Resampling
 from pytils.numeral import get_plural
 from telegram.ext import run_async
 
@@ -138,7 +139,7 @@ class Photo:
         @staticmethod
         def __prepare_img(image) -> Image:
             size = (256, 256)
-            resize = Image.ANTIALIAS
+            resize = Resampling.LANCZOS
             image = image.convert('L')
             # image = ImageOps.autocontrast(image)
             image.thumbnail(size, resize)

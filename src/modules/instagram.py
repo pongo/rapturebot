@@ -79,7 +79,30 @@ def parse_instagram_story_id(text: str):
         return None
 
 
+def get_first_instagram_share_url(message: telegram.Message):
+    for url in message.parse_entities([MessageEntity.URL]).values():
+        if 'instagram.com/share/' in url:
+            return url
+    return None
+
+
+def get_post_from_share(message: telegram.Message):
+    share_url = get_first_instagram_share_url(message)
+    if not share_url:
+        return None
+
+    # через редирект получаем настоящую ссылку
+    r = requests.head(share_url, allow_redirects=True)
+    return parse_instagram_post_id(r.url)
+
+
 def process_message_for_instagram(message: telegram.Message) -> bool:
+    post = get_post_from_share(message)  # instagram.com/share/ links
+    if post is not None:
+        post_id, url = post
+        call(message, post_id, url)
+        return True
+
     post = get_first_instagram_post_id_from_message(message)
     if post is not None:
         post_id, url = post

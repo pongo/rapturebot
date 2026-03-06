@@ -30,6 +30,7 @@ from src.utils.handlers_decorators import chat_guard, collect_stats, command_gua
 from src.utils.handlers_helpers import is_command_enabled_for_chat, \
     check_command_is_off
 from src.utils.logger_helpers import get_logger
+from src.utils.telegram_helpers import get_sticker_set_fixed
 from src.utils.time_helpers import get_current_monday_str, today_str
 
 logger = get_logger(__name__)
@@ -106,11 +107,12 @@ def send_pidor(bot, update):
 
 
 @run_async
-def send_random_sticker_from_stickerset(bot: telegram.Bot, chat_id: int, stickerset_name: str) -> None:
+def send_random_sticker_from_stickerset(bot: telegram.Bot, chat_id: int,
+                                        stickerset_name: str) -> None:
     key = f'stickerset:{stickerset_name}'
     stickerset = cache.get(key)
     if not stickerset:
-        stickerset = bot.get_sticker_set(stickerset_name)
+        stickerset = get_sticker_set_fixed(bot, stickerset_name)
         cache.set(key, stickerset, time=50)
     sticker = random.choice(stickerset.stickers)
     bot.send_sticker(chat_id, sticker)
@@ -181,6 +183,7 @@ def twitter_video(bot: telegram.Bot, update: telegram.Update) -> None:
     if not is_command_enabled_for_chat(update.message.chat_id, 'twitter_video'):
         return
     process_message_for_twitter(update.effective_message)
+
 
 def threads_video(bot: telegram.Bot, update: telegram.Update) -> None:
     if not is_command_enabled_for_chat(update.message.chat_id, 'threads_video'):

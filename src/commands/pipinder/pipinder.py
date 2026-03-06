@@ -6,7 +6,7 @@ import telegram
 from src.utils.cache import cache, FEW_DAYS, YEAR
 from src.utils.handlers_decorators import chat_guard, collect_stats, command_guard
 from src.utils.logger_helpers import get_logger
-from src.utils.telegram_helpers import telegram_retry
+from src.utils.telegram_helpers import telegram_retry, get_sticker_set_fixed
 from src.utils.time_helpers import today_str
 
 logger = get_logger(__name__)
@@ -20,7 +20,7 @@ def get_working_stickerset(bot: telegram.Bot, chat_id: int, stickerset_name: str
     """
     logger.debug(f'[pipinder:get_working_stickerset] trying get stickerset {stickerset_name}')
     bot.send_chat_action(chat_id, telegram.ChatAction.TYPING)
-    return bot.get_sticker_set(stickerset_name)
+    return get_sticker_set_fixed(bot, stickerset_name)
 
 
 def remove_stickersets_from_cache(stickersets: List[str]) -> None:

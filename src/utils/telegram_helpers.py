@@ -4,7 +4,7 @@ from functools import wraps
 from typing import List, Optional
 
 import telegram
-from telegram import ParseMode
+from telegram import ParseMode, StickerSet
 from telegram.ext import DelayQueue
 
 from src.utils.logger_helpers import get_logger
@@ -83,3 +83,13 @@ def get_photo_url(bot: telegram.Bot, message: telegram.Message) -> str:
 def send_long(bot: telegram.Bot, chat_id: int, msg: str):
     for chunk in chunks(msg, 4096):
         dsp(bot.send_message, chat_id, chunk, parse_mode=ParseMode.HTML)
+
+
+def get_sticker_set_fixed(bot: telegram.Bot, name: str) -> StickerSet:
+    """
+    Исправление бага https://github.com/python-telegram-bot/python-telegram-bot/issues/4181
+    """
+    resp = bot._request.post(f"{bot.base_url}/getStickerSet", {"name": name})
+    resp.update({"is_animated": None})
+    stickerset = StickerSet.de_json(resp, bot)
+    return stickerset

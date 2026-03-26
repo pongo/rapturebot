@@ -75,7 +75,7 @@ def call(message: telegram.Message, twitter_username: str, twitter_id: str):
 
 
 def fetch_post(twitter_id):
-    r = requests.post(f'http://localhost:3000/api/v1/twitter', json={"id": twitter_id})
+    r = requests.post(f'http://localhost:3001/api/v1/twitter', json={"id": twitter_id})
     res = r.json()
     if not res['ok']:
         logger.error(res)

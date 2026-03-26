@@ -48,7 +48,7 @@ def call(message: telegram.Message, url: str):
 
 
 def fetch_post(url):
-    r = requests.post(f'http://localhost:3000/api/v1/threads', json={"url": url})
+    r = requests.post(f'http://localhost:3001/api/v1/threads', json={"url": url})
     res = r.json()
     if not res['ok']:
         logger.error(res)

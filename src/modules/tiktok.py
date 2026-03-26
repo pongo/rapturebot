@@ -100,7 +100,7 @@ def send_video(message: telegram.Message, video_url: str):
 
 
 def fetch_api(url: str):
-    r = requests.post(f'http://localhost:3000/api/v1/tiktok-video', json={"video": url})
+    r = requests.post(f'http://localhost:3001/api/v1/tiktok-video', json={"video": url})
     res = r.json()
     if not res['ok']:
         logger.error(res)

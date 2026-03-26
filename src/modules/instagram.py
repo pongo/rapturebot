@@ -125,7 +125,7 @@ def call(message: telegram.Message, post_id: str, url: str, story=False):
         r = fetch_post(post_id, url, story)
         if r is None:
             logger.error(f"Third instagram api returns None for {post_id}")
-            message.reply_text(url.replace('instagram.com', 'ddinstagram.com'))
+            message.reply_text(url.replace('instagram.com', 'eeinstagram.com'))
             return
 
         images, videos = r
@@ -157,10 +157,10 @@ def fetch_post(post_id: str, url: str, story=False):
     # return None
 
     if story:
-        r = requests.post(f'http://localhost:3000/api/v1/instagram_story',
+        r = requests.post(f'http://localhost:3001/api/v1/instagram_story',
                           json={"id": post_id, "url": url})
     else:
-        r = requests.post(f'http://localhost:3000/api/v2/instagram',
+        r = requests.post(f'http://localhost:3001/api/v2/instagram',
                           json={"post_id": post_id})
     res = r.json()
     if not res['ok']:

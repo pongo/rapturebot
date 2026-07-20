@@ -4,6 +4,7 @@ import requests
 import telegram
 from telegram import MessageEntity, ChatAction
 
+from src.modules.bayanometer import Bayanometer
 from src.utils.logger_helpers import get_logger
 from src.utils.send_video_helpers import send_images, send_videos
 
@@ -39,7 +40,9 @@ def call(message: telegram.Message, url: str):
             return
 
         images, videos = r
-        send_images(message, images)
+        sent_images = send_images(message, images)
+        if sent_images:
+            Bayanometer.check_sent_images(message.bot, message, sent_images)
         send_videos(message, videos)
         logger.info(f"Processed threads {url}")
     except Exception as e:

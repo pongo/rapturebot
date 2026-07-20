@@ -184,6 +184,45 @@ class Photo:
         cls.__send(bot, chat_id, msg_id, photo.date, data)
 
     @classmethod
+    def sent_messages_handler(cls, bot: telegram.Bot, source_message: telegram.Message,
+                              sent_messages: List[telegram.Message]) -> None:
+        chat_id = source_message.chat_id
+        source_message_id = source_message.message_id
+        user_id = source_message.from_user.id
+        first_match = None
+        first_match_url = None
+
+        for sent_message in sent_messages:
+            try:
+                img_url = get_photo_url(bot, sent_message)
+                photo = cls.__check(img_url, chat_id, sent_message.message_id, user_id)
+            except Exception as e:
+                logger.error(
+                    f'Failed to check sent social image {chat_id}:{sent_message.message_id}: {repr(e)}'
+                )
+                continue
+
+            if not photo:
+                continue
+            if user_id == photo.user_id:
+                logger.debug(
+                    f'same user bayan: {chat_id}:{sent_message.message_id}={photo.message_id}'
+                )
+                continue
+            if first_match is None:
+                first_match = photo
+                first_match_url = img_url
+
+        if first_match is None:
+            return
+
+        data = {
+            "name": BAYANOMETER_SHOW_ORIG, "type": cls.data_type,
+            "orig_photo": first_match, "url": first_match_url
+        }
+        cls.__send(bot, chat_id, source_message_id, first_match.date, data)
+
+    @classmethod
     def callback_handler(cls, bot: telegram.Bot, uid, cid, button_msg_id, data, query: telegram.CallbackQuery) -> None:
         url = data['url']
         orig_photo: Photo = data['orig_photo']
@@ -443,6 +482,17 @@ class Bayanometer:
         if len(update.message.photo) > 0:
             Photo.message_handler(bot, update)
             return
+
+    @classmethod
+    @run_async
+    def check_sent_images(cls, bot: telegram.Bot, source_message: telegram.Message,
+                          sent_messages: List[telegram.Message]) -> None:
+        chat_id = source_message.chat_id
+        if chat_id >= 0:  # is private
+            return
+        if not is_command_enabled_for_chat(chat_id, 'bayanometer'):
+            return
+        Photo.sent_messages_handler(bot, source_message, sent_messages)
 
     @classmethod
     def callback_handler(cls, bot: telegram.Bot, _, query: telegram.CallbackQuery, data) -> None:

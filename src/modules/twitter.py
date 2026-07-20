@@ -6,6 +6,7 @@ import telegram
 from telegram import MessageEntity, ChatAction
 
 from src.config import CONFIG
+from src.modules.bayanometer import Bayanometer
 from src.utils.logger_helpers import get_logger
 from src.utils.send_video_helpers import send_images, send_videos
 from src.utils.text_helpers import truncate
@@ -65,7 +66,10 @@ def call(message: telegram.Message, twitter_username: str, twitter_id: str):
         if len(images) == 0 and len(videos) == 0:
             message.reply_text(truncate(text, 4000))
         else:
-            text_sent = send_images(message, images, text)
+            sent_images = send_images(message, images, text)
+            if sent_images:
+                Bayanometer.check_sent_images(message.bot, message, sent_images)
+            text_sent = bool(sent_images)
             send_videos(message, videos, text, text_sent, is_private)
 
         logger.info(f"Processed twitter {twitter_id}")

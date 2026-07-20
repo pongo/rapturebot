@@ -166,37 +166,39 @@ def send_too_big(bot, chat_id, message_id, video_url):
         parse_mode=ParseMode.HTML, reply_to_message_id=message_id)
 
 
-def send_images(message: telegram.Message, images: List[str], text: str = '') -> bool:
+def send_images(message: telegram.Message, images: List[str], text: str = '') -> List[telegram.Message]:
     if len(images) == 0:
-        return False
+        return []
 
     if len(images) == 1:
         if len(text) > 1000:
             message.reply_text(truncate(text, 4000), disable_web_page_preview=True)
             sleep(1)
             text = ''
-        message.reply_photo(images[0], filename=f"photo.jpg", caption=truncate(text, 1000))
-        return True
+        sent_message = message.reply_photo(images[0], filename=f"photo.jpg", caption=truncate(text, 1000))
+        return [sent_message]
 
     if len(images) > 1:
         if text:
             message.reply_text(truncate(text, 4000), disable_web_page_preview=True)
             sleep(1)
-        # телеграм позволяет отправить только 10 изображений в группе
-        send_images_by_chunks(message, images, 10)
-        return True
+        # Telegram allows sending only 10 images in a media group.
+        return send_images_by_chunks(message, images, 10)
 
-def send_images_by_chunks(message: telegram.Message, images: List[str], chunk_size=10) -> None:
+
+def send_images_by_chunks(message: telegram.Message, images: List[str], chunk_size=10) -> List[telegram.Message]:
     first = True
+    sent_messages = []
     for chunk in chunks(images, chunk_size):
         if first:
             first = False
         else:
             sleep(1)
-        message.reply_media_group([
+        sent_messages.extend(message.reply_media_group([
             InputMediaPhoto(url)  # , filename=f"{post_id}-{i + 1}.jpg")
             for i, url in enumerate(chunk)
-        ])
+        ]))
+    return sent_messages
 
 def send_videos(message: telegram.Message, videos: List[str], text: str = '',
                 text_sent: bool = False, best_quality=False) -> None:

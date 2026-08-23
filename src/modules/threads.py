@@ -23,7 +23,29 @@ def get_first_threads_url_from_message(message: telegram.Message):
     return message_entities[0] if message_entities else None
 
 
+def get_first_threads_share_url(message: telegram.Message):
+    for url in message.parse_entities([MessageEntity.URL]).values():
+        if 'threads.com/share/' in url:
+            return url
+    return None
+
+
+def get_post_from_share(message: telegram.Message):
+    share_url = get_first_threads_share_url(message)
+    if not share_url:
+        return None
+
+    # Get the canonical post URL through the redirect.
+    response = requests.head(share_url, allow_redirects=True)
+    return response.url
+
+
 def process_message_for_threads(message: telegram.Message) -> bool:
+    url = get_post_from_share(message)
+    if url is not None:
+        call(message, url)
+        return True
+
     url = get_first_threads_url_from_message(message)
     if url is None:
         return False

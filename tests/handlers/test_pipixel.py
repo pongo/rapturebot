@@ -1,18 +1,6 @@
-import sys
 import unittest
-from unittest.mock import MagicMock
 
 from src.commands.other import pipixel
-
-sys.modules['telegram'] = MagicMock()
-sys.modules['telegram.ext'] = MagicMock()
-sys.modules['src.commands'] = MagicMock()
-sys.modules['src.config'] = MagicMock()
-sys.modules['src.config.CONFIG'] = MagicMock()
-sys.modules['src.utils.handlers_helpers'] = MagicMock()
-sys.modules['src.utils.cache'] = MagicMock()
-sys.modules['src.utils.logger'] = MagicMock()
-sys.modules['src.utils.db'] = MagicMock()
 
 
 class PipixelTest(unittest.TestCase):

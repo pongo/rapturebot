@@ -23,7 +23,8 @@ class ParseInstagramPostId(unittest.TestCase):
             ['https://www.instagram.com/reel/CKVMQ9dg-hJ/?igshid=1tuvggc2qv85b', 'CKVMQ9dg-hJ'],
         ]
         for value, expected in cases:
-            self.assertEqual(parse_instagram_post_id(value), expected)
+            expected_result = None if expected is None else (expected, value)
+            self.assertEqual(parse_instagram_post_id(value), expected_result)
 
 
 if __name__ == '__main__':

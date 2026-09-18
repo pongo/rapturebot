@@ -1,22 +1,9 @@
-import sys
 import unittest
 from typing import Dict, Union, List
-from unittest.mock import MagicMock
 
 from src.dayof.valentine_day.model import check_errors, VChatsUser, VUnknownUser, VChat, \
     CardDraftSelectHeart, CardDraftSelectChat, command_val, Card, next_emoji, Stats, revn_emojis, \
     StatsHumanReporter
-
-sys.modules['telegram'] = MagicMock()
-sys.modules['telegram.ext'] = MagicMock()
-sys.modules['src.commands'] = MagicMock()
-sys.modules['src.config'] = MagicMock()
-sys.modules['src.config.CONFIG'] = MagicMock()
-sys.modules['src.utils.handlers_helpers'] = MagicMock()
-sys.modules['src.utils.cache'] = MagicMock()
-sys.modules['src.utils.logger'] = MagicMock()
-sys.modules['src.utils.db'] = MagicMock()
-
 
 class CheckErrorsTest(unittest.TestCase):
     def test_from_unknown_user(self):

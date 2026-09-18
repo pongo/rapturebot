@@ -1,19 +1,6 @@
 # noqa: E402
 
 import unittest
-import sys
-
-from unittest.mock import MagicMock
-
-sys.modules['telegram'] = MagicMock()
-sys.modules['telegram.ext'] = MagicMock()
-sys.modules['src.commands'] = MagicMock()
-sys.modules['src.config'] = MagicMock()
-sys.modules['src.config.CONFIG'] = MagicMock()
-sys.modules['src.modules.khaleesi'] = MagicMock()
-sys.modules['src.utils.handlers_helpers'] = MagicMock()
-sys.modules['src.utils.cache'] = MagicMock()
-sys.modules['src.utils.logger'] = MagicMock()
 
 from src.commands.weather import parse_temp, get_wind
 

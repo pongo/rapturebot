@@ -1,20 +1,7 @@
 import os
-import sys
 import unittest
-from unittest.mock import MagicMock
 
 from src.modules.antimat.antimat import Antimat, get_default_filter, ObsceneRegexp, extended_filter_enabled
-
-sys.modules['telegram'] = MagicMock()
-sys.modules['telegram.ext'] = MagicMock()
-sys.modules['src.commands'] = MagicMock()
-sys.modules['src.config'] = MagicMock()
-sys.modules['src.config.CONFIG'] = MagicMock()
-sys.modules['src.modules.khaleesi'] = MagicMock()
-sys.modules['src.utils.handlers_helpers'] = MagicMock()
-sys.modules['src.utils.cache'] = MagicMock()
-sys.modules['src.utils.logger'] = MagicMock()
-
 
 stop_after_first_fail = True
 
@@ -24,10 +11,11 @@ class StopAfterFailTestCase(unittest.TestCase):
     https://stackoverflow.com/a/690286/136559
     """
     def run(self, result=None):
-        if stop_after_first_fail and result.failures or result.errors:
+        if result is not None and hasattr(result, 'failures') and \
+                (stop_after_first_fail and (result.failures or result.errors)):
             print('aborted')
-        else:
-            super(StopAfterFailTestCase, self).run(result)
+            return
+        super().run(result)
 
 
 class ObsceneRegexpTest(StopAfterFailTestCase):

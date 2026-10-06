@@ -14,7 +14,7 @@ logger = get_logger(__name__)
 CACHE_PREFIX = 'instagram'
 MODULE_NAME = CACHE_PREFIX
 callback_upload_video = 'instagram_upload_video'
-re_instagram_url = re.compile(r"instagram\.com\S*?\/(?:p|tv|reel)\/([\w-]+)\/?")
+re_instagram_url = re.compile(r"instagram\.com\S*?\/(?:p|tv|reels?)\/([\w-]+)\/?")
 re_instagram_story = re.compile(r"instagram.com/stories/(?:\S+)/(\d+)/?")
 SEND_VIDEO_SIZE_LIMIT = 50 * 1048576  # 50mb https://core.telegram.org/bots/api#sendvideo
 
